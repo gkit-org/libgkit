@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../utils/Singleton.hpp"
-#include "../include/keydef.hpp"
+#include "utils/Singleton.hpp"
+#include "input/keydef.hpp"
 #include <SDL3/SDL_keycode.h>
 #include <string>
 #include <unordered_map>

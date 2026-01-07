@@ -1,5 +1,5 @@
-#include "../include/input.hpp"
-#include "keydef.hpp"
+#include "core/include/input/input.hpp"
+#include "core/include/input/keydef.hpp"
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_events.h>
 #include <string>
