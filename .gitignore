@@ -4,5 +4,8 @@
 
 # temp files
 .cache/
+
+# binary files
 bin/
 build/
+binding/rust/target/

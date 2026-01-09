@@ -1,0 +1,12 @@
+[package]
+name = "gkit-rs"
+version = "0.1.0"
+edition = "2024"
+build = "src/build.rs"
+
+[lib]
+name = "gkit_rs"
+path = "src/lib.rs"
+crate-type = ["cdylib"]
+
+[dependencies]
