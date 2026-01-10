@@ -1,11 +1,11 @@
 [package]
-name = "gkit-rs"
+name = "gkit"
 version = "0.1.0"
 edition = "2024"
 build = "src/build.rs"
 
 [lib]
-name = "gkit_rs"
+name = "gkit"
 path = "src/lib.rs"
 crate-type = ["cdylib"]
 
