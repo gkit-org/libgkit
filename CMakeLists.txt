@@ -48,7 +48,7 @@ set(CORE_SRC
     ${CORE_UTILS_SRC}
 )
 
-if (DEFINED ENABLE_C_ABI)
+if (ENABLE_C_ABI)
 
     ## CABI sources ##
     file(GLOB_RECURSE CABI_APPLICATION_SRC

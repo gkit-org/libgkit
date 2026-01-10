@@ -4,7 +4,7 @@ pub struct Application{
 
 impl Application {
     #[allow(unused)]
-    fn new() -> Self {
+    pub fn new() -> Self {
         return unsafe {
             Self {
                 raw_ptr: gkit_application_new()

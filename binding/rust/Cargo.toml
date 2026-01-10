@@ -2,11 +2,11 @@
 name = "gkit"
 version = "0.1.0"
 edition = "2024"
-build = "src/build.rs"
+build = "build.rs"
 
 [lib]
 name = "gkit"
 path = "src/lib.rs"
-crate-type = ["cdylib"]
+crate-type = ["rlib", "cdylib"]
 
 [dependencies]

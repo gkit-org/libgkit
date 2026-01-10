@@ -9,7 +9,7 @@ pub struct Window {
 
 impl Window {
     #[allow(unused)]
-    fn new(title: String, width: i32, height: i32) -> Self {
+    pub fn new(title: String, width: i32, height: i32) -> Self {
         let title_cstr = CString::new(title).expect("filed to cast title to CString");
         return unsafe {
             Self {
@@ -19,14 +19,14 @@ impl Window {
     }
 
     #[allow(unused)]
-    fn show(&self) {
+    pub fn show(&self) {
         unsafe {
             gkit_window_show(self.raw_ptr);
         }
     }
 
     #[allow(unused)]
-    fn hide(&self) {
+    pub fn hide(&self) {
         unsafe {
             gkit_window_hide(self.raw_ptr);
         }
@@ -50,8 +50,8 @@ struct Gkit_Window {
 }
 
 unsafe extern "C" {
-    unsafe fn gkit_window_new(title: *const c_char, width: c_int, height: c_int) -> *mut Gkit_Window;      
-    unsafe fn gkit_window_delete(win_ptr: *mut Gkit_Window);
-    unsafe fn gkit_window_show(win_ptr: *mut Gkit_Window);
-    unsafe fn gkit_window_hide(win_ptr: *mut Gkit_Window);
+    fn gkit_window_new(title: *const c_char, width: c_int, height: c_int) -> *mut Gkit_Window;      
+    fn gkit_window_delete(win_ptr: *mut Gkit_Window);
+    fn gkit_window_show(win_ptr: *mut Gkit_Window);
+    fn gkit_window_hide(win_ptr: *mut Gkit_Window);
 }

@@ -1,7 +1,9 @@
-pub mod application {
+pub(crate) mod application {
     pub mod application;
 }
+pub use application::application::Application;
 
 pub mod graphic {
-    pub mod window;
+    pub(crate) mod window;
+    pub use window::Window;
 }

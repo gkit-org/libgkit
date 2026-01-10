@@ -9,3 +9,4 @@
 bin/
 build/
 binding/rust/target/
+test/rust_binding/target/
