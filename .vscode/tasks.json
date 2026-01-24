@@ -26,7 +26,7 @@
             "command": "g++",
             "args": [
                 "-g",
-                "${fileBasename}",
+                "${fileDirname}/${fileBasename}",
                 "-o",
                 "${workspaceFolder}/bin/test/core/${fileBasenameNoExtension}.out",
                 "-I",
