@@ -13,7 +13,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-        build_type: [Debug, Release]
+        # build_type: [Debug, Release]
       
     steps:
     - name: Checkout code
@@ -23,7 +23,6 @@ jobs:
       run: |
         echo "🚀 Starting build for gkit project"
         echo "Platform: ${{ runner.os }}"
-        echo "Build type: ${{ matrix.build_type }}"
         echo "Workflow: ${{ github.workflow }}"
         echo "Repository: ${{ github.repository }}"
         echo "Commit SHA: ${{ github.sha }}"
@@ -89,7 +88,6 @@ jobs:
       run: |
         echo "🎉 Build process completed!"
         echo "Platform: ${{ runner.os }}"
-        echo "Build type: ${{ matrix.build_type }}"
         echo "Job status: ${{ job.status }}"
         
         # List built files
@@ -99,9 +97,3 @@ jobs:
         # Show disk usage
         echo "💾 Disk usage:"
         du -sh ${{ github.workspace }}/build 2>/dev/null || echo "Build directory size info not available"
-
-    # - name: Upload build artifacts
-    #   uses: actions/upload-artifact@v3
-    #   with:
-    #     name: gkit-${{ matrix.os }}-${{ matrix.build_type }}
-    #     path: ${{ github.workspace }}/build/
