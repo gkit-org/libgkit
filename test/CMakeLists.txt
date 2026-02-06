@@ -12,7 +12,6 @@ file(GLOB_RECURSE CORE_TEST_SRCS
 foreach(test_file ${CORE_TEST_SRCS})
     get_filename_component(FILE_BASE_NAME ${test_file} NAME_WE)
     add_executable(${FILE_BASE_NAME} ${test_file} $<TARGET_OBJECTS:gkit_core>)
-    add_dependencies(${FILE_BASE_NAME} ${CORE})
     target_link_libraries(${FILE_BASE_NAME} PRIVATE gkit_static)
 endforeach()
 

@@ -12,12 +12,13 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]
-        # build_type: [Debug, Release]
+        os: [ubuntu-latest]
       
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        submodules: true
 
     - name: Show build information
       run: |
@@ -32,22 +33,14 @@ jobs:
       run: |
         echo "📦 Installing Ubuntu dependencies..."
         sudo apt-get update
-        sudo apt-get install -y cmake build-essential ninja-build
+        sudo apt-get install -y \
+        build-essential cmake ninja-build \
+        libasound2-dev libpulse-dev libx11-dev libxext-dev \
+        libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev \
+        libxss-dev libxtst-dev libxkbcommon-dev libdrm-dev \
+        libgbm-dev libgl1-mesa-dev libgles2-mesa-dev libegl1-mesa-dev \
+        libdbus-1-dev libibus-1.0-dev libudev-dev
         echo "✅ Ubuntu dependencies installed successfully"
-
-    - name: Install dependencies (Windows)
-      if: runner.os == 'Windows'
-      run: |
-        echo "📦 Installing Windows dependencies..."
-        choco install cmake
-        choco install ninja
-        echo "✅ Windows dependencies installed successfully"
-
-    # - name: Install dependencies (macOS)
-    #   if: runner.os == 'macOS'
-    #   run: |
-    #     brew install sdl3
-    #     brew install cmake
 
     - name: Configure CMake (Linux)
       if: runner.os == 'Linux'
@@ -65,23 +58,6 @@ jobs:
         echo "Build directory: $BUILD_DIR"
         cmake --build $BUILD_DIR
         echo "✅ Linux build completed successfully"
-
-    - name: Configure CMake (Windows)
-      if: runner.os == 'Windows'
-      run: |
-        echo "⚙️ Configuring CMake for Windows..."
-        echo "Using preset: windows-x86_64-mingw64-debug"
-        cmake --preset windows-x86_64-mingw64-debug
-        echo "✅ CMake configuration completed"
-
-    - name: Configure and build project (Windows)
-      if: runner.os == 'Windows'
-      run: |
-        echo "🔨 Building project on Windows..."
-        BUILD_DIR="${{ github.workspace }}/build/windows-x86_64-mingw64-debug"
-        echo "Build directory: $BUILD_DIR"
-        cmake --build $BUILD_DIR
-        echo "✅ Windows build completed successfully"
 
     - name: Show build results
       run: |
