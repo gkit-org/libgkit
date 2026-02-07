@@ -1,0 +1,68 @@
+name: gkit-build-test
+
+on:
+  push:
+    branches: [ "dev" ]
+  pull_request:
+    branches: [ "dev" ]
+
+jobs:
+  build-and-test:
+    name: Build and Test on Ubuntu-latest
+    runs-on: ubuntu-latest
+      
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: true
+
+    - name: Show build information
+      run: |
+        echo "🚀 Starting build for gkit project"
+        echo "Platform: ${{ runner.os }}"
+        echo "Workflow: ${{ github.workflow }}"
+        echo "Repository: ${{ github.repository }}"
+        echo "Commit SHA: ${{ github.sha }}"
+
+    - name: Install dependencies
+      run: |
+        echo "📦 Installing Ubuntu dependencies..."
+        sudo apt-get update
+        sudo apt-get install -y \
+        build-essential cmake ninja-build \
+        libasound2-dev libpulse-dev libx11-dev libxext-dev \
+        libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev \
+        libxss-dev libxtst-dev libxkbcommon-dev libdrm-dev \
+        libgbm-dev libgl1-mesa-dev libgles2-mesa-dev libegl1-mesa-dev \
+        libdbus-1-dev libibus-1.0-dev libudev-dev
+        echo "✅ Ubuntu dependencies installed successfully"
+
+    - name: Configure CMake (Linux)
+      run: |
+        echo "⚙️ Configuring CMake for Linux..."
+        echo "Using preset: linux-x86_64-gcc-debug"
+        cmake --preset linux-x86_64-gcc-debug
+        echo "✅ CMake configuration completed"
+
+    - name: Configure and build project (Linux)
+      run: |
+        echo "🔨 Building project on Linux..."
+        BUILD_DIR="${{ github.workspace }}/build/linux-x86_64-gcc-debug"
+        echo "Build directory: $BUILD_DIR"
+        cmake --build $BUILD_DIR
+        echo "✅ Linux build completed successfully"
+
+    - name: Show build results
+      run: |
+        echo "🎉 Build process completed!"
+        echo "Platform: Linux(Ubuntu-latest)"
+        echo "Job status: ${{ job.status }}"
+        
+        # List built files
+        echo "📁 Built files:"
+        find ${{ github.workspace }}/build -name "*.so" -o -name "*.dll" -o -name "*.a" -o -name "*.lib" 2>/dev/null || echo "No library files found"
+        
+        # Show disk usage
+        echo "💾 Disk usage:"
+        du -sh ${{ github.workspace }}/build 2>/dev/null || echo "Build directory size info not available"
