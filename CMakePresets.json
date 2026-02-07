@@ -10,7 +10,10 @@
             "name": "common",
             "hidden": true,
             "generator": "Ninja",
-            "binaryDir": "${sourceDir}/build/${presetName}"
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "cacheVariables": {
+                "BIN_FOLDER": "${sourceDir}/bin/${presetName}"
+            }
         },
 
         {"name": "linux", "hidden": true },
@@ -29,28 +32,28 @@
             "name": "linux-x86_64-gcc-debug",
             "inherits": ["common", "linux", "debug", "gcc", "c_abi"],
             "cacheVariables": {
-                "BIN_FOLDER": "linux-x86_64-gcc"
+                
             }
         },
         {
             "name": "linux-x86_64-gcc-noabi-debug",
             "inherits": ["common", "linux", "debug", "gcc", "noabi"],
             "cacheVariables": {
-                "BIN_FOLDER": "linux-x86_64-gcc-noabi"
+                
             }
         },
         {
             "name": "windows-x86_64-mingw64-debug",
             "inherits": ["common", "windows", "debug", "c_abi"],
             "cacheVariables": {
-                "BIN_FOLDER": "windows-x86_64-gcc"
+                
             }
         },
         {
             "name": "windows-x86_64-mingw64-noabi-debug",
             "inherits": ["common", "windows", "debug", "noabi"],
             "cacheVariables": {
-                "BIN_FOLDER": "windows-x86_64-gcc-noabi"
+                
             }
         }
     ]

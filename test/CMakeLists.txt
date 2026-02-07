@@ -1,4 +1,4 @@
-set (EXECUTABLE_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/bin/${BIN_FOLDER}/test)
+set (EXECUTABLE_OUTPUT_PATH ${BIN_FOLDER}/test)
 
 include_directories(${CMAKE_SOURCE_DIR}/src)
 include_directories(${CMAKE_SOURCE_DIR}/src/core/include)
