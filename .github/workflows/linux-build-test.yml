@@ -44,8 +44,8 @@ jobs:
     - name: Configure CMake (Linux)
       run: |
         echo "⚙️ Configuring CMake for Linux..."
-        echo "Using preset: linux-x86_64-gcc-debug"
-        cmake --preset linux-x86_64-gcc-debug
+        echo "Using preset: ${{matrix.preset}}"
+        cmake --preset ${{matrix.preset}}
         echo "✅ CMake configuration completed"
 
     - name: Configure and build project (Linux)
