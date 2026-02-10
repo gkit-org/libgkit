@@ -9,7 +9,7 @@
 
 namespace gkit {
 
-    class Input final : protected Singleton<Input> {
+    class Input final : protected utils::Singleton<Input> {
     public:
         Input()  noexcept;
         ~Input() noexcept = default;

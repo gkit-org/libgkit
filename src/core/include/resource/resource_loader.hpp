@@ -9,7 +9,7 @@
 #include <memory>
 
 namespace gkit::resource {
-    class ResourceLoader : Singleton<ResourceLoader>{
+    class ResourceLoader : utils::Singleton<ResourceLoader> {
     public:
         ResourceLoader() = default;
 

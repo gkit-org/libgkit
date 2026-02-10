@@ -1,6 +1,6 @@
 #pragma once
 
-namespace gkit {
+namespace gkit::utils {
 
 template<typename T>
 class Singleton {
