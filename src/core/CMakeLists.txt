@@ -4,7 +4,7 @@ set (CORE "gkit_core")
 file(GLOB_RECURSE CORE_SRC
   "./application/*.cpp"
   "./graphic/*.cpp"
-  "./input/*.cpp"
+  # "./input/*.cpp"
   "./resource/*cpp"
   "./utils/*.cpp"
 )
