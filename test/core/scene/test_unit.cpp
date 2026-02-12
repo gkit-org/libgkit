@@ -23,9 +23,9 @@ public:
         std::cout << std::format("TestUnit({})::_process(): num = {}", this->name, this->num) << std::endl;
     }
 
-    auto _physics_process() -> void override {
-        std::cout << std::format("TestUnit({})::_physics_process()", this->name) << std::endl;
-    }
+    // auto _physics_process() -> void override {
+    //     std::cout << std::format("TestUnit({})::_physics_process()", this->name) << std::endl;
+    // }
 
     auto _exit() -> void override {
         std::cout << std::format("TestUnit({})::_exit()", this->name) << std::endl;
@@ -40,12 +40,14 @@ public:
     using Unit::Unit;
 
     auto _ready() -> void override {
+        std::cout << std::format("RootUnit({})::_ready()", this->name) << std::endl;
         for (auto i = 1; i <= 10; ++i) {
             auto new_child = Unit::create<TestUnit>(std::format("Unit{}", i));
             add_child(std::move(new_child));    
         }
     }
     auto _process() -> void override {
+        std::cout << std::format("RootUnit({})::_process()", this->name) << std::endl;
         if (times <= 0) {
             this->remove_child(0);
             times = BEGIN;
@@ -58,7 +60,9 @@ public:
         times -= 1;
     }
     auto _physics_process() -> void override {}
-    auto _exit() -> void override {}
+    auto _exit() -> void override {
+        std::cout << std::format("RootUnit({})::_exit()", this->name) << std::endl;
+    }
 };
 
 
