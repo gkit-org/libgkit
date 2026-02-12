@@ -5,6 +5,7 @@ file(GLOB_RECURSE CORE_SRC
   "./application/*.cpp"
   "./graphic/*.cpp"
   # "./input/*.cpp"
+  "./scene/*.cpp"
   "./resource/*cpp"
   "./utils/*.cpp"
   "./*.cpp"
