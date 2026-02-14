@@ -6,6 +6,10 @@
 // Graphic
 #include <graphic/window.hpp>
 
+// Scene
+#include <scene/unit.hpp>
+#include <scene/object.hpp>
+
 // Resource
 #include <resource/resource.hpp>
 #include <resource/texture.hpp>
