@@ -16,45 +16,30 @@
             }
         },
 
-        {"name": "linux", "hidden": true },
+        {"name": "linux",   "hidden": true },
         {"name": "windows", "hidden": true },
 
 
-        {"name": "debug", "hidden": true, "cacheVariables": {"CMAKE_BUILD_TYPE": "Debug"}},
+        {"name": "debug",   "hidden": true, "cacheVariables": {"CMAKE_BUILD_TYPE": "Debug"}},
         {"name": "release", "hidden": true, "cacheVariables": {"CMAKE_BUILD_TYPE": "Release"}},
 
-        {"name": "gcc", "hidden": true, "cacheVariables": {"CMAKE_C_COMPILER": "gcc", "CMAKE_CXX_COMPILER": "g++"}},
+        {"name": "gcc",  "hidden": true, "cacheVariables": {"CMAKE_C_COMPILER": "gcc",   "CMAKE_CXX_COMPILER": "g++"}},
+        {"name": "llvm", "hidden": true, "cacheVariables": {"CMAKE_C_COMPILER": "clang", "CMAKE_CXX_COMPILER": "clang++"}},
+        {"name": "msvc", "hidden": true, "cacheVariables": {"CMAKE_C_COMPILER": "cl",    "CMAKE_CXX_COMPILER": "cl", "CMAKE_CXX_LINKER": "link.exe"}},
 
         {"name": "c_abi", "hidden": true, "cacheVariables": {"EXPORT_C_ABI": {"type": "BOOL", "value": true}}}, 
         {"name": "noabi", "hidden": true, "cacheVariables": {"EXPORT_C_ABI": {"type": "BOOL", "value": false}}}, 
 
-        {
-            "name": "linux-x86_64-gcc-debug",
-            "inherits": ["common", "linux", "debug", "gcc", "c_abi"],
-            "cacheVariables": {
-                
-            }
-        },
-        {
-            "name": "linux-x86_64-gcc-noabi-debug",
-            "inherits": ["common", "linux", "debug", "gcc", "noabi"],
-            "cacheVariables": {
-                
-            }
-        },
-        {
-            "name": "windows-x86_64-mingw64-debug",
-            "inherits": ["common", "windows", "debug", "c_abi"],
-            "cacheVariables": {
-                
-            }
-        },
-        {
-            "name": "windows-x86_64-mingw64-noabi-debug",
-            "inherits": ["common", "windows", "debug", "noabi"],
-            "cacheVariables": {
-                
-            }
-        }
+        { "name": "linux-x86_64-gcc-debug",       "inherits": ["common", "linux", "debug", "gcc", "c_abi"] },
+        { "name": "linux-x86_64-gcc-noabi-debug", "inherits": ["common", "linux", "debug", "gcc", "noabi"] },
+        { "name": "linux-x86_64-llvm-debug",      "inherits": ["common", "linux", "debug", "llvm", "c_abi"]},
+        { "name": "linux-x86_64-llvm-noabi-debug","inherits": ["common", "linux", "debug", "llvm", "noabi"]},
+
+        { "name": "windows-x86_64-mingw64-debug",       "inherits": ["common", "windows", "debug", "gcc", "c_abi"] },
+        { "name": "windows-x86_64-mingw64-noabi-debug", "inherits": ["common", "windows", "debug", "gcc", "noabi"] },
+        { "name": "windows-x86_64-llvm-debug",          "inherits": ["common", "windows", "debug", "llvm", "c_abi"] },
+        { "name": "windows-x86_64-llvm-noabi-debug",    "inherits": ["common", "windows", "debug", "llvm", "noabi"] },
+        { "name": "windows-x86_64-msvc-debug",          "inherits": ["common", "windows", "debug", "msvc", "c_abi"] },
+        { "name": "windows-x86_64-msvc-noabi-debug",    "inherits": ["common", "windows", "debug", "msvc", "noabi"] }        
     ]
 }
