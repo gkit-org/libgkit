@@ -13,13 +13,15 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix: 
-        preset: [ "windows-x86_64-mingw64-debug", "windows-x86_64-mingw64-noabi-debug" ]
+        preset: [ "windows-x86_64-mingw64-debug", "windows-x86_64-mingw64-noabi-debug",
+                  "windows-x86_64-llvm-debug",    "windows-x86_64-llvm-noabi-debug",
+                  "windows-x86_64-msvc-debug",    "windows-x86_64-msvc-noabi-debug" ]
       
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
-        submodules: true
+        submodules: 'recursive'
 
     - name: Show build information
       run: |
@@ -35,6 +37,12 @@ jobs:
         
         echo "✅ Windows dependencies installed successfully"
 
+    - name: Configure MSVC
+      if: ${{ matrix.preset == 'windows-x86_64-msvc-debug' || matrix.preset == 'windows-x86_64-msvc-noabi-debug' }}
+      uses: TheMrMilchmann/setup-msvc-dev@v4.0.0
+      with: 
+        arch: x64
+      
     - name: Configure CMake
       run: |
         echo "⚙️ Configuring CMake ..."
