@@ -1,4 +1,4 @@
-name: gkit-build-test
+name: gkit-linux-build-test
 
 on:
   push:
@@ -41,14 +41,14 @@ jobs:
         libdbus-1-dev libibus-1.0-dev libudev-dev
         echo "✅ Ubuntu dependencies installed successfully"
 
-    - name: Configure CMake (Linux)
+    - name: Configure CMake
       run: |
         echo "⚙️ Configuring CMake for Linux..."
         echo "Using preset: ${{matrix.preset}}"
         cmake --preset ${{matrix.preset}}
         echo "✅ CMake configuration completed"
 
-    - name: Configure and build project (Linux)
+    - name: Configure and build project
       run: |
         echo "🔨 Building project on Linux..."
         BUILD_DIR="${{ github.workspace }}/build/${{matrix.preset}}"
