@@ -30,7 +30,11 @@ namespace gkit::utils {
     public:
         static auto zero() -> const Vector2&;
         auto normalization() -> void;
+#ifdef _MSC_VER
+        inline auto length() const -> float { return std::sqrt(x * x + y * y); }
+#else
         inline constexpr auto length() const -> float { return std::sqrt(x * x + y * y); }
+#endif
         inline auto properties() -> auto { return std::tie(x, y);}
 
     private:

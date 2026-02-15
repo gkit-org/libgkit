@@ -1,4 +1,4 @@
-name: gkit-build-test
+name: gkit-linux-build-test
 
 on:
   push:
@@ -12,13 +12,14 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix: 
-        preset: [ "linux-x86_64-gcc-debug", "linux-x86_64-gcc-noabi-debug" ]
+        preset: [ "linux-x86_64-gcc-debug",  "linux-x86_64-gcc-noabi-debug",
+                  "linux-x86_64-llvm-debug", "linux-x86_64-llvm-noabi-debug" ]
       
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
-        submodules: true
+        submodules: 'recursive'
 
     - name: Show build information
       run: |
@@ -33,7 +34,7 @@ jobs:
         echo "📦 Installing Ubuntu dependencies..."
         sudo apt-get update
         sudo apt-get install -y \
-        build-essential cmake ninja-build \
+        build-essential clang cmake ninja-build \
         libasound2-dev libpulse-dev libx11-dev libxext-dev \
         libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev \
         libxss-dev libxtst-dev libxkbcommon-dev libdrm-dev \
@@ -41,14 +42,14 @@ jobs:
         libdbus-1-dev libibus-1.0-dev libudev-dev
         echo "✅ Ubuntu dependencies installed successfully"
 
-    - name: Configure CMake (Linux)
+    - name: Configure CMake
       run: |
         echo "⚙️ Configuring CMake for Linux..."
         echo "Using preset: ${{matrix.preset}}"
         cmake --preset ${{matrix.preset}}
         echo "✅ CMake configuration completed"
 
-    - name: Configure and build project (Linux)
+    - name: Configure and build project
       run: |
         echo "🔨 Building project on Linux..."
         BUILD_DIR="${{ github.workspace }}/build/${{matrix.preset}}"
