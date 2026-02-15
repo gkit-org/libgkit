@@ -45,11 +45,11 @@ jobs:
     - name: Configure and build project
       shell: powershell
       run: |
-        echo "🔨 Building project..."
+        echo "Building project..."
         $env:BUILD_DIR = "${{ github.workspace }}/build/${{matrix.preset}}"
         echo "Build directory: $BUILD_DIR"
         cmake --build $BUILD_DIR
-        echo "✅ Windows build completed successfully"
+        echo "Windows build completed successfully"
 
     - name: Show build results
       run: |
