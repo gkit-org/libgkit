@@ -4,6 +4,7 @@
 #include <atomic>
 #include <cstdint>
 #include <functional>
+#include <iterator>
 #include <optional>
 #include <shared_mutex>
 #include <string>
@@ -17,6 +18,7 @@ namespace gkit {
 
 namespace gkit::scene {
     class Unit;
+    class ConstIterator;
 
     template <typename T>
     concept IsUnitExtend = requires (T v) {
@@ -132,6 +134,11 @@ namespace gkit::scene {
          */
         auto get_children_count() const noexcept -> uint32_t;
 
+        using const_iterator = ConstIterator;
+
+        auto begin() const noexcept -> const_iterator;
+        auto end() const noexcept -> const_iterator;
+
         /**
          * @brief Drop the unit(by set @ref ready_to_drop to true)
          * @return void
@@ -206,8 +213,10 @@ namespace gkit::scene {
         auto drop_children() -> void;
 
     private:
-        std::atomic<bool> process_enabled = true; // process enabled flag
-        std::atomic<bool> ready_to_drop  = false; // drop flag(mark as dead)
+        std::atomic<bool> process_enabled = true;
+        std::atomic<bool> ready_to_drop  = false;
+
+        friend ConstIterator;
     }; // class Unit
 
     template <IsUnitExtend T>
@@ -240,5 +249,64 @@ namespace gkit::scene {
         if (parent == nullptr) return std::nullopt;
         auto cast_parent = dynamic_cast<T*>(parent);
         return cast_parent == nullptr ? std::nullopt : *cast_parent;
-    } // Unit::get_parent<T>
+    }
+
+    class ConstIterator {
+    public:
+        using iterator_category = std::input_iterator_tag;
+        using value_type = const Unit;
+        using difference_type = std::ptrdiff_t;
+        using pointer = const Unit*;
+        using reference = const Unit&;
+
+    private:
+        const Unit* owner = nullptr;
+        std::vector<uint32_t> indices;
+        size_t position = 0;
+
+    public:
+        ConstIterator() noexcept = default;
+
+        ConstIterator(const Unit* o, std::vector<uint32_t> idx, size_t pos) noexcept
+            : owner(o), indices(std::move(idx)), position(pos) {}
+
+        auto operator*() const noexcept -> const Unit* {
+            if (position >= indices.size()) return nullptr;
+            auto child_idx = indices[position];
+            if (child_idx >= owner->children.size()) return nullptr;
+            return owner->children[child_idx].get();
+        }
+
+        auto operator->() const noexcept -> const Unit* {
+            return operator*();
+        }
+
+        auto operator++() noexcept -> ConstIterator& {
+            ++position;
+            return *this;
+        }
+
+        auto operator--() noexcept -> ConstIterator& {
+            if (position > 0) --position;
+            return *this;
+        }
+
+        auto operator==(const ConstIterator& other) const noexcept -> bool {
+            return position == other.position;
+        }
+
+        auto operator!=(const ConstIterator& other) const noexcept -> bool {
+            return position != other.position;
+        }
+    };
+
+    auto Unit::begin() const noexcept -> const_iterator {
+        std::shared_lock lock(index_cache_rw_mutex);
+        return ConstIterator(this, active_index_cache, 0);
+    }
+
+    auto Unit::end() const noexcept -> const_iterator {
+        std::shared_lock lock(index_cache_rw_mutex);
+        return ConstIterator(this, active_index_cache, active_index_cache.size());
+    }
 } // namespace gkit::scene
