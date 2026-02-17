@@ -300,12 +300,12 @@ namespace gkit::scene {
         }
     };
 
-    auto Unit::begin() const noexcept -> const_iterator {
+    inline auto Unit::begin() const noexcept -> const_iterator {
         std::shared_lock lock(index_cache_rw_mutex);
         return ConstIterator(this, active_index_cache, 0);
     }
 
-    auto Unit::end() const noexcept -> const_iterator {
+    inline auto Unit::end() const noexcept -> const_iterator {
         std::shared_lock lock(index_cache_rw_mutex);
         return ConstIterator(this, active_index_cache, active_index_cache.size());
     }
