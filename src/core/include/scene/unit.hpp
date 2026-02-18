@@ -310,14 +310,6 @@ namespace gkit::scene {
         }
 
         /**
-         * @brief Arrow operator - provides read-write access
-         * @return Pointer to the current Unit
-         */
-        pointer operator->() const {
-            return &operator*();
-        }
-
-        /**
          * @brief Prefix increment operator
          */
         UnitIterator& operator++() {
@@ -368,37 +360,338 @@ namespace gkit::scene {
     };
 
     /**
-     * @class UnitChildrenView
-     * @brief Helper class to provide iterator-like access to Unit children
-     * 
-     * This class provides begin() and end() methods for range-based iteration.
-     * The end iterator is identified by having no cached child (out of range).
-     * 
+     * @class UnitConstIterator
+     * @brief Read-only iterator for traversing active children of a Unit
+     *
+     * This iterator provides read-only access to Unit children.
+     * It uses only public Unit methods (get_available_child) to access children.
+     * Automatically skips deleted children.
+     *
+     * Usage:
+     * @code
+     * auto view = iterate_children_const(my_unit);
+     * for (auto it = view.begin(); it != view.end(); ++it) {
+     *     std::cout << it->name;  // Read access only
+     *     // it->name = "new";  // Compilation error - read-only
+     * }
+     * @endcode
+     */
+    class UnitConstIterator {
+    private:
+        const Unit* parent;
+        size_t current_index;
+        std::optional<const Unit*> cached_child;
+
+        /**
+         * @brief Get child at current index using public Unit method
+         */
+        void cache_current_child() {
+            if (!parent) {
+                cached_child = std::nullopt;
+                return;
+            }
+            // Use with_child to access the child through public interface
+            auto result = const_cast<Unit*>(parent)->with_child<Unit>(
+                static_cast<uint32_t>(current_index),
+                [](Unit& unit) -> const Unit* { return &unit; }
+            );
+            cached_child = result;
+        }
+
+    public:
+        using iterator_category = std::forward_iterator_tag;
+        using value_type = const Unit;
+        using difference_type = std::ptrdiff_t;
+        using pointer = const Unit*;
+        using reference = const Unit&;
+
+        /**
+         * @brief Construct an iterator
+         * @param parent Pointer to the parent Unit
+         * @param index Starting index
+         */
+        UnitConstIterator(const Unit* parent, size_t index = 0)
+            : parent(parent), current_index(index) {
+            cache_current_child();
+        }
+
+        /**
+         * @brief Dereference operator - provides read-only access
+         * @return Reference to the current Unit
+         * @throws std::runtime_error if iterator is out of range or invalid
+         */
+        reference operator*() const {
+            if (!cached_child.has_value() || !cached_child.value()) {
+                throw std::runtime_error("UnitConstIterator out of range or pointing to null");
+            }
+            return *(cached_child.value());
+        }
+
+        /**
+         * @brief Arrow operator - provides read-only access
+         * @return Pointer to the current Unit
+         */
+        pointer operator->() const {
+            return &operator*();
+        }
+
+        /**
+         * @brief Prefix increment operator
+         */
+        UnitConstIterator& operator++() {
+            ++current_index;
+            cache_current_child();
+            return *this;
+        }
+
+        /**
+         * @brief Postfix increment operator
+         */
+        UnitConstIterator operator++(int) {
+            UnitConstIterator tmp = *this;
+            ++(*this);
+            return tmp;
+        }
+
+        /**
+         * @brief Equality comparison
+         *
+         * Iterators are equal if:
+         * - Both have nullptr parent (both are end iterators)
+         * - Both have no cached child (both are end iterators)
+         * - Both have the same parent and index
+         */
+        friend bool operator==(const UnitConstIterator& a, const UnitConstIterator& b) {
+            // Both are end iterators (nullptr parent or no cached child)
+            bool a_is_end = (!a.parent) || (!a.cached_child.has_value());
+            bool b_is_end = (!b.parent) || (!b.cached_child.has_value());
+
+            if (a_is_end && b_is_end) {
+                return true;
+            }
+            // Only one is end iterator
+            if (a_is_end || b_is_end) {
+                return false;
+            }
+            // Same parent and index
+            return a.parent == b.parent && a.current_index == b.current_index;
+        }
+
+        /**
+         * @brief Inequality comparison
+         */
+        friend bool operator!=(const UnitConstIterator& a, const UnitConstIterator& b) {
+            return !(a == b);
+        }
+    };
+
+    /**
+     * @class ConstUnitIterator
+     * @brief Read-only iterator for traversing active children of a Unit
+     *
+     * This iterator provides only read access to Unit children.
+     * It automatically handles the active_index_cache to skip deleted children.
+     * Thread-safe by using shared_lock during iteration.
+     *
      * Usage:
      * @code
      * auto view = iterate_children(my_unit);
      * for (auto it = view.begin(); it != view.end(); ++it) {
+     *     std::cout << it->name;   // Read access only
+     *     // it->name = "new";    // Compilation error: cannot assign to const reference
+     * }
+     * @endcode
+     */
+    class ConstUnitIterator {
+    private:
+        const Unit* parent;
+        size_t current_index;
+        std::optional<const Unit*> cached_child;
+
+        /**
+         * @brief Get child at current index using public Unit method
+         */
+        void cache_current_child() {
+            if (!parent) {
+                cached_child = std::nullopt;
+                return;
+            }
+            // Use with_child to access the child through public interface
+            auto result = const_cast<Unit*>(parent)->with_child<Unit>(
+                static_cast<uint32_t>(current_index),
+                [](Unit& unit) -> const Unit* { return &unit; }
+            );
+            cached_child = result;
+        }
+
+    public:
+        using iterator_category = std::forward_iterator_tag;
+        using value_type = const Unit;
+        using difference_type = std::ptrdiff_t;
+        using pointer = const Unit*;
+        using reference = const Unit&;
+
+        /**
+         * @brief Construct an iterator
+         * @param parent Pointer to the parent Unit
+         * @param index Starting index
+         */
+        ConstUnitIterator(const Unit* parent, size_t index = 0)
+            : parent(parent), current_index(index) {
+            cache_current_child();
+        }
+
+        /**
+         * @brief Dereference operator - provides read-only access
+         * @return Const reference to the current Unit
+         * @throws std::runtime_error if iterator is out of range or invalid
+         */
+        reference operator*() const {
+            if (!cached_child.has_value() || !cached_child.value()) {
+                throw std::runtime_error("ConstUnitIterator out of range or pointing to null");
+            }
+            return *(cached_child.value());
+        }
+
+        /**
+         * @brief Arrow operator - provides read-only access
+         * @return Const pointer to the current Unit
+         */
+        pointer operator->() const {
+            return &operator*();
+        }
+
+        /**
+         * @brief Prefix increment operator
+         */
+        ConstUnitIterator& operator++() {
+            ++current_index;
+            cache_current_child();
+            return *this;
+        }
+
+        /**
+         * @brief Postfix increment operator
+         */
+        ConstUnitIterator operator++(int) {
+            ConstUnitIterator tmp = *this;
+            ++(*this);
+            return tmp;
+        }
+
+        /**
+         * @brief Equality comparison
+         *
+         * Iterators are equal if:
+         * - Both have nullptr parent (both are end iterators)
+         * - Both have no cached child (both are end iterators)
+         * - Both have the same parent and index
+         */
+        friend bool operator==(const ConstUnitIterator& a, const ConstUnitIterator& b) {
+            // Both are end iterators (nullptr parent or no cached child)
+            bool a_is_end = (!a.parent) || (!a.cached_child.has_value());
+            bool b_is_end = (!b.parent) || (!b.cached_child.has_value());
+
+            if (a_is_end && b_is_end) {
+                return true;
+            }
+            // Only one is end iterator
+            if (a_is_end || b_is_end) {
+                return false;
+            }
+            // Same parent and index
+            return a.parent == b.parent && a.current_index == b.current_index;
+        }
+
+        /**
+         * @brief Inequality comparison
+         */
+        friend bool operator!=(const ConstUnitIterator& a, const ConstUnitIterator& b) {
+            return !(a == b);
+        }
+    };
+
+    /**
+     * @class UnitChildrenView
+     * @brief Helper class to provide read-only iterator-like access to Unit children
+     *
+     * This class provides begin() and end() methods for range-based iteration.
+     * The end iterator is identified by having no cached child (out of range).
+     * This is a read-only view that prevents modification of children.
+     *
+     * Usage:
+     * @code
+     * auto view = iterate_children(my_unit);
+     * for (auto it = view.begin(); it != view.end(); ++it) {
+     *     std::cout << it->name;   // Read access only
+     * }
+     * @endcode
+     *
+     * For read-write access, use UnitIterator directly:
+     * @code
+     * for (auto it = UnitIterator(my_unit, 0); it != UnitIterator(nullptr, 0); ++it) {
      *     it->name = "new_name";  // Write access
-     *     std::cout << it->name;   // Read access
      * }
      * @endcode
      */
     class UnitChildrenView {
     private:
+        const Unit* parent;
+    public:
+        UnitChildrenView(const Unit* p) : parent(p) {}
+
+        /**
+         * @brief Get read-only iterator to the first active child
+         */
+        ConstUnitIterator begin() const {
+            return ConstUnitIterator(parent, 0);
+        }
+
+        /**
+         * @brief Get read-only iterator to one past the last active child
+         *
+         * This creates an end sentinel iterator with nullptr parent.
+         * Comparison logic handles this specially to mark the end.
+         */
+        ConstUnitIterator end() const {
+            return ConstUnitIterator(nullptr, 0);
+        }
+    };
+
+    /**
+     * @class MutableUnitChildrenView
+     * @brief Helper class to provide read-write iterator-like access to Unit children
+     *
+     * This class provides begin() and end() methods for range-based iteration.
+     * The end iterator is identified by having no cached child (out of range).
+     * This is a mutable view that allows modification of children.
+     *
+     * Usage:
+     * @code
+     * auto view = iterate_children_mut(my_unit);
+     * for (auto it = view.begin(); it != view.end(); ++it) {
+     *     it->name = "new_name";  // Write access
+     * }
+     * @endcode
+     *
+     * For read-only access, use UnitChildrenView or iterate_children().
+     */
+    class MutableUnitChildrenView {
+    private:
         Unit* parent;
     public:
-        UnitChildrenView(Unit* p) : parent(p) {}
-        
+        MutableUnitChildrenView(Unit* p) : parent(p) {}
+
         /**
-         * @brief Get iterator to the first active child
+         * @brief Get read-write iterator to the first active child
          */
         UnitIterator begin() {
             return UnitIterator(parent, 0);
         }
-        
+
         /**
-         * @brief Get iterator to one past the last active child
-         * 
+         * @brief Get read-write iterator to one past the last active child
+         *
          * This creates an end sentinel iterator with nullptr parent.
          * Comparison logic handles this specially to mark the end.
          */
@@ -408,49 +701,96 @@ namespace gkit::scene {
     };
 
     /**
-     * @brief Create a view for iterating over active children (read-write)
+     * @brief Create a read-only view for iterating over active children
      * @param unit The unit to iterate over
-     * @return UnitChildrenView that provides begin/end iterators
-     * 
+     * @return UnitChildrenView that provides begin/end iterators (read-only)
+     *
      * This free function provides a convenient way to access children iterators.
-     * The iterator provides both read and write access to Unit children.
-     * 
+     * The iterator provides only read access to Unit children.
+     *
      * Usage example:
      * @code
-     * for (auto it = iterate_children(my_unit).begin(); 
+     * for (auto it = iterate_children(my_unit).begin();
      *      it != iterate_children(my_unit).end(); ++it) {
+     *     std::cout << it->name;   // Read access only
+     * }
+     *
+     * // Or with view capture
+     * auto view = iterate_children(my_unit);
+     * for (auto it = view.begin(); it != view.end(); ++it) {
+     *     std::cout << it->name;   // Read access only
+     * }
+     * @endcode
+     *
+     * For read-write access, use iterate_children_mut() instead.
+     */
+    inline auto iterate_children(const Unit* unit) -> UnitChildrenView {
+        return UnitChildrenView(unit);
+    }
+
+    /**
+     * @brief Create a read-only view for iterating over active children - reference overload
+     * @param unit The unit to iterate over
+     * @return UnitChildrenView that provides begin/end iterators (read-only)
+     *
+     * This overload accepts a reference instead of a pointer for convenience.
+     *
+     * Usage example:
+     * @code
+     * for (auto it = iterate_children(my_unit).begin();
+     *      it != iterate_children(my_unit).end(); ++it) {
+     *     std::cout << it->name;   // Read access only
+     * }
+     * @endcode
+     */
+    inline auto iterate_children(const Unit& unit) -> UnitChildrenView {
+        return UnitChildrenView(&unit);
+    }
+
+    /**
+     * @brief Create a mutable view for iterating over active children (read-write)
+     * @param unit The unit to iterate over
+     * @return MutableUnitChildrenView that provides begin/end iterators (read-write)
+     *
+     * This free function provides a convenient way to access mutable children iterators.
+     * The iterator provides both read and write access to Unit children.
+     *
+     * Usage example:
+     * @code
+     * for (auto it = iterate_children_mut(my_unit).begin();
+     *      it != iterate_children_mut(my_unit).end(); ++it) {
      *     it->name = "new_name";  // Write access
      *     std::cout << it->name;   // Read access
      * }
-     * 
+     *
      * // Or with view capture
-     * auto view = iterate_children(my_unit);
+     * auto view = iterate_children_mut(my_unit);
      * for (auto it = view.begin(); it != view.end(); ++it) {
      *     it->drop();  // Write access
      * }
      * @endcode
      */
-    inline auto iterate_children(Unit* unit) -> UnitChildrenView {
-        return UnitChildrenView(unit);
+    inline auto iterate_children_mut(Unit* unit) -> MutableUnitChildrenView {
+        return MutableUnitChildrenView(unit);
     }
 
     /**
-     * @brief Create a view for iterating over active children (read-write) - reference overload
+     * @brief Create a mutable view for iterating over active children (read-write) - reference overload
      * @param unit The unit to iterate over
-     * @return UnitChildrenView that provides begin/end iterators
-     * 
+     * @return MutableUnitChildrenView that provides begin/end iterators (read-write)
+     *
      * This overload accepts a reference instead of a pointer for convenience.
-     * 
+     *
      * Usage example:
      * @code
-     * for (auto it = iterate_children(my_unit).begin(); 
-     *      it != iterate_children(my_unit).end(); ++it) {
+     * for (auto it = iterate_children_mut(my_unit).begin();
+     *      it != iterate_children_mut(my_unit).end(); ++it) {
      *     it->name = "new_name";
      * }
      * @endcode
      */
-    inline auto iterate_children(Unit& unit) -> UnitChildrenView {
-        return UnitChildrenView(&unit);
+    inline auto iterate_children_mut(Unit& unit) -> MutableUnitChildrenView {
+        return MutableUnitChildrenView(&unit);
     }
 
 } // namespace gkit::scene
