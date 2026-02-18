@@ -1,0 +1,74 @@
+name: gkit-windows-build-test
+
+on:
+  push:
+    branches-ignore: [ "main" ]
+  pull_request:
+    branches-ignore: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    name: Build and Test on Windows
+    runs-on: windows-latest
+    strategy:
+      matrix: 
+        preset: [ "windows-x86_64-mingw64-debug", "windows-x86_64-mingw64-noabi-debug",
+                  "windows-x86_64-llvm-debug",    "windows-x86_64-llvm-noabi-debug",
+                  "windows-x86_64-msvc-debug",    "windows-x86_64-msvc-noabi-debug" ]
+      
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: 'recursive'
+
+    - name: Show build information
+      run: |
+        echo "🚀 Starting build for gkit project"
+        echo "Platform: ${{ runner.os }}"
+        echo "Workflow: ${{ github.workflow }}"
+        echo "Repository: ${{ github.repository }}"
+        echo "Commit SHA: ${{ github.sha }}"
+
+    - name: Install dependencies
+      run: |
+        echo "📦 Installing Windows dependencies..."
+        
+        echo "✅ Windows dependencies installed successfully"
+
+    - name: Configure MSVC
+      if: ${{ matrix.preset == 'windows-x86_64-msvc-debug' || matrix.preset == 'windows-x86_64-msvc-noabi-debug' }}
+      uses: TheMrMilchmann/setup-msvc-dev@v4.0.0
+      with: 
+        arch: x64
+      
+    - name: Configure CMake
+      run: |
+        echo "⚙️ Configuring CMake ..."
+        echo "Using preset: ${{matrix.preset}}"
+        cmake --preset ${{matrix.preset}}
+        echo "✅ CMake configuration completed"
+
+    - name: Configure and build project
+      shell: pwsh
+      run: |
+        echo "Building project..."
+        $BUILD_DIR = "${{ github.workspace }}/build/${{matrix.preset}}"
+        echo "Build directory: $BUILD_DIR"
+        cmake --build $BUILD_DIR
+        echo "Windows build completed successfully"
+
+    - name: Show build results
+      run: |
+        echo "🎉 Build process completed!"
+        echo "Platform: ${{ runner.os }}"
+        echo "Job status: ${{ job.status }}"
+        
+        # # List built files
+        # echo "📁 Built files:"
+        # find ${{ github.workspace }}/build -name "*.so" -o -name "*.dll" -o -name "*.a" -o -name "*.lib" 2>/dev/null || echo "No library files found"
+        
+        # # Show disk usage
+        # echo "💾 Disk usage:"
+        # du -sh ${{ github.workspace }}/build 2>/dev/null || echo "Build directory size info not available"
