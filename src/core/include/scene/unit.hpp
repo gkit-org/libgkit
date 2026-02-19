@@ -57,28 +57,25 @@ namespace gkit::scene {
 
     protected: // control workflow handler
         friend Application;
-        friend class iterator;
-        friend class const_iterator;
-
         /**
          * @brief The call the @ref _ready() of the unit and the children.
          * @note It will be called when the unit is ready.
          * It always will be called when the call @ref gkit::application::run
-         * and an unit become the child of another Unit instance by calling
+         * and an unit become the child of another Unit instance by calling 
          * @ref add_child if the unit is active.
-         *
-         * It will call the @ref _ready() of the children of the unit
+         * 
+         * It will call the @ref _ready() of the children of the unit 
          * in the forward order of valid indexes and call this one.
          */
         auto ready_handler() noexcept -> void;
 
         /**
          * @brief The call the @ref _process() of the unit and the children.
-         * @note It will be called before the frame begin. And call the @ref _process()
+         * @note It will be called before the frame begin. And call the @ref _process() 
          * of the children of the unit(the called order is same as @ref ready_handler)
-         *
+         * 
          * Before call the @ref _process(), it will call the @ref update_index_cache()
-         * to make sure the index cache is valid. After call @ref _process() for its children
+         * to make sure the index cache is valid. After call @ref _process() for its children 
          * and itself, it will call the @ref drop_children() to drop the children whose
          * @ref ready_to_drop is true.
          */
@@ -151,7 +148,7 @@ namespace gkit::scene {
          * @param index The index of the child.
          * @param func The callable method, which return type is not void.
          * @param args The arguments of the callable method.
-         * @return the callable method's return value.
+         * @return the callable method's return value. 
          * If the index is out of range, return std::nullopt.
          */
         template<typename Unit_T, typename F, typename... Args>
@@ -185,7 +182,7 @@ namespace gkit::scene {
         /**
          * @brief Get the available child pointer.
          * @param index The index of the child.
-         * @return std::optional<Unit*>
+         * @return std::optional<Unit*> 
          * If the index is valid, return the pointer to the child, otherwise return std::nullopt.
          */
         auto get_available_child(uint32_t index) noexcept -> std::optional<Unit*>;
@@ -210,143 +207,7 @@ namespace gkit::scene {
 
     private:
         std::atomic<bool> process_enabled = true; // process enabled flag
-        std::atomic<bool> ready_to_drop = false;  // drop flag(mark as dead)
-
-    public:
-        // iterator
-        class iterator {
-        public:
-            using iterator_category = std::bidirectional_iterator_tag;
-            using value_type = Unit;
-            using difference_type = std::ptrdiff_t;
-            using pointer = Unit*;
-            using reference = Unit&;
-
-        public:
-            iterator(Unit* owner, size_t pos) : m_owner(owner), m_pos(pos) {}
-            reference operator*() const {
-                auto child_opt = m_owner->get_available_child(static_cast<uint32_t>(m_pos));
-                return **child_opt;
-            }
-            pointer operator->() const {
-                auto child_opt = m_owner->get_available_child(static_cast<uint32_t>(m_pos));
-                return *child_opt;
-            }
-            iterator &operator++() {
-                ++m_pos;
-                return *this;
-            }
-            iterator operator++(int) {
-                iterator tmp = *this;
-                ++(*this);
-                return tmp;
-            }
-            iterator &operator--() {
-                --m_pos;
-                return *this;
-            }
-            iterator operator--(int) {
-                iterator tmp = *this;
-                --(*this);
-                return tmp;
-            }
-            bool operator==(const iterator& other) const { return m_owner == other.m_owner && m_pos == other.m_pos; }
-            bool operator!=(const iterator& other) const { return !(*this == other); }
-
-        private:
-            Unit* m_owner;
-            size_t m_pos;
-            friend class Unit;
-        };
-
-        iterator begin() {
-            update_index_cache();
-            return iterator(this, 0);
-        }
-
-        iterator end() {
-            update_index_cache();
-            return iterator(this, active_index_cache.size());
-        }
-
-    public:
-        // Next, we are going to write the const implementation of the iterator.
-        class const_iterator {
-        public:
-            using iterator_category = std::bidirectional_iterator_tag;
-            using value_type = const Unit;
-            using difference_type = std::ptrdiff_t;
-            using pointer = const Unit*;
-            using reference = const Unit&;
-
-            const_iterator(const Unit* owner, size_t pos) : m_owner(owner), m_pos(pos) {}
-
-            reference operator*() const {
-                auto child_opt = const_cast<Unit*>(m_owner)->get_available_child(static_cast<uint32_t>(m_pos));
-                return **child_opt;
-            }
-
-            pointer operator->() const {
-                auto child_opt = const_cast<Unit*>(m_owner)->get_available_child(static_cast<uint32_t>(m_pos));
-                return *child_opt;
-            }
-
-            const_iterator &operator++() {
-                ++m_pos;
-                return *this;
-            }
-            const_iterator operator++(int) {
-                const_iterator tmp = *this;
-                ++(*this);
-                return tmp;
-            }
-            const_iterator &operator--() {
-                --m_pos;
-                return *this;
-            }
-            const_iterator operator--(int) {
-                const_iterator tmp = *this;
-                --(*this);
-                return tmp;
-            }
-
-            bool operator==(const const_iterator& other) const {
-                return m_owner == other.m_owner && m_pos == other.m_pos;
-            }
-            bool operator!=(const const_iterator& other) const { return !(*this == other); }
-
-        private:
-            const Unit* m_owner;
-            size_t m_pos;
-        };
-
-        const_iterator begin() const {
-            const_cast<Unit*>(this)->update_index_cache();
-            return const_iterator(this, 0);
-        }
-
-        const_iterator end() const {
-            const_cast<Unit*>(this)->update_index_cache();
-            return const_iterator(this, active_index_cache.size());
-        }
-
-        const_iterator cbegin() const { return begin(); }
-        const_iterator cend() const { return end(); }
-
-    public:
-        // This is a reverse iterator, implemented using std::reverse_iterator.
-        using reverse_iterator = std::reverse_iterator<iterator>;
-        using const_reverse_iterator = std::reverse_iterator<const_iterator>;
-
-        reverse_iterator rbegin() { return reverse_iterator(end()); }
-        reverse_iterator rend() { return reverse_iterator(begin()); }
-
-        const_reverse_iterator rbegin() const { return const_reverse_iterator(end()); }
-        const_reverse_iterator rend() const { return const_reverse_iterator(begin()); }
-
-        const_reverse_iterator crbegin() const { return rbegin(); }
-        const_reverse_iterator crend() const { return rend(); }
-
+        std::atomic<bool> ready_to_drop  = false; // drop flag(mark as dead)
     }; // class Unit
 
     template <IsUnitExtend T>
@@ -355,7 +216,7 @@ namespace gkit::scene {
         try {
             auto ptr = std::unique_ptr<T>(new T(name));
             return ptr;
-        } catch (...) {
+        } catch(...) {
             return nullptr;
         }
     }
