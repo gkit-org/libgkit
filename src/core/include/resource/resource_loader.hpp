@@ -18,7 +18,8 @@ namespace gkit::resource {
         auto load(std::filesystem::path path) -> std::optional<std::shared_ptr<T>> {
             auto cached_res = get_cache(path);
             if (cached_res.has_value()) {
-                return std::static_pointer_cast<T>(cached_res);
+                auto target_res = std::dynamic_pointer_cast<T>(cached_res);
+                return target_res == nullptr ? std::nullopt : target_res;
             }
 
             auto loaded_res = std::make_shared(T());
