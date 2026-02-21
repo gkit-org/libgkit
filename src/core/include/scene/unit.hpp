@@ -220,35 +220,15 @@ namespace gkit::scene {
             using reference = Unit&;
 
         public:
-            iterator(Unit* owner, size_t pos) : m_owner(owner), m_pos(pos) {}
-            auto operator*() -> reference const {
-                auto child_opt = m_owner->get_available_child(static_cast<uint32_t>(m_pos));
-                return **child_opt;
-            }
-            auto operator->() -> pointer const {
-                auto child_opt = m_owner->get_available_child(static_cast<uint32_t>(m_pos));
-                return *child_opt;
-            }
-            auto operator++() -> iterator& {
-                ++m_pos;
-                return *this;
-            }
-            auto operator++(int) -> iterator {
-                iterator tmp = *this;
-                ++(*this);
-                return tmp;
-            }
-            auto operator--() -> iterator& {
-                --m_pos;
-                return *this;
-            }
-            auto operator--(int) -> iterator {
-                iterator tmp = *this;
-                --(*this);
-                return tmp;
-            }
-            auto operator==(const iterator& other) -> bool const { return m_owner == other.m_owner && m_pos == other.m_pos; }
-            auto operator!=(const iterator& other) -> bool const { return !(*this == other); }
+            iterator(Unit* owner, size_t pos);
+            auto operator*() -> reference const;
+            auto operator->() -> pointer const;
+            auto operator++() -> iterator&;
+            auto operator++(int) -> iterator;
+            auto operator--() -> iterator&;
+            auto operator--(int) -> iterator;
+            auto operator==(const iterator& other) const -> bool;
+            auto operator!=(const iterator& other) const -> bool;
 
         private:
             Unit* m_owner;
@@ -260,13 +240,8 @@ namespace gkit::scene {
         // but auto could not allow two same function but with different return
         // but begin() and end() need those two return
         // So I will not change it
-        iterator begin() {
-            return iterator(this, 0);
-        }
-
-        iterator end() {
-            return iterator(this, active_index_cache.size());
-        }
+        auto begin() -> iterator;
+        auto end() -> iterator;
 
     public:
         // Next, we are going to write the const implementation of the iterator.
@@ -278,71 +253,40 @@ namespace gkit::scene {
             using pointer = const Unit*;
             using reference = const Unit&;
 
-            const_iterator(const Unit* owner, size_t pos) : m_owner(owner), m_pos(pos) {}
-
-            auto operator*() -> reference const {
-                auto child_opt = const_cast<Unit*>(m_owner)->get_available_child(static_cast<uint32_t>(m_pos));
-                return **child_opt;
-            }
-
-            auto operator->() -> pointer const {
-                auto child_opt = const_cast<Unit*>(m_owner)->get_available_child(static_cast<uint32_t>(m_pos));
-                return *child_opt;
-            }
-
-            auto operator++() -> const_iterator& {
-                ++m_pos;
-                return *this;
-            }
-            auto operator++(int) -> const_iterator {
-                const_iterator tmp = *this;
-                ++(*this);
-                return tmp;
-            }
-            auto operator--() -> const_iterator& {
-                --m_pos;
-                return *this;
-            }
-            auto  operator--(int) -> const_iterator {
-                const_iterator tmp = *this;
-                --(*this);
-                return tmp;
-            }
-
-            auto operator==(const const_iterator& other) -> bool const { return m_owner == other.m_owner && m_pos == other.m_pos; }
-            auto operator!=(const const_iterator& other) -> bool const { return !(*this == other); }
+            const_iterator(const Unit* owner, size_t pos);
+            auto operator*() -> reference const;
+            auto operator->() -> pointer const;
+            auto operator++() -> const_iterator&;
+            auto operator++(int) -> const_iterator;
+            auto operator--() -> const_iterator&;
+            auto operator--(int) -> const_iterator;
+            auto operator==(const const_iterator& other) const -> bool;
+            auto operator!=(const const_iterator& other) const -> bool;
 
         private:
             const Unit* m_owner;
             size_t m_pos;
         };
 
-        const_iterator begin() const{
-            const_cast<Unit*>(this);
-            return const_iterator(this, 0);
-        }
+        auto begin() const -> const_iterator;
+        auto end() const -> const_iterator;
 
-        const_iterator end() const {
-            const_cast<Unit*>(this);
-            return const_iterator(this, active_index_cache.size());
-        }
-
-        const_iterator cbegin() const { return begin(); }
-        const_iterator cend() const { return end(); }
+        const_iterator cbegin() const;
+        const_iterator cend() const;
 
     public:
         // This is a reverse iterator, implemented using std::reverse_iterator.
         using reverse_iterator = std::reverse_iterator<iterator>;
         using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
-        reverse_iterator rbegin() { return reverse_iterator(end()); }
-        reverse_iterator rend() { return reverse_iterator(begin()); }
+        reverse_iterator rbegin();
+        reverse_iterator rend();
 
-        const_reverse_iterator rbegin() const { return const_reverse_iterator(end()); }
-        const_reverse_iterator rend() const { return const_reverse_iterator(begin()); }
+        const_reverse_iterator rbegin() const;
+        const_reverse_iterator rend() const;
 
-        const_reverse_iterator crbegin() const { return rbegin(); }
-        const_reverse_iterator crend() const { return rend(); }
+        const_reverse_iterator crbegin() const;
+        const_reverse_iterator crend() const;
 
     }; // class Unit
 

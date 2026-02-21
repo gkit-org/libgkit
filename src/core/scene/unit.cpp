@@ -184,3 +184,101 @@ auto gkit::scene::Unit::get_parent<gkit::scene::Unit>() noexcept -> std::optiona
     if (parent == nullptr) return std::nullopt;
     return std::ref(*parent);
 }
+
+
+// iterator part use
+gkit::scene::Unit::iterator::iterator(Unit* owner, size_t pos) : m_owner(owner), m_pos(pos) {}
+auto gkit::scene::Unit::iterator::operator*() -> reference const {
+auto child_opt = m_owner->get_available_child(static_cast<uint32_t>(m_pos));
+    return **child_opt;
+}
+auto gkit::scene::Unit::iterator::operator->() -> pointer const {
+    auto child_opt = m_owner->get_available_child(static_cast<uint32_t>(m_pos));
+    return *child_opt;
+}
+auto gkit::scene::Unit::iterator::operator++() -> iterator& {
+    ++m_pos;
+    return *this;
+}
+auto gkit::scene::Unit::iterator::operator++(int) -> iterator {
+    iterator tmp = *this;
+    ++(*this);
+    return tmp;
+}
+auto gkit::scene::Unit::iterator::operator--() -> iterator& {
+    --m_pos;
+    return *this;
+}
+auto gkit::scene::Unit::iterator::operator--(int) -> iterator {
+    iterator tmp = *this;
+    --(*this);
+    return tmp;
+}
+auto gkit::scene::Unit::iterator::operator==(const iterator& other) const -> bool  { return m_owner == other.m_owner && m_pos == other.m_pos; }
+auto gkit::scene::Unit::iterator::operator!=(const iterator& other) const -> bool  { return !(*this == other); }
+
+auto gkit::scene::Unit::begin() -> iterator{
+    return iterator(this, 0);
+}
+
+auto gkit::scene::Unit::end() -> iterator{
+    return iterator(this, active_index_cache.size());
+}
+
+// now is const_iterator use
+gkit::scene::Unit::const_iterator::const_iterator(const Unit* owner, size_t pos) : m_owner(owner), m_pos(pos) {}
+
+auto gkit::scene::Unit::const_iterator::operator*() -> reference const {
+    auto child_opt = const_cast<Unit*>(m_owner)->get_available_child(static_cast<uint32_t>(m_pos));
+    return **child_opt;
+}
+
+auto gkit::scene::Unit::const_iterator::operator->() -> pointer const {
+    auto child_opt = const_cast<Unit*>(m_owner)->get_available_child(static_cast<uint32_t>(m_pos));
+    return *child_opt;
+}
+
+auto gkit::scene::Unit::const_iterator::operator++() -> const_iterator& {
+    ++m_pos;
+    return *this;
+}
+auto gkit::scene::Unit::const_iterator::operator++(int) -> const_iterator {
+    const_iterator tmp = *this;
+    ++(*this);
+    return tmp;
+}
+auto gkit::scene::Unit::const_iterator::operator--() -> const_iterator& {
+    --m_pos;
+    return *this;
+}
+auto gkit::scene::Unit::const_iterator::operator--(int) -> const_iterator {
+    const_iterator tmp = *this;
+    --(*this);
+    return tmp;
+}
+
+auto gkit::scene::Unit::const_iterator::operator==(const const_iterator& other) const -> bool { return m_owner == other.m_owner && m_pos == other.m_pos; }
+auto gkit::scene::Unit::const_iterator::operator!=(const const_iterator& other) const -> bool { return !(*this == other); }
+
+auto gkit::scene::Unit::begin() const -> const_iterator {
+    const_cast<Unit*>(this);
+    return const_iterator(this, 0);
+}
+
+auto gkit::scene::Unit::end() const -> const_iterator {
+    const_cast<Unit*>(this);
+    return const_iterator(this, active_index_cache.size());
+}
+
+auto gkit::scene::Unit::cbegin() const -> const_iterator { return begin(); }
+auto gkit::scene::Unit::cend() const -> const_iterator { return end(); }
+
+// This is a reverse iterator, implemented using std::reverse_iterator.
+using reverse_iterator = std::reverse_iterator<gkit::scene::Unit::iterator>;
+using const_reverse_iterator = std::reverse_iterator<gkit::scene::Unit::const_iterator>;
+reverse_iterator gkit::scene::Unit::rbegin() { return reverse_iterator(end()); }
+reverse_iterator gkit::scene::Unit::rend() { return reverse_iterator(begin()); }
+const_reverse_iterator gkit::scene::Unit::rbegin() const { return const_reverse_iterator(end()); }
+const_reverse_iterator gkit::scene::Unit::rend() const { return const_reverse_iterator(begin()); }
+const_reverse_iterator gkit::scene::Unit::crbegin() const { return rbegin(); }
+const_reverse_iterator gkit::scene::Unit::crend() const { return rend(); }
