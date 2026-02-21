@@ -207,7 +207,87 @@ namespace gkit::scene {
 
     private:
         std::atomic<bool> process_enabled = true; // process enabled flag
-        std::atomic<bool> ready_to_drop  = false; // drop flag(mark as dead)
+        std::atomic<bool> ready_to_drop = false;  // drop flag(mark as dead)
+
+    public:
+        // iterator
+        class iterator {
+        public:
+            using iterator_category = std::bidirectional_iterator_tag;
+            using value_type = Unit;
+            using difference_type = std::ptrdiff_t;
+            using pointer = Unit*;
+            using reference = Unit&;
+
+        public:
+            iterator(Unit* owner, size_t pos);
+            auto operator*() -> reference const;
+            auto operator->() -> pointer const;
+            auto operator++() -> iterator&;
+            auto operator++(int) -> iterator;
+            auto operator--() -> iterator&;
+            auto operator--(int) -> iterator;
+            auto operator==(const iterator& other) const -> bool;
+            auto operator!=(const iterator& other) const -> bool;
+
+        private:
+            Unit* m_owner;
+            size_t m_pos;
+            friend class Unit;
+        };
+
+        // Why this part didn't use auto, because it need to have a const_iterator use
+        // but auto could not allow two same function but with different return
+        // but begin() and end() need those two return
+        // So I will not change it
+        auto begin() -> iterator;
+        auto end() -> iterator;
+
+    public:
+        // Next, we are going to write the const implementation of the iterator.
+        class const_iterator {
+        public:
+            using iterator_category = std::bidirectional_iterator_tag;
+            using value_type = const Unit;
+            using difference_type = std::ptrdiff_t;
+            using pointer = const Unit*;
+            using reference = const Unit&;
+
+            const_iterator(const Unit* owner, size_t pos);
+            auto operator*() -> reference const;
+            auto operator->() -> pointer const;
+            auto operator++() -> const_iterator&;
+            auto operator++(int) -> const_iterator;
+            auto operator--() -> const_iterator&;
+            auto operator--(int) -> const_iterator;
+            auto operator==(const const_iterator& other) const -> bool;
+            auto operator!=(const const_iterator& other) const -> bool;
+
+        private:
+            const Unit* m_owner;
+            size_t m_pos;
+        };
+
+        auto begin() const -> const_iterator;
+        auto end() const -> const_iterator;
+
+        auto cbegin() const -> const_iterator;
+        auto cend() const -> const_iterator;
+
+    public:
+        // This is a reverse iterator, implemented using std::reverse_iterator.
+        using reverse_iterator = std::reverse_iterator<iterator>;
+        using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+
+        auto rbegin() -> reverse_iterator;
+        auto rend() -> reverse_iterator;
+
+        auto rbegin() const -> const_reverse_iterator;
+        auto rend() const -> const_reverse_iterator;
+
+        auto crbegin() const -> const_reverse_iterator;
+        auto crend() const -> const_reverse_iterator;
+
     }; // class Unit
 
     template <IsUnitExtend T>
