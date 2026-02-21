@@ -220,9 +220,10 @@ namespace gkit::scene {
             using reference = Unit&;
 
         public:
+            // Overloaded operator
             iterator(Unit* owner, size_t pos);
-            auto operator*() -> reference const;
-            auto operator->() -> pointer const;
+            auto operator*() const -> reference;
+            auto operator->() const -> pointer;
             auto operator++() -> iterator&;
             auto operator++(int) -> iterator;
             auto operator--() -> iterator&;
@@ -236,10 +237,7 @@ namespace gkit::scene {
             friend class Unit;
         };
 
-        // Why this part didn't use auto, because it need to have a const_iterator use
-        // but auto could not allow two same function but with different return
-        // but begin() and end() need those two return
-        // So I will not change it
+
         auto begin() -> iterator;
         auto end() -> iterator;
 
@@ -252,10 +250,12 @@ namespace gkit::scene {
             using difference_type = std::ptrdiff_t;
             using pointer = const Unit*;
             using reference = const Unit&;
-
+        
+        public:
+            // Overloaded operator
             const_iterator(const Unit* owner, size_t pos);
-            auto operator*() -> reference const;
-            auto operator->() -> pointer const;
+            auto operator*() const -> reference;
+            auto operator->() const -> pointer;
             auto operator++() -> const_iterator&;
             auto operator++(int) -> const_iterator;
             auto operator--() -> const_iterator&;
