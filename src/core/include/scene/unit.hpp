@@ -271,22 +271,22 @@ namespace gkit::scene {
         auto begin() const -> const_iterator;
         auto end() const -> const_iterator;
 
-        const_iterator cbegin() const;
-        const_iterator cend() const;
+        auto cbegin() const -> const_iterator;
+        auto cend() const -> const_iterator;
 
     public:
         // This is a reverse iterator, implemented using std::reverse_iterator.
         using reverse_iterator = std::reverse_iterator<iterator>;
         using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
-        reverse_iterator rbegin();
-        reverse_iterator rend();
+        auto rbegin() -> reverse_iterator;
+        auto rend() -> reverse_iterator;
 
-        const_reverse_iterator rbegin() const;
-        const_reverse_iterator rend() const;
+        auto rbegin() const -> const_reverse_iterator;
+        auto rend() const -> const_reverse_iterator;
 
-        const_reverse_iterator crbegin() const;
-        const_reverse_iterator crend() const;
+        auto crbegin() const -> const_reverse_iterator;
+        auto crend() const -> const_reverse_iterator;
 
     }; // class Unit
 

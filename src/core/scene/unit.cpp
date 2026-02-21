@@ -276,9 +276,9 @@ auto gkit::scene::Unit::cend() const -> const_iterator { return end(); }
 // This is a reverse iterator, implemented using std::reverse_iterator.
 using reverse_iterator = std::reverse_iterator<gkit::scene::Unit::iterator>;
 using const_reverse_iterator = std::reverse_iterator<gkit::scene::Unit::const_iterator>;
-reverse_iterator gkit::scene::Unit::rbegin() { return reverse_iterator(end()); }
-reverse_iterator gkit::scene::Unit::rend() { return reverse_iterator(begin()); }
-const_reverse_iterator gkit::scene::Unit::rbegin() const { return const_reverse_iterator(end()); }
-const_reverse_iterator gkit::scene::Unit::rend() const { return const_reverse_iterator(begin()); }
-const_reverse_iterator gkit::scene::Unit::crbegin() const { return rbegin(); }
-const_reverse_iterator gkit::scene::Unit::crend() const { return rend(); }
+auto gkit::scene::Unit::rbegin() -> reverse_iterator { return reverse_iterator(end()); }
+auto gkit::scene::Unit::rend() -> reverse_iterator { return reverse_iterator(begin()); }
+auto gkit::scene::Unit::rbegin() const -> const_reverse_iterator { return const_reverse_iterator(end()); }
+auto gkit::scene::Unit::rend() const -> const_reverse_iterator { return const_reverse_iterator(begin()); }
+auto gkit::scene::Unit::crbegin() const -> const_reverse_iterator { return rbegin(); }
+auto gkit::scene::Unit::crend() const -> const_reverse_iterator { return rend(); }
