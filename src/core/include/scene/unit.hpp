@@ -250,9 +250,9 @@ namespace gkit::scene {
             using difference_type = std::ptrdiff_t;
             using pointer = const Unit*;
             using reference = const Unit&;
-        
+
         public:
-            // Overloaded operator
+            // Constructor and operators
             const_iterator(const Unit* owner, size_t pos);
             auto operator*() const -> reference;
             auto operator->() const -> pointer;

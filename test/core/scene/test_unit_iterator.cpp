@@ -5,7 +5,7 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include <cassert>
+
 #include <iterator>
 
 using gkit::scene::Unit;
@@ -22,7 +22,7 @@ using gkit::scene::Unit;
 
 class TestUnit : public Unit {
 public:
-    // using Unit::Unit;
+
     using Unit::ready_handler;
     using Unit::process_handler;
     using Unit::exit_handler;
@@ -107,7 +107,7 @@ bool test_iterator() {
 // ==================== main function ====================
 int main() {
     bool all_passed = true;
-    // 仅运行迭代器测试
+    // Only run iterator test
     all_passed &= test_iterator();
 
     if (all_passed) {
