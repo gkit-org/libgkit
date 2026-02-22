@@ -252,7 +252,7 @@ namespace gkit::scene {
             using reference = const Unit&;
         
         public:
-            // Overloaded operator
+            // Constructor and operators
             const_iterator(const Unit* owner, size_t pos);
             auto operator*() const -> reference;
             auto operator->() const -> pointer;

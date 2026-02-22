@@ -5,7 +5,6 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include <cassert>
 #include <iterator>
 
 using gkit::scene::Unit;
@@ -22,7 +21,6 @@ using gkit::scene::Unit;
 
 class TestUnit : public Unit {
 public:
-    // using Unit::Unit;
     using Unit::ready_handler;
     using Unit::process_handler;
     using Unit::exit_handler;
@@ -38,7 +36,7 @@ public:
     int exit_calls = 0;
     std::string name_storage;
 
-    // 自定义构造函数
+    // Custom constructor
     TestUnit(const std::string& name) : Unit(name), name_storage(name) {}
 
     void _ready() override {
@@ -88,12 +86,14 @@ bool test_iterator() {
     auto it = parent->begin();
     ++it;
     TEST(&(*it) == children[1], "pre-increment");
-    it++;
-    TEST(&(*it) == children[2], "post-increment");
+    auto old_it = it++;
+    TEST(&(*old_it) == children[1], "post-increment returns old value");
+    TEST(&(*it) == children[2], "post-increment advances iterator");
+    auto old_it2 = it--;
+    TEST(&(*old_it2) == children[2], "post-decrement returns old value");
+    TEST(&(*it) == children[1], "post-decrement moves iterator back");
     --it;
-    TEST(&(*it) == children[1], "pre-decrement");
-    it--;
-    TEST(&(*it) == children[0], "post-decrement");
+    TEST(&(*it) == children[0], "pre-decrement");
 
     const auto& const_parent = *parent;
     idx = 0;
@@ -107,7 +107,7 @@ bool test_iterator() {
 // ==================== main function ====================
 int main() {
     bool all_passed = true;
-    // 仅运行迭代器测试
+    // Only run iterator test
     all_passed &= test_iterator();
 
     if (all_passed) {
