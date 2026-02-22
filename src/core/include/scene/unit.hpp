@@ -220,7 +220,7 @@ namespace gkit::scene {
             using reference = Unit&;
 
         public:
-            // Overloaded operator
+            // Constructor and operators
             iterator(Unit* owner, size_t pos);
             auto operator*() const -> reference;
             auto operator->() const -> pointer;
