@@ -15,7 +15,7 @@ libgkit is a simple game library for game development. It is written in C++ main
 
 ## What is our goal
 
-This library is not designed for creating large, stable game projects. It aims to achieve zero runtime performance overhead by processing all object information at compile time. In terms of script extensions, we aim to use cabi as a bridge for the core content of the library to achieve high performance.
+This library is not designed for creating large, stable game projects.
 
 ## Contribution
 
