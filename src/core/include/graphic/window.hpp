@@ -1,5 +1,6 @@
 #pragma once
 
+#include "scene/unit.hpp"
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_render.h>
 #include <SDL3/SDL_video.h>
@@ -7,9 +8,9 @@
 #include <memory>
 #include <vector>
 
-namespace gkit {
+namespace gkit::graphic {
 
-    class Window {
+    class Window : gkit::scene::Unit{
     public:
         Window(std::string title, int width, int height) noexcept;
         Window(std::string title, int width, int height, std::vector<SDL_WindowFlags> flags) noexcept;

@@ -8,7 +8,7 @@
 int main() {
     gkit::Application app;
 
-    gkit::Window win("Hello World", 640, 480);
+    gkit::graphic::Window win("Hello World", 640, 480);
     std::this_thread::sleep_for(std::chrono::seconds(3));
 
     return 0;
