@@ -1,6 +1,8 @@
 # libgkit -- A simple game library for game development
 
-<img style="display: block; margin: 0 auto;" width="200" height="200" src="./gkit_logo.png">
+<center>
+<img src="./gkit_logo.png" width="200" height="200">
+</center>
 
 > [!IMPORTANT]
 >
