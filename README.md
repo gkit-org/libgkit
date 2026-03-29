@@ -1,5 +1,7 @@
 # libgkit -- A simple game library for game development
 
+<img style="display: block; margin: 0 auto;" width="200" height="200" src="./gkit_logo.png">
+
 > [!IMPORTANT]
 >
 > - libgkit is still in development. We need your help to improve it.
