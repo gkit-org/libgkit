@@ -1,8 +1,8 @@
 [submodule "third_party/sdl"]
 	path = third_party/sdl
-	url = https://github.com/libsdl-org/SDL.git
+	url = https://github.com/gkit-org/SDL.git
 	branch = release-3.4.x
 [submodule "third_party/sdl_image"]
 	path = third_party/sdl_image
-	url = https://github.com/libsdl-org/SDL_image.git
+	url = https://github.com/gkit-org/SDL_image.git
 	branch = release-3.4.x
