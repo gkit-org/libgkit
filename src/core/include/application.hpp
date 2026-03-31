@@ -4,6 +4,7 @@
 #include "utils/Singleton.hpp"
 #include <atomic>
 #include <memory>
+#include <vector>
 
 namespace gkit {
 
@@ -20,6 +21,7 @@ namespace gkit {
 
     private:
         std::unique_ptr<scene::Unit> root;
+        std::unique_ptr<scene::Unit> singleton_units;
         std::atomic<bool> running = false;
     }; // class Application
 

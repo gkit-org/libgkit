@@ -1,9 +1,10 @@
 #include "../include/application.hpp"
+#include "scene/unit.hpp"
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_init.h>
 #include <SDL3/SDL_log.h>
 
-gkit::Application::Application() noexcept : root() {
+gkit::Application::Application() noexcept : root(), singleton_units(gkit::scene::Unit::create<scene::Unit>()) {
     SDL_InitFlags flags = SDL_INIT_AUDIO |
                           SDL_INIT_EVENTS |
                           SDL_INIT_GAMEPAD |

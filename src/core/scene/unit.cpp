@@ -13,22 +13,8 @@ gkit::scene::Unit::Unit() noexcept :
     children(std::vector<std::unique_ptr<Unit>>()),
     active_index_cache(),
     children_rw_mutex() { }
-// gkit::scene::Unit::Unit(const Unit&) noexcept {}
-// gkit::scene::Unit::Unit(Unit&& other) noexcept : 
-//     name(other.name),
-//     parent(nullptr),
-//     modified(true),
-//     active_index_cache(),
-//     process_enabled(other.process_enabled.load()),
-//     ready_to_drop(other.ready_to_drop.load())
-// {
-//     for (auto&& child_ptr : other.children) {
-//         if (child_ptr == nullptr) continue; 
-//         this->children.push_back(std::move(child_ptr));
-//     }
-//     this->update_index_cache();
-// }
-// gkit::scene::Unit::Unit(std::string&& name) noexcept : gkit::scene::Unit(name) { }
+
+    
 gkit::scene::Unit::Unit(std::string name) noexcept : gkit::scene::Unit() {
     this->name = name;
 }
