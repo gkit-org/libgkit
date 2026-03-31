@@ -3,7 +3,7 @@
 #include <SDL3/SDL_init.h>
 #include <SDL3/SDL_log.h>
 
-gkit::Application::Application() noexcept : root(), windows() {
+gkit::Application::Application() noexcept : root() {
     SDL_InitFlags flags = SDL_INIT_AUDIO |
                           SDL_INIT_EVENTS |
                           SDL_INIT_GAMEPAD |
