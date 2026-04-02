@@ -67,7 +67,7 @@ public:
 
 
 int main() {
-    gkit::Application app;
+    auto& app = gkit::Application::instance();
     auto root = Unit::create<RootUnit>("root");
     app.set_root(std::move(root));
     app.run();

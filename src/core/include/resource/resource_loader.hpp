@@ -18,7 +18,8 @@ namespace gkit::resource {
         auto load(std::filesystem::path path) -> std::optional<std::shared_ptr<T>> {
             auto cached_res = get_cache(path);
             if (cached_res.has_value()) {
-                return std::static_pointer_cast<T>(cached_res);
+                auto target_res = std::dynamic_pointer_cast<T>(cached_res);
+                return target_res == nullptr ? std::nullopt : target_res;
             }
 
             auto loaded_res = std::make_shared(T());
@@ -32,9 +33,8 @@ namespace gkit::resource {
             }
         };
     private:
-        std::shared_mutex cache_rw_mutex = std::shared_mutex();
-        std::unordered_map<std::filesystem::path, std::shared_ptr<gkit::resource::Resource>> resource_cache 
-                    = std::unordered_map<std::filesystem::path, std::shared_ptr<gkit::resource::Resource>>();
+        std::shared_mutex cache_rw_mutex {};
+        std::unordered_map<std::filesystem::path, std::shared_ptr<gkit::resource::Resource>> resource_cache {};
 
         auto push_to_cache(std::shared_ptr<gkit::resource::Resource> res) -> void;
         auto get_cache(std::filesystem::path path) -> std::optional<std::shared_ptr<gkit::resource::Resource>>;

@@ -1,14 +1,14 @@
 #pragma once
 
-#include "graphic/window.hpp"
 #include "scene/unit.hpp"
+#include "utils/Singleton.hpp"
 #include <atomic>
 #include <memory>
 #include <vector>
 
 namespace gkit {
 
-    class Application {
+    class Application : public utils::Singleton<Application> {
     public:
         explicit Application() noexcept;
         virtual ~Application() noexcept;
@@ -21,8 +21,7 @@ namespace gkit {
 
     private:
         std::unique_ptr<scene::Unit> root;
-        std::vector<std::unique_ptr<gkit::graphic::Window>> windows;
-
+        std::unique_ptr<scene::Unit> singleton_units;
         std::atomic<bool> running = false;
     }; // class Application
 

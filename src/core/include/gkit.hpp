@@ -3,9 +3,6 @@
 // Basic
 #include <application.hpp>
 
-// Graphic
-#include <graphic/window.hpp>
-
 // Scene
 #include <scene/unit.hpp>
 #include <scene/object.hpp>

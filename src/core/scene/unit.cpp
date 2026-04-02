@@ -13,22 +13,8 @@ gkit::scene::Unit::Unit() noexcept :
     children(std::vector<std::unique_ptr<Unit>>()),
     active_index_cache(),
     children_rw_mutex() { }
-// gkit::scene::Unit::Unit(const Unit&) noexcept {}
-// gkit::scene::Unit::Unit(Unit&& other) noexcept : 
-//     name(other.name),
-//     parent(nullptr),
-//     modified(true),
-//     active_index_cache(),
-//     process_enabled(other.process_enabled.load()),
-//     ready_to_drop(other.ready_to_drop.load())
-// {
-//     for (auto&& child_ptr : other.children) {
-//         if (child_ptr == nullptr) continue; 
-//         this->children.push_back(std::move(child_ptr));
-//     }
-//     this->update_index_cache();
-// }
-// gkit::scene::Unit::Unit(std::string&& name) noexcept : gkit::scene::Unit(name) { }
+
+    
 gkit::scene::Unit::Unit(std::string name) noexcept : gkit::scene::Unit() {
     this->name = name;
 }
@@ -217,11 +203,11 @@ auto gkit::scene::Unit::iterator::operator--(int) -> iterator {
 auto gkit::scene::Unit::iterator::operator==(const iterator& other) const -> bool  { return m_owner == other.m_owner && m_pos == other.m_pos; }
 auto gkit::scene::Unit::iterator::operator!=(const iterator& other) const -> bool  { return !(*this == other); }
 
-auto gkit::scene::Unit::begin() -> iterator{
+auto gkit::scene::Unit::begin() -> iterator {
     return iterator(this, 0);
 }
 
-auto gkit::scene::Unit::end() -> iterator{
+auto gkit::scene::Unit::end() -> iterator {
     return iterator(this, active_index_cache.size());
 }
 
@@ -261,13 +247,11 @@ auto gkit::scene::Unit::const_iterator::operator==(const const_iterator& other) 
 auto gkit::scene::Unit::const_iterator::operator!=(const const_iterator& other) const -> bool { return !(*this == other); }
 
 auto gkit::scene::Unit::begin() const -> const_iterator {
-    const_cast<Unit*>(this);
-    return const_iterator(this, 0);
+    return const_iterator(const_cast<Unit*>(this), 0);
 }
 
 auto gkit::scene::Unit::end() const -> const_iterator {
-    const_cast<Unit*>(this);
-    return const_iterator(this, active_index_cache.size());
+    return const_iterator(const_cast<Unit*>(this), active_index_cache.size());
 }
 
 auto gkit::scene::Unit::cbegin() const -> const_iterator { return begin(); }
