@@ -203,11 +203,11 @@ auto gkit::scene::Unit::iterator::operator--(int) -> iterator {
 auto gkit::scene::Unit::iterator::operator==(const iterator& other) const -> bool  { return m_owner == other.m_owner && m_pos == other.m_pos; }
 auto gkit::scene::Unit::iterator::operator!=(const iterator& other) const -> bool  { return !(*this == other); }
 
-auto gkit::scene::Unit::begin() -> iterator{
+auto gkit::scene::Unit::begin() -> iterator {
     return iterator(this, 0);
 }
 
-auto gkit::scene::Unit::end() -> iterator{
+auto gkit::scene::Unit::end() -> iterator {
     return iterator(this, active_index_cache.size());
 }
 
@@ -247,13 +247,11 @@ auto gkit::scene::Unit::const_iterator::operator==(const const_iterator& other) 
 auto gkit::scene::Unit::const_iterator::operator!=(const const_iterator& other) const -> bool { return !(*this == other); }
 
 auto gkit::scene::Unit::begin() const -> const_iterator {
-    const_cast<Unit*>(this);
-    return const_iterator(this, 0);
+    return const_iterator(const_cast<Unit*>(this), 0);
 }
 
 auto gkit::scene::Unit::end() const -> const_iterator {
-    const_cast<Unit*>(this);
-    return const_iterator(this, active_index_cache.size());
+    return const_iterator(const_cast<Unit*>(this), active_index_cache.size());
 }
 
 auto gkit::scene::Unit::cbegin() const -> const_iterator { return begin(); }

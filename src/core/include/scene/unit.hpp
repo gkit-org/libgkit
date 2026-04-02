@@ -8,6 +8,7 @@
 #include <shared_mutex>
 #include <string>
 #include <type_traits>
+#include <unordered_map>
 #include <vector>
 #include <memory>
 
@@ -170,10 +171,15 @@ namespace gkit::scene {
         
     private: // children management
         std::atomic<bool> modified = false;
-        mutable std::shared_mutex index_cache_rw_mutex;
+
+        std::unordered_map<const char*, Unit*> name_map_cache;
+        mutable std::shared_mutex name_map_cache_rw_mutex;
+
         std::vector<uint32_t> active_index_cache;
-        mutable std::shared_mutex children_rw_mutex;
+        mutable std::shared_mutex index_cache_rw_mutex;
+        
         std::vector<std::unique_ptr<Unit>> children;
+        mutable std::shared_mutex children_rw_mutex;
 
         // when (active_index_cache.size() / children.size() <= overload_factor)
         // children vector will realloc(call method @ref remap_children_and_cache())
