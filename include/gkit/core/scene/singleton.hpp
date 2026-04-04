@@ -1,12 +1,5 @@
 #pragma once
 
-#include "gkit/core/scene/unit.hpp"
-#include <atomic>
-#include <optional>
-#include <functional>
-#include <memory>
-#include <string>
-
 namespace gkit {
     class Processer;
 }
