@@ -21,7 +21,7 @@ namespace gkit::scene {
 
     template <typename T>
     concept IsUnitExtend = requires (T v) {
-        std::is_base_of<Unit, T>();
+        { std::is_base_of_v<Unit, T> } -> std::convertible_to<bool>;
     };
 
     /**

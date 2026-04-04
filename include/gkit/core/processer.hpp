@@ -7,7 +7,6 @@
 #include <unordered_map>
 
 namespace gkit {
-
     class Processer {
     public:
         explicit Processer() noexcept;
@@ -25,5 +24,4 @@ namespace gkit {
         std::unordered_map<std::string, std::unique_ptr<scene::Unit>> service_units {};
         std::atomic<bool> running = false;
     }; // class Processer
-
 } // namespace gkit

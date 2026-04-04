@@ -1,6 +1,6 @@
 #pragma once
 
-#include "gkit/core/utils/Singleton.hpp"
+#include "gkit/core/scene/singleton_unit.hpp"
 #include "gkit/core/resource/resource.hpp"
 #include <unordered_map>
 #include <shared_mutex>
@@ -9,7 +9,7 @@
 #include <memory>
 
 namespace gkit::resource {
-    class ResourceLoader : utils::Singleton<ResourceLoader> {
+    class ResourceLoader : scene::Singleton<ResourceLoader> {
     public:
         ResourceLoader() = default;
 
@@ -22,7 +22,7 @@ namespace gkit::resource {
                 return target_res == nullptr ? std::nullopt : target_res;
             }
 
-            auto loaded_res = std::make_shared(T());
+            auto loaded_res = std::make_shared<T>();
             loaded_res->load_from_file();
 
             if (loaded_res->available()) {
