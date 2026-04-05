@@ -75,8 +75,8 @@ auto main() -> int {
             break;
         }
 
-        if (input.is_action_pressed("Save")) {
-            std::cout << "Action Save is pressed" << std::endl;
+        if (input.is_action_just_pressed("Save")) {
+            std::cout << "Action Save is just pressed" << std::endl;
         }
     }
 
