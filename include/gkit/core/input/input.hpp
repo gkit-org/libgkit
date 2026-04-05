@@ -15,6 +15,9 @@ namespace gkit {
         auto update() -> void;
 
         // action related
+        auto register_action(const input::Action& action) -> void;
+        auto unregister_action(const std::string& name) -> void; 
+
         auto is_action_pressed(std::string name)  -> bool;
         auto is_action_released(std::string name) -> bool;
         auto is_action_just_pressed(std::string name)  -> bool;

@@ -1,3 +1,4 @@
+#include <cstdint>
 #include <gkit/core/input/input.hpp>
 #include <SDL3/SDL.h>
 #include <iostream>
@@ -36,9 +37,27 @@ struct Window {
 };
 
 auto main() -> int {
+    using gkit::input::Action;
     using gkit::input::Key;
+    using gkit::input::Mod;
+    using gkit::input::KeyChord;
+
     Window win;
     auto& input = gkit::Input::instance();
+
+    auto save_action = Action("Save");
+    save_action.set_action(KeyChord{
+        .keys = {Key::S},
+        .modifiers = static_cast<uint32_t>(Mod::LCtrl)
+    });
+
+    auto quit_action = Action("Quit");
+    quit_action.set_action(KeyChord{
+        .keys = {Key::Q}
+    });
+
+    input.register_action(save_action);
+    input.register_action(quit_action);
 
     while(1) {
         input.update();
@@ -51,9 +70,13 @@ auto main() -> int {
             std::cout << "Key Space is just pressed" << std::endl;
         }
 
-        if (input.is_key_just_pressed(Key::Q)) {
-            std::cout << "Key Q is just pressed, exiting..." << std::endl;
+        if (input.is_action_pressed("Quit")) {
+            std::cout << "Action Quit is pressed, exiting..." << std::endl;
             break;
+        }
+
+        if (input.is_action_pressed("Save")) {
+            std::cout << "Action Save is pressed" << std::endl;
         }
     }
 

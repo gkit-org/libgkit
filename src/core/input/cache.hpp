@@ -33,7 +33,22 @@ namespace gkit::input {
         };
 
     public:
+        /**
+         * @brief Update the input cache by polling SDL events and updating the current and previous cache states.
+         */
         auto update_cache() -> void;
+
+    public:
+        /**
+         * @brief Check if the specified modifiers are currently pressed.
+         * @param mods The modifier bitmask to check
+         * @return true if all specified modifiers are currently pressed, false otherwise. 
+         * if mods is 0, it will return true.
+         */
+        inline auto modifiers_pressed(uint32_t mods) const -> bool {
+            if (mods == 0u) return true;
+            return (mods & this->current_cache.key_cache.pressed_modifiers) == mods;
+        }
 
     private:
         CacheData current_cache;
