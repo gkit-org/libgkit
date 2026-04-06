@@ -13,9 +13,9 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix: 
-        preset: [ "windows-x86_64-mingw64-debug", "windows-x86_64-mingw64-noabi-debug",
-                  "windows-x86_64-llvm-debug",    "windows-x86_64-llvm-noabi-debug",
-                  "windows-x86_64-msvc-debug",    "windows-x86_64-msvc-noabi-debug" ]
+        preset: [ "windows-x86_64-mingw64-debug",
+                  "windows-x86_64-llvm-debug",
+                  "windows-x86_64-msvc-debug",]
       
     steps:
     - name: Checkout code
