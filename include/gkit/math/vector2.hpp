@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <tuple>
 
-namespace gkit::utils {
+namespace gkit::math {
     class Vector2 final {
     public:
         Vector2() noexcept = default;
@@ -41,4 +41,4 @@ namespace gkit::utils {
         float x = 0.f,
               y = 0.f;
     }; // class Vector2
-} // namespace utils
+} // namespace math

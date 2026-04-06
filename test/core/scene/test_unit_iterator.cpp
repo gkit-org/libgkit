@@ -1,4 +1,4 @@
-#include <gkit/core/gkit.hpp>
+#include <gkit/gkit.hpp>
 #include <iostream>
 #include <memory>
 #include <string>

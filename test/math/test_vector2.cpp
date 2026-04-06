@@ -1,9 +1,9 @@
-#include <gkit/core/utils/vector2.hpp>
+#include <gkit/math/vector2.hpp>
 #include <iostream>
 #include <format>
 #include <string>
 
-using gkit::utils::Vector2;
+using gkit::math::Vector2;
 
 auto vec_str(Vector2& vec) -> std::string {
     auto [x, y] = vec.properties();

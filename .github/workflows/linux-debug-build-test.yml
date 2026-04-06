@@ -12,8 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix: 
-        preset: [ "linux-x86_64-gcc-debug",  "linux-x86_64-gcc-noabi-debug",
-                  "linux-x86_64-llvm-debug", "linux-x86_64-llvm-noabi-debug" ]
+        preset: [ "linux-x86_64-gcc-debug", "linux-x86_64-llvm-debug" ]
       
     steps:
     - name: Checkout code

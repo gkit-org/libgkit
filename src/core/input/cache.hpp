@@ -3,7 +3,7 @@
 #include "gkit/core/input/keys.hpp"
 #include "gkit/core/input/mouse.hpp"
 #include "gkit/core/scene/singleton.hpp"
-#include "gkit/core/utils/vector2.hpp"
+#include "gkit/math/vector2.hpp"
 #include <SDL3/SDL.h>
 #include <cstdint>
 #include <unordered_set>
@@ -43,7 +43,7 @@ namespace gkit::input {
         struct MouseCache_t {
             std::unordered_set<MouseButton> pressed_buttons;
             MouseWheel wheel;
-            utils::Vector2 offset;
+            math::Vector2 offset;
         };
 
         struct GamepadCache_t {

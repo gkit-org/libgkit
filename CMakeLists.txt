@@ -7,31 +7,11 @@ include(cmake/common.cmake)
 # Third party dependencices build
 add_subdirectory(third_party)
 
-# build core
-set (GKIT_OBJS $<TARGET_OBJECTS:gkit_core>)
-add_subdirectory(${CMAKE_SOURCE_DIR}/src/core)
+# Main library build
+add_subdirectory(src)
 
-# build c_abi
-if (DEFINED EXPORT_C_ABI AND EXPORT_C_ABI EQUAL true)
-    list (APPEND GKIT_OBJS $<TARGET_OBJECTS:gkit_c_abi>)
-    add_subdirectory(${CMAKE_SOURCE_DIR}/src/c_abi)
-endif() # ENABLE_C_ABI
-
+# Test program build
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_subdirectory(${CMAKE_SOURCE_DIR}/test)
 endif()
 
-add_library(${PROJECT_NAME} SHARED ${GKIT_OBJS})
-add_library(${PROJECT_NAME}_static STATIC ${GKIT_OBJS})
-
-set (GKIT_LIBS)
-list (APPEND GKIT_LIBS ${PROJECT_NAME})
-list (APPEND GKIT_LIBS ${PROJECT_NAME}_static)
-
-# link third party static libraries
-foreach(GKIT_LIB ${GKIT_LIBS})
-    target_link_libraries(${GKIT_LIB} PRIVATE 
-        SDL3::SDL3-static 
-        SDL3_image::SDL3_image
-    )
-endforeach()

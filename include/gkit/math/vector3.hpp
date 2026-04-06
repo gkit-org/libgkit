@@ -4,7 +4,7 @@
 #include <cmath>
 #include <tuple>
 
-namespace gkit::utils {
+namespace gkit::math {
     class Vector3 final {
     public:
         Vector3() noexcept = default;
@@ -41,4 +41,4 @@ namespace gkit::utils {
               y = 0.f,
               z = 0.f;
     }; // class Vector3
-} // namespace gkit::utils
+} // namespace gkit::math

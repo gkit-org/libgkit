@@ -1,6 +1,6 @@
 #pragma once
 
-#include "gkit/core/utils/vector2.hpp"
+#include "gkit/math/vector2.hpp"
 #include <cstdint>
 #include <vector>
 
@@ -21,5 +21,5 @@ namespace gkit::input {
         uint32_t modifiers;
     }; // struct MouseChord
 
-    using MouseWheel = gkit::utils::Vector2;
+    using MouseWheel = gkit::math::Vector2;
 } // namespace gkit::input
