@@ -24,6 +24,16 @@ namespace gkit::input {
          * @param name The name of the action
          */
         Action(std::string name);
+
+        /**
+         * @brief Construct a new Action object with a name and an input chord
+         * @param name The name of the action
+         * @param chord The input chord associated with this action. The type of chord can be
+         * @ref KeyChord or @ref MouseChord
+         * @param auto_register If true, the action will be automatically registered to the 
+         * Input system upon construction. Default is true.
+         */
+        Action(std::string name, const InputChord& chord, bool auto_register = true);
         ~Action() = default;
 
     public:
