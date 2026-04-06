@@ -1,27 +1,27 @@
 #pragma once
 
 #include "gkit/core/scene/unit.hpp"
-#include "gkit/core/utils/Singleton.hpp"
 #include <atomic>
 #include <memory>
+#include <string>
+#include <unordered_map>
 
 namespace gkit {
-
-    class Application : public utils::Singleton<Application> {
+    class Processer {
     public:
-        explicit Application() noexcept;
-        virtual ~Application() noexcept;
+        explicit Processer() noexcept;
+        virtual ~Processer() noexcept;
 
     public:
         auto run() -> void;
         auto stop() -> void;
 
+        auto add_service_unit(std::string name, std::unique_ptr<scene::Unit>&& unit_ptr) noexcept -> void;
         auto set_root(std::unique_ptr<scene::Unit>&& root_ptr) noexcept -> void;
 
     private:
         std::unique_ptr<scene::Unit> root;
-        std::unique_ptr<scene::Unit> singleton_units;
+        std::unordered_map<std::string, std::unique_ptr<scene::Unit>> service_units {};
         std::atomic<bool> running = false;
-    }; // class Application
-
+    }; // class Processer
 } // namespace gkit

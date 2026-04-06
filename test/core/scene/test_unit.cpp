@@ -1,5 +1,5 @@
 #include <gkit/core/scene/unit.hpp>
-#include <gkit/core/application.hpp>
+#include <gkit/core/processer.hpp>
 #include <format>
 #include <iostream>
 #include <memory>
@@ -67,7 +67,7 @@ public:
 
 
 int main() {
-    auto& app = gkit::Application::instance();
+    auto app = gkit::Processer();
     auto root = Unit::create<RootUnit>("root");
     app.set_root(std::move(root));
     app.run();

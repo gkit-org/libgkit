@@ -1,10 +1,10 @@
-#include "gkit/core/application.hpp"
+#include "gkit/core/processer.hpp"
 #include "gkit/core/scene/unit.hpp"
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_init.h>
 #include <SDL3/SDL_log.h>
 
-gkit::Application::Application() noexcept : root(), singleton_units(gkit::scene::Unit::create<scene::Unit>()) {
+gkit::Processer::Processer() noexcept : root() {
     SDL_InitFlags flags = SDL_INIT_AUDIO |
                           SDL_INIT_EVENTS |
                           SDL_INIT_GAMEPAD |
@@ -17,18 +17,18 @@ gkit::Application::Application() noexcept : root(), singleton_units(gkit::scene:
     }
 }
 
-gkit::Application::~Application() noexcept {
+gkit::Processer::~Processer() noexcept {
     SDL_Quit();
 }
 
 
-auto gkit::Application::set_root(std::unique_ptr<scene::Unit>&& root_ptr) noexcept -> void {
+auto gkit::Processer::set_root(std::unique_ptr<scene::Unit>&& root_ptr) noexcept -> void {
     if (root_ptr == nullptr) return;
     this->root = std::move(root_ptr);
 }
 
 
-auto gkit::Application::run() -> void {
+auto gkit::Processer::run() -> void {
     this->root->ready_handler();
     this->running.store(true);
     while (this->running.load()) {
@@ -37,6 +37,6 @@ auto gkit::Application::run() -> void {
 }
 
 
-auto gkit::Application::stop() -> void {
+auto gkit::Processer::stop() -> void {
     this->running.store(false);
 }

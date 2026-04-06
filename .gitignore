@@ -1,6 +1,5 @@
-# .vscode
-.vscode/launch.json
-.vscode/settings.json
+# IDE
+.vscode/
 
 # temp files
 .cache/
@@ -8,5 +7,3 @@
 # binary files
 bin/
 build/
-binding/rust/target/
-test/rust_binding/target/
