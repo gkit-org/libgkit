@@ -22,9 +22,8 @@ namespace gkit::input {
         /**
          * @brief Construct a new Action object with a name
          * @param name The name of the action
-         * @param auto_register Whether to automatically register the action
          */
-        Action(std::string name, bool auto_register = true);
+        Action(std::string name);
         ~Action() = default;
 
     public:

@@ -1,7 +1,11 @@
 #pragma once
 
 #include "gkit/core/input/keys.hpp"
+#include "gkit/core/input/mouse.hpp"
 #include "gkit/core/scene/singleton.hpp"
+#include "gkit/core/utils/vector2.hpp"
+#include <SDL3/SDL.h>
+#include <cstdint>
 #include <unordered_set>
 
 namespace gkit {
@@ -11,27 +15,6 @@ namespace gkit {
 namespace gkit::input {
     class Cache : public gkit::scene::Singleton<Cache> {
         friend class gkit::Input;
-    
-    public:
-        struct KeyCache_t {
-            std::unordered_set<Key> pressed_keys;
-            std::uint32_t pressed_modifiers;
-        };
-
-        struct MouseCache_t {
-
-        };
-
-        struct GamepadCache_t {
-
-        };
-
-        struct CacheData {
-            KeyCache_t key_cache = {{}, 0};
-            MouseCache_t mouse_button_cache = {};
-            GamepadCache_t gamepad_button_cache = {};
-        };
-
     public:
         /**
          * @brief Update the input cache by polling SDL events and updating the current and previous cache states.
@@ -46,9 +29,32 @@ namespace gkit::input {
          * if mods is 0, it will return true.
          */
         inline auto modifiers_pressed(uint32_t mods) const -> bool {
-            if (mods == 0u) return true;
-            return (mods & this->current_cache.key_cache.pressed_modifiers) == mods;
+            const auto& current_mods = static_cast<uint32_t>(SDL_GetModState());
+            if (mods == 0u) return current_mods == 0u;
+            return (mods & current_mods) == mods;
         }
+
+    private:
+        struct KeyCache_t {
+            std::unordered_set<Key> pressed_keys;
+            /* std::uint32_t pressed_modifiers; */
+        };
+
+        struct MouseCache_t {
+            std::unordered_set<MouseButton> pressed_buttons;
+            MouseWheel wheel;
+            utils::Vector2 offset;
+        };
+
+        struct GamepadCache_t {
+
+        };
+
+        struct CacheData {
+            KeyCache_t key_cache = {};
+            MouseCache_t mouse_button_cache = {};
+            GamepadCache_t gamepad_button_cache = {};
+        };
 
     private:
         CacheData current_cache;

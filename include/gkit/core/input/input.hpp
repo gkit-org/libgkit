@@ -2,6 +2,7 @@
 
 #include "gkit/core/input/action.hpp"
 #include "gkit/core/scene/singleton.hpp"
+#include "mouse.hpp"
 #include <string>
 #include <unordered_map>
 
@@ -30,10 +31,10 @@ namespace gkit {
         auto is_key_just_released(gkit::input::Key key) -> bool;
 
         // mouse button related
-        auto is_mouse_button_pressed(int button)  -> bool;
-        auto is_mouse_button_released(int button) -> bool;
-        auto is_mouse_button_just_pressed(int button)  -> bool;
-        auto is_mouse_button_just_released(int button) -> bool;
+        auto is_mouse_button_pressed(input::MouseButton button)  -> bool;
+        auto is_mouse_button_released(input::MouseButton button) -> bool;
+        auto is_mouse_button_just_pressed(input::MouseButton button)  -> bool;
+        auto is_mouse_button_just_released(input::MouseButton button) -> bool;
 
         // gamepad button related
         auto is_gamepad_button_pressed(int button)  -> bool;
