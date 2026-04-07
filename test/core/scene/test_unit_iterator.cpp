@@ -5,7 +5,7 @@
 #include <vector>
 #include <iterator>
 
-using gkit::scene::Unit;
+using gkit::core::scene::Unit;
 
 #define TEST(cond, msg) do { \
     if (!(cond)) { \
@@ -37,18 +37,18 @@ public:
     // Custom constructor
     TestUnit(const std::string& name) : Unit(name), name_storage(name) {}
 
-    void _ready() override {
+    void ready() override {
         ready_calls++;
         std::cout << "TestUnit[" << name_storage << "] _ready()\n";
     }
-    void _process() override {
+    void process() override {
         process_calls++;
         std::cout << "TestUnit[" << name_storage << "] _process()\n";
     }
-    void _physics_process() override {
+    void physics_process() override {
         physics_calls++;
     }
-    void _exit() override {
+    void exit() override {
         exit_calls++;
         std::cout << "TestUnit[" << name_storage << "] _exit()\n";
     }

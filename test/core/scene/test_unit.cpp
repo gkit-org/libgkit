@@ -5,7 +5,7 @@
 #include <memory>
 #include <string>
 
-using gkit::scene::Unit;
+using gkit::core::scene::Unit;
 
 const auto BEGIN = 5000;
 uint32_t times = BEGIN;
@@ -15,11 +15,11 @@ class TestUnit : public Unit {
 public:
     using Unit::Unit;
 
-    auto _ready() -> void override {
+    auto ready() -> void override {
         std::cout << std::format("TestUnit({})::_ready()", this->name) << std::endl;
     }
 
-    auto _process() -> void override {
+    auto process() -> void override {
         std::cout << std::format("TestUnit({})::_process(): num = {}", this->name, this->num) << std::endl;
     }
 
@@ -27,7 +27,7 @@ public:
     //     std::cout << std::format("TestUnit({})::_physics_process()", this->name) << std::endl;
     // }
 
-    auto _exit() -> void override {
+    auto exit() -> void override {
         std::cout << std::format("TestUnit({})::_exit()", this->name) << std::endl;
     }
 
@@ -39,14 +39,14 @@ class RootUnit : public Unit {
 public:
     using Unit::Unit;
 
-    auto _ready() -> void override {
+    auto ready() -> void override {
         std::cout << std::format("RootUnit({})::_ready()", this->name) << std::endl;
         for (auto i = 1; i <= 10; ++i) {
             auto new_child = Unit::create<TestUnit>(std::format("Unit{}", i));
             add_child(std::move(new_child));    
         }
     }
-    auto _process() -> void override {
+    auto process() -> void override {
         std::cout << std::format("RootUnit({})::_process()", this->name) << std::endl;
         if (times <= 0) {
             this->remove_child(0);
@@ -59,8 +59,8 @@ public:
 
         times -= 1;
     }
-    auto _physics_process() -> void override {}
-    auto _exit() -> void override {
+    auto physics_process() -> void override {}
+    auto exit() -> void override {
         std::cout << std::format("RootUnit({})::_exit()", this->name) << std::endl;
     }
 };
