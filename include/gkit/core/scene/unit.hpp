@@ -16,7 +16,7 @@ namespace gkit {
     class Processer;
 }
 
-namespace gkit::scene {
+namespace gkit::core::scene {
     class Unit;
 
     template <typename T>
@@ -28,7 +28,7 @@ namespace gkit::scene {
      * class Unit
      * @brief This is the gkit application unit. It is the basic unit of program composition.
      * @note This class cannot be copied and constructed externally. If you want to create a unit,
-     * you should use the function @ref gkit::scene::Unit::create<T>().
+     * you should use the function @ref gkit::core::scene::Unit::create<T>().
      *
      * If you want to move an Unit instance, you should move with the std::unique_ptr by std::move().
      */
@@ -124,7 +124,7 @@ namespace gkit::scene {
         /**
          * It is not use in the current version.
          */
-        // auto remove_child(std::unique_ptr<gkit::scene::Unit>& child_ptr) noexcept -> void; 
+        // auto remove_child(std::unique_ptr<gkit::core::scene::Unit>& child_ptr) noexcept -> void; 
 
         /**
          * @brief Get the number of children
@@ -327,4 +327,4 @@ namespace gkit::scene {
         auto cast_parent = dynamic_cast<T*>(parent);
         return cast_parent == nullptr ? std::nullopt : *cast_parent;
     } // Unit::get_parent<T>
-} // namespace gkit::scene
+} // namespace gkit::core::scene

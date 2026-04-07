@@ -1,11 +1,11 @@
 #pragma once
 
 #include "gkit/core/scene/unit.hpp"
-namespace gkit::scene {
+namespace gkit::core::scene {
     /**
      * @brief This is the basic unit of game composition
      */
-    class Object : protected gkit::scene::Unit {
+    class Object : public gkit::core::scene::Unit {
     public:
         Object() = default;
         virtual ~Object();

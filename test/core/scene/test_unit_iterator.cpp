@@ -5,7 +5,7 @@
 #include <vector>
 #include <iterator>
 
-using gkit::scene::Unit;
+using gkit::core::scene::Unit;
 
 #define TEST(cond, msg) do { \
     if (!(cond)) { \

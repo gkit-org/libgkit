@@ -5,7 +5,7 @@
 #include <memory>
 #include <string>
 
-using gkit::scene::Unit;
+using gkit::core::scene::Unit;
 
 const auto BEGIN = 5000;
 uint32_t times = BEGIN;
