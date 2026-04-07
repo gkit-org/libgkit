@@ -9,6 +9,9 @@ list (APPEND GKIT_OBJS $<TARGET_OBJECTS:gkit_math>)
 add_subdirectory(resource)
 list (APPEND GKIT_OBJS $<TARGET_OBJECTS:gkit_resource>)
 
+add_subdirectory(scene)
+list (APPEND GKIT_OBJS $<TARGET_OBJECTS:gkit_scene>)
+
 add_subdirectory(utils)
 list (APPEND GKIT_OBJS $<TARGET_OBJECTS:gkit_utils>)
 

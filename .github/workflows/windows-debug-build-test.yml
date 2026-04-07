@@ -2,9 +2,9 @@ name: gkit-windows-build-test
 
 on:
   push:
-    branches-ignore: [ "main" ]
+    branches: [ "main" ]
   pull_request:
-    branches-ignore: [ "main" ]
+    branches: [ "main" ]
   workflow_dispatch:
 
 jobs:

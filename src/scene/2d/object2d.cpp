@@ -1,0 +1,1 @@
+#include "gkit/core/scene/object.hpp"
