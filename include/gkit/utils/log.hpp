@@ -11,8 +11,8 @@
 #include <thread>
 
 namespace gkit::utils {
-    class Log : public gkit::scene::Singleton<Log> {
-        friend class gkit::scene::Singleton<Log>;
+    class Log : public gkit::core::scene::Singleton<Log> {
+        friend class gkit::core::scene::Singleton<Log>;
     public:
         enum class LogLevel : std::uint8_t {
             Info,
