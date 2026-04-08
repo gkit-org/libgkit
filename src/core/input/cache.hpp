@@ -13,7 +13,7 @@ namespace gkit {
 }
 
 namespace gkit::input {
-    class Cache : public gkit::scene::Singleton<Cache> {
+    class Cache : public gkit::core::scene::Singleton<Cache> {
         friend class gkit::Input;
     public:
         /**

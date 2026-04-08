@@ -4,7 +4,7 @@ namespace gkit {
     class Processer;
 }
 
-namespace gkit::scene {
+namespace gkit::core::scene {
     template<typename T>
     class Singleton {
         friend T;

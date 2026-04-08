@@ -7,7 +7,7 @@
 #include <unordered_map>
 
 namespace gkit {
-    class Input : public gkit::scene::Singleton<Input> {
+    class Input : public gkit::core::scene::Singleton<Input> {
     public:
         Input();
         virtual ~Input() = default;
