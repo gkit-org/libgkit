@@ -90,22 +90,39 @@ auto gkit::core::scene::Unit::add_child(std::unique_ptr<Unit>&& child_ptr) -> vo
 
 
 auto gkit::core::scene::Unit::remove_child(uint32_t index) noexcept -> void {
-    auto child_opt = this->get_available_child(index);
-    if (!child_opt.has_value()) return;
-    child_opt.value()->drop();
+    auto child_ptr = this->get_available_child(index);
+    if (child_ptr == nullptr) return;
+    child_ptr->drop();
 }
 
 
-auto gkit::core::scene::Unit::get_available_child(uint32_t index) noexcept -> std::optional<Unit*> {
+auto gkit::core::scene::Unit::remove_child(const std::string& child_name) noexcept -> void {
+    auto child_ptr = this->get_child(child_name);
+    if (child_ptr == nullptr) return;
+    child_ptr->drop();
+}
+
+
+auto gkit::core::scene::Unit::get_available_child(uint32_t index) noexcept -> Unit* {
     // check modified flag and update cache
     this->update_index_cache();
     std::shared_lock<std::shared_mutex> r_lock(this->children_rw_mutex);
 
     if (index >= this->active_index_cache.size()) {
-        return std::nullopt;
+        return nullptr;
     }
     auto raw_index = this->active_index_cache.at(index);
     return this->children.at(raw_index).get();
+}
+
+
+auto gkit::core::scene::Unit::get_child(const std::string& child_name) noexcept -> Unit* {
+    std::shared_lock<std::shared_mutex> r_lock(this->name_map_cache_rw_mutex);
+    auto iter = this->name_map_cache.find(child_name);
+    if (iter == this->name_map_cache.end()) {
+        return nullptr;
+    }
+    return iter->second;
 }
 
 
@@ -193,12 +210,12 @@ auto gkit::core::scene::Unit::get_parent<gkit::core::scene::Unit>() noexcept -> 
 // iterator part use
 gkit::core::scene::Unit::iterator::iterator(Unit* owner, size_t pos) : m_owner(owner), m_pos(pos) {}
 auto gkit::core::scene::Unit::iterator::operator*() const -> reference {
-auto child_opt = m_owner->get_available_child(static_cast<uint32_t>(m_pos));
-    return **child_opt;
+auto child_ptr = m_owner->get_available_child(static_cast<uint32_t>(m_pos));
+    return *child_ptr;
 }
 auto gkit::core::scene::Unit::iterator::operator->() const -> pointer {
-    auto child_opt = m_owner->get_available_child(static_cast<uint32_t>(m_pos));
-    return *child_opt;
+    auto child_ptr = m_owner->get_available_child(static_cast<uint32_t>(m_pos));
+    return child_ptr;
 }
 auto gkit::core::scene::Unit::iterator::operator++() -> iterator& {
     ++m_pos;
@@ -233,13 +250,13 @@ auto gkit::core::scene::Unit::end() -> iterator {
 gkit::core::scene::Unit::const_iterator::const_iterator(const Unit* owner, size_t pos) : m_owner(owner), m_pos(pos) {}
 
 auto gkit::core::scene::Unit::const_iterator::operator*() const -> reference {
-    auto child_opt = const_cast<Unit*>(m_owner)->get_available_child(static_cast<uint32_t>(m_pos));
-    return **child_opt;
+    auto child_ptr = const_cast<Unit*>(m_owner)->get_available_child(static_cast<uint32_t>(m_pos));
+    return *child_ptr;
 }
 
 auto gkit::core::scene::Unit::const_iterator::operator->() const -> pointer {
-    auto child_opt = const_cast<Unit*>(m_owner)->get_available_child(static_cast<uint32_t>(m_pos));
-    return *child_opt;
+    auto child_ptr = const_cast<Unit*>(m_owner)->get_available_child(static_cast<uint32_t>(m_pos));
+    return child_ptr;
 }
 
 auto gkit::core::scene::Unit::const_iterator::operator++() -> const_iterator& {

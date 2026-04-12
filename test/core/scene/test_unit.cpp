@@ -1,6 +1,7 @@
 #include <gkit/core/scene/unit.hpp>
 
 #include <cstdint>
+#include <exception>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -85,14 +86,34 @@ auto test_create_and_with_child() -> bool {
     TEST(child_ptr->ready_calls == 1, "add_child triggers child ready once");
 
     auto value_opt = parent->with_child<TestUnit>(0, [](TestUnit& c) { return c.value; });
-    TEST(value_opt.has_value(), "with_child can access valid child index");
-    TEST(value_opt.value() == 0, "with_child returns callable result");
+    TEST(value_opt == 0, "with_child(index) returns callable result");
 
-    auto wrong_type = parent->with_child<OtherUnit>(0, [](OtherUnit&) { return 1; });
-    TEST(!wrong_type.has_value(), "with_child returns nullopt when type mismatch");
+    auto value_by_name = parent->with_child<TestUnit>("child", [](TestUnit& c) { return c.value; });
+    TEST(value_by_name == 0, "with_child(name) returns callable result");
 
-    auto out_of_range = parent->with_child<TestUnit>(99, [](TestUnit&) { return 1; });
-    TEST(!out_of_range.has_value(), "with_child returns nullopt when index out of range");
+    bool wrong_type_thrown = false;
+    try {
+        (void)parent->with_child<OtherUnit>(0, [](OtherUnit&) { return 1; });
+    } catch (const std::invalid_argument&) {
+        wrong_type_thrown = true;
+    }
+    TEST(wrong_type_thrown, "with_child throws invalid_argument when type mismatch");
+
+    bool out_of_range_thrown = false;
+    try {
+        (void)parent->with_child<TestUnit>(99, [](TestUnit&) { return 1; });
+    } catch (const std::out_of_range&) {
+        out_of_range_thrown = true;
+    }
+    TEST(out_of_range_thrown, "with_child(index) throws out_of_range when index missing");
+
+    bool name_not_found_thrown = false;
+    try {
+        (void)parent->with_child<TestUnit>("missing", [](TestUnit&) { return 1; });
+    } catch (const std::out_of_range&) {
+        name_not_found_thrown = true;
+    }
+    TEST(name_not_found_thrown, "with_child(name) throws out_of_range when name missing");
 
     return true;
 }
@@ -135,9 +156,17 @@ auto test_handlers_and_drop_flow() -> bool {
     TEST(drop_ptr->exit_calls == 1, "child dropped during process receives exit");
 
     auto remain_0 = root->with_child<TestUnit>(0, [](TestUnit& c) { return c.id; });
-    auto remain_1 = root->with_child<TestUnit>(1, [](TestUnit& c) { return c.id; });
-    TEST(remain_0.has_value() && remain_0.value() == "keep", "remaining child is accessible at index 0");
-    TEST(!remain_1.has_value(), "dropped child is no longer accessible");
+    TEST(remain_0 == "keep", "remaining child is accessible at index 0");
+    bool dropped_missing = false;
+    try {
+        (void)root->with_child<TestUnit>(1, [](TestUnit& c) { return c.id; });
+    } catch (const std::out_of_range&) {
+        dropped_missing = true;
+    }
+    TEST(dropped_missing, "dropped child is no longer accessible");
+
+    auto remain_by_name = root->with_child<TestUnit>("keep", [](TestUnit& c) { return c.id; });
+    TEST(remain_by_name == "keep", "remaining child is accessible by name");
 
     root->physics_process_handler();
     TEST(root->physics_calls == 0, "physics_process_handler is currently no-op");
@@ -186,12 +215,25 @@ auto test_remove_child_and_iterators() -> bool {
     root->process_handler();
 
     TEST(removed->exit_calls == 1, "remove_child marks and removes target child");
-    auto missing = root->with_child<TestUnit>(2, [](TestUnit& c) { return c.id; });
-    TEST(!missing.has_value(), "remove_child compacts active view after process frame");
+    bool missing = false;
+    try {
+        (void)root->with_child<TestUnit>(2, [](TestUnit& c) { return c.id; });
+    } catch (const std::out_of_range&) {
+        missing = true;
+    }
+    TEST(missing, "remove_child compacts active view after process frame");
 
     root->remove_child(1000);
     root->process_handler();
     TEST(true, "remove_child ignores out-of-range index");
+
+    root->remove_child("child0");
+    root->process_handler();
+    TEST(children[0]->exit_calls == 1, "remove_child(name) marks and removes target child");
+
+    root->remove_child("missing-name");
+    root->process_handler();
+    TEST(true, "remove_child(name) ignores missing name");
 
     return true;
 }
