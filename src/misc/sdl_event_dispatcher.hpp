@@ -51,5 +51,5 @@ namespace gkit::misc {
 
         // Key: SDL event type, Value: callback chain for that event.
         std::unordered_map<Uint32, std::vector<std::function<void(const SDL_Event&)>>> event_handlers;
-    };
-}
+    }; // class SDLEventDispatcher
+} // namespace gkit::misc
