@@ -26,11 +26,19 @@ namespace gkit::input {
          * @brief Check if the specified modifiers are currently pressed.
          * @param mods The modifier bitmask to check
          * @return true if all specified modifiers are currently pressed, false otherwise. 
-         * if mods is 0, it will return true.
+         * if mods is 0, it will return true when Alt, Ctrl, Shift, and Gui modifiers are not pressed.
          */
         inline auto modifiers_pressed(uint32_t mods) const -> bool {
             const auto& current_mods = static_cast<uint32_t>(SDL_GetModState());
-            if (mods == 0u) return current_mods == 0u;
+            static constexpr const uint32_t all_mods = static_cast<uint32_t>(Mod::Alt)
+                | static_cast<uint32_t>(Mod::Ctrl)
+                | static_cast<uint32_t>(Mod::Shift)
+                | static_cast<uint32_t>(Mod::Gui);
+            
+            if (mods == static_cast<uint32_t>(Mod::None)) {
+                return (current_mods & all_mods) == 0u;
+            }
+
             return (mods & current_mods) == mods;
         }
 
