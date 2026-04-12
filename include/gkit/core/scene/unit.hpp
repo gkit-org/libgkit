@@ -6,6 +6,7 @@
 #include <functional>
 #include <optional>
 #include <shared_mutex>
+#include <stdexcept>
 #include <string>
 #include <type_traits>
 #include <unordered_map>
@@ -152,7 +153,7 @@ namespace gkit::core::scene {
          */
         template<typename Unit_T, typename F, typename... Args>
         auto with_child(uint32_t index, F&& func, Args&&... args)
-            -> std::optional<std::invoke_result_t<F, Unit_T&, Args...>>;
+            -> std::invoke_result_t<F, Unit_T&, Args...>;
 
         /**
          * @brief Get the unit parent refernce.
@@ -307,14 +308,17 @@ namespace gkit::core::scene {
 
     template<typename Unit_T, typename F, typename... Args>
     auto Unit::with_child(uint32_t index, F&& func, Args&&... args) 
-    -> std::optional<std::invoke_result_t<F, Unit_T&, Args...>> {
+    -> std::invoke_result_t<F, Unit_T&, Args...> {
         static_assert(std::is_base_of_v<Unit, Unit_T>, "T is not derived from Unit");
         auto child_opt = get_available_child(index);
-        if (!child_opt.has_value()) return std::nullopt;
+        if (!child_opt.has_value()) {
+            throw std::out_of_range("Child index is out of range");
+        }
         auto* child_ptr = *child_opt;
         auto child = dynamic_cast<Unit_T*>(child_ptr);
-        if (child == nullptr) return std::nullopt;
-        // return func(*child, std::forward<Args>(args)...);
+        if (child == nullptr) {
+            throw std::invalid_argument("Failed to cast child to requested type");
+        }
         return std::invoke(func, *child, std::forward<Args>(args)...);
     } // Unit::with_child
 
