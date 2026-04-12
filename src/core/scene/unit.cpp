@@ -60,9 +60,13 @@ auto gkit::core::scene::Unit::exit_handler() noexcept -> void {
 }
 
 
-auto gkit::core::scene::Unit::add_child(std::unique_ptr<Unit>&& child_ptr) noexcept -> void {
+auto gkit::core::scene::Unit::add_child(std::unique_ptr<Unit>&& child_ptr) -> void {
     if (child_ptr == nullptr) {
-        return;
+        throw std::invalid_argument("child_ptr is nullptr");
+    }
+
+    if (child_ptr->name.empty()) {
+        throw std::invalid_argument("child_ptr name is empty");
     }
 
     child_ptr->ready();
@@ -70,6 +74,16 @@ auto gkit::core::scene::Unit::add_child(std::unique_ptr<Unit>&& child_ptr) noexc
         std::unique_lock<std::shared_mutex> w_lock(this->children_rw_mutex);
         child_ptr->parent = this;
         children.push_back(std::move(child_ptr));
+    }
+    {
+        std::shared_lock<std::shared_mutex> r_lock(this->children_rw_mutex);
+        std::unique_lock<std::shared_mutex> w_lock(this->name_map_cache_rw_mutex);
+        auto& child_name = this->children.back()->name;
+        auto* new_child_ptr = this->children.back().get();
+        if (this->name_map_cache.contains(child_name)) {
+            throw std::invalid_argument("child_ptr name is already exist");
+        }
+        this->name_map_cache.emplace(std::make_pair(child_name, new_child_ptr));
     }
     this->modified.store(true);
 }
@@ -156,10 +170,14 @@ auto gkit::core::scene::Unit::drop_children() -> void {
     for (auto& active_index : this->active_index_cache) {
         auto& child_ptr = this->children[active_index];
         if (child_ptr != nullptr && child_ptr->ready_to_drop == true) {
-            auto child_temp = std::move(child_ptr);
-            child_ptr.reset();
+            auto droped_child = std::move(child_ptr);
+            {
+                std::unique_lock<std::shared_mutex> w_lock(this->name_map_cache_rw_mutex);
+                this->name_map_cache.erase(droped_child->name);
+            }
+            child_ptr.reset(nullptr);
             this->modified = true;
-            child_temp->exit_handler();
+            droped_child->exit_handler();
         }
     }
 }

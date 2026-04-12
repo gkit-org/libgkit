@@ -1,74 +1,237 @@
 #include <gkit/core/scene/unit.hpp>
-#include <gkit/core/processer.hpp>
-#include <format>
+
+#include <cstdint>
 #include <iostream>
 #include <memory>
 #include <string>
+#include <vector>
 
 using gkit::core::scene::Unit;
 
-const auto BEGIN = 5000;
-uint32_t times = BEGIN;
+#define TEST(cond, msg) do { \
+    if (!(cond)) { \
+        std::cerr << "FAIL: " << msg << " (" << __FILE__ << ":" << __LINE__ << ")" << std::endl; \
+        return false; \
+    } else { \
+        std::cout << "PASS: " << msg << std::endl; \
+    } \
+} while(0)
 
-// Unit class for debug
+class OtherUnit : public Unit {
+public:
+    using Unit::Unit;
+};
+
 class TestUnit : public Unit {
 public:
-    using Unit::Unit;
+    using Unit::ready_handler;
+    using Unit::process_handler;
+    using Unit::physics_process_handler;
+    using Unit::exit_handler;
+
+    explicit TestUnit(const std::string& unit_name) : Unit(unit_name), id(unit_name) {}
+
+    static auto create(const std::string& name) -> std::unique_ptr<TestUnit> {
+        return Unit::create<TestUnit>(name);
+    }
 
     auto ready() -> void override {
-        std::cout << std::format("TestUnit({})::_ready()", this->name) << std::endl;
+        ++ready_calls;
+        timeline.push_back(id + ":ready");
     }
 
     auto process() -> void override {
-        std::cout << std::format("TestUnit({})::_process(): num = {}", this->name, this->num) << std::endl;
-    }
-
-    // auto _physics_process() -> void override {
-    //     std::cout << std::format("TestUnit({})::_physics_process()", this->name) << std::endl;
-    // }
-
-    auto exit() -> void override {
-        std::cout << std::format("TestUnit({})::_exit()", this->name) << std::endl;
-    }
-
-    int num = 0;
-};
-
-
-class RootUnit : public Unit { 
-public:
-    using Unit::Unit;
-
-    auto ready() -> void override {
-        std::cout << std::format("RootUnit({})::_ready()", this->name) << std::endl;
-        for (auto i = 1; i <= 10; ++i) {
-            auto new_child = Unit::create<TestUnit>(std::format("Unit{}", i));
-            add_child(std::move(new_child));    
+        ++process_calls;
+        ++value;
+        timeline.push_back(id + ":process");
+        if (drop_on_process) {
+            drop();
         }
     }
-    auto process() -> void override {
-        std::cout << std::format("RootUnit({})::_process()", this->name) << std::endl;
-        if (times <= 0) {
-            this->remove_child(0);
-            times = BEGIN;
-        }
-        auto result = this->with_child<TestUnit>(0, [](TestUnit& child) -> int {
-            child.num += 1;
-            return 0;
-        });
 
-        times -= 1;
+    auto physics_process() -> void override {
+        ++physics_calls;
+        timeline.push_back(id + ":physics");
     }
-    auto physics_process() -> void override {}
+
     auto exit() -> void override {
-        std::cout << std::format("RootUnit({})::_exit()", this->name) << std::endl;
+        ++exit_calls;
+        timeline.push_back(id + ":exit");
     }
+
+    std::string id;
+    int ready_calls = 0;
+    int process_calls = 0;
+    int physics_calls = 0;
+    int exit_calls = 0;
+    int value = 0;
+    bool drop_on_process = false;
+
+    static std::vector<std::string> timeline;
 };
 
+std::vector<std::string> TestUnit::timeline;
 
-int main() {
-    auto app = gkit::Processer();
-    auto root = Unit::create<RootUnit>("root");
-    app.set_root(std::move(root));
-    app.run();
+auto test_create_and_with_child() -> bool {
+    std::cout << "\n=== test_create_and_with_child ===\n";
+
+    auto parent = TestUnit::create("parent");
+    TEST(parent != nullptr, "create<TestUnit> returns non-null");
+
+    auto child = TestUnit::create("child");
+    auto* child_ptr = child.get();
+    parent->add_child(std::move(child));
+
+    TEST(child_ptr->ready_calls == 1, "add_child triggers child ready once");
+
+    auto value_opt = parent->with_child<TestUnit>(0, [](TestUnit& c) { return c.value; });
+    TEST(value_opt.has_value(), "with_child can access valid child index");
+    TEST(value_opt.value() == 0, "with_child returns callable result");
+
+    auto wrong_type = parent->with_child<OtherUnit>(0, [](OtherUnit&) { return 1; });
+    TEST(!wrong_type.has_value(), "with_child returns nullopt when type mismatch");
+
+    auto out_of_range = parent->with_child<TestUnit>(99, [](TestUnit&) { return 1; });
+    TEST(!out_of_range.has_value(), "with_child returns nullopt when index out of range");
+
+    return true;
+}
+
+auto test_handlers_and_drop_flow() -> bool {
+    std::cout << "\n=== test_handlers_and_drop_flow ===\n";
+
+    auto root = TestUnit::create("root");
+    auto keep = TestUnit::create("keep");
+    auto drop_later = TestUnit::create("drop_later");
+
+    auto* keep_ptr = keep.get();
+    auto* drop_ptr = drop_later.get();
+
+    drop_ptr->drop_on_process = true;
+
+    root->add_child(std::move(keep));
+    root->add_child(std::move(drop_later));
+
+    auto _cache_sync = root->with_child<TestUnit>(0, [](TestUnit& c) { return c.process_calls; });
+
+    TestUnit::timeline.clear();
+    root->ready_handler();
+
+    TEST(keep_ptr->ready_calls == 2, "ready_handler calls child ready after add_child ready");
+    TEST(drop_ptr->ready_calls == 2, "all children participate in ready_handler");
+    TEST(root->ready_calls == 1, "ready_handler calls root ready");
+
+    TEST(TestUnit::timeline.size() >= 3, "ready timeline has expected entries");
+    TEST(TestUnit::timeline[0] == "keep:ready", "ready order child0 first");
+    TEST(TestUnit::timeline[1] == "drop_later:ready", "ready order child1 second");
+    TEST(TestUnit::timeline[2] == "root:ready", "ready order root last");
+
+    TestUnit::timeline.clear();
+    root->process_handler();
+
+    TEST(keep_ptr->process_calls == 1, "process_handler calls process on normal child");
+    TEST(drop_ptr->process_calls == 1, "process_handler calls process on dropping child");
+    TEST(root->process_calls == 1, "process_handler calls process on root");
+    TEST(drop_ptr->exit_calls == 1, "child dropped during process receives exit");
+
+    auto remain_0 = root->with_child<TestUnit>(0, [](TestUnit& c) { return c.id; });
+    auto remain_1 = root->with_child<TestUnit>(1, [](TestUnit& c) { return c.id; });
+    TEST(remain_0.has_value() && remain_0.value() == "keep", "remaining child is accessible at index 0");
+    TEST(!remain_1.has_value(), "dropped child is no longer accessible");
+
+    root->physics_process_handler();
+    TEST(root->physics_calls == 0, "physics_process_handler is currently no-op");
+    TEST(keep_ptr->physics_calls == 0, "physics_process_handler does not cascade currently");
+
+    return true;
+}
+
+auto test_remove_child_and_iterators() -> bool {
+    std::cout << "\n=== test_remove_child_and_iterators ===\n";
+
+    auto root = TestUnit::create("root");
+    std::vector<TestUnit*> children;
+
+    for (int i = 0; i < 3; ++i) {
+        auto child = TestUnit::create("child" + std::to_string(i));
+        children.push_back(child.get());
+        root->add_child(std::move(child));
+    }
+
+    root->process_handler();
+
+    int idx = 0;
+    for (auto& unit : *root) {
+        TEST(&unit == children[static_cast<size_t>(idx)], "forward iterator keeps insertion order");
+        ++idx;
+    }
+    TEST(idx == 3, "forward iterator visits all children");
+
+    idx = 2;
+    for (auto it = root->rbegin(); it != root->rend(); ++it) {
+        TEST(&(*it) == children[static_cast<size_t>(idx)], "reverse iterator works");
+        --idx;
+    }
+    TEST(idx == -1, "reverse iterator visits all children");
+
+    const auto& const_root = *root;
+    idx = 0;
+    for (auto& unit : const_root) {
+        TEST(&unit == children[static_cast<size_t>(idx)], "const iterator works");
+        ++idx;
+    }
+
+    auto* removed = children[1];
+    root->remove_child(1);
+    root->process_handler();
+
+    TEST(removed->exit_calls == 1, "remove_child marks and removes target child");
+    auto missing = root->with_child<TestUnit>(2, [](TestUnit& c) { return c.id; });
+    TEST(!missing.has_value(), "remove_child compacts active view after process frame");
+
+    root->remove_child(1000);
+    root->process_handler();
+    TEST(true, "remove_child ignores out-of-range index");
+
+    return true;
+}
+
+auto test_exit_handler_order() -> bool {
+    std::cout << "\n=== test_exit_handler_order ===\n";
+
+    auto root = TestUnit::create("root");
+    auto child0 = TestUnit::create("child0");
+    auto child1 = TestUnit::create("child1");
+
+    root->add_child(std::move(child0));
+    root->add_child(std::move(child1));
+
+    auto _cache_sync = root->with_child<TestUnit>(0, [](TestUnit& c) { return c.ready_calls; });
+
+    TestUnit::timeline.clear();
+    root->exit_handler();
+
+    TEST(TestUnit::timeline.size() >= 3, "exit timeline has expected entries");
+    TEST(TestUnit::timeline[0] == "child0:exit", "exit order child0 first");
+    TEST(TestUnit::timeline[1] == "child1:exit", "exit order child1 second");
+    TEST(TestUnit::timeline[2] == "root:exit", "exit order root last");
+
+    return true;
+}
+
+auto main() -> int {
+    bool all_passed = true;
+
+    all_passed &= test_create_and_with_child();
+    all_passed &= test_handlers_and_drop_flow();
+    all_passed &= test_remove_child_and_iterators();
+    all_passed &= test_exit_handler_order();
+
+    if (all_passed) {
+        std::cout << "\nAll tests passed!" << std::endl;
+        return 0;
+    }
+
+    std::cerr << "\nSome tests failed." << std::endl;
+    return 1;
 }

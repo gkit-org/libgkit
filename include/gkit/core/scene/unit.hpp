@@ -35,9 +35,7 @@ namespace gkit::core::scene {
     class Unit {
     protected:
         Unit() noexcept;
-        // Unit(Unit&&) noexcept;
         Unit(std::string name) noexcept;
-        // Unit(std::string&& name) noexcept;
     public:
         /**
          * @brief Create a instance of the type which is based of class Unit.
@@ -47,7 +45,7 @@ namespace gkit::core::scene {
          * @note It will throw error if the type is not a class which is based of class Unit.
          */
         template <IsUnitExtend T>
-        static auto create(std::string name = "") noexcept -> std::unique_ptr<T>;
+        static auto create(std::string name) noexcept -> std::unique_ptr<T>;
         virtual ~Unit() = default;
 
     public: // virtual methods
@@ -108,7 +106,7 @@ namespace gkit::core::scene {
          * be available after call @ref update_index_cache(), which will be happened when
          * @ref process_handler() is called.
          */
-        auto add_child(std::unique_ptr<Unit>&& child_ptr) noexcept -> void;
+        auto add_child(std::unique_ptr<Unit>&& child_ptr) -> void;
 
         /**
          * @brief Remove a child unit by index
@@ -172,7 +170,7 @@ namespace gkit::core::scene {
     private: // children management
         std::atomic<bool> modified = false;
 
-        std::unordered_map<const char*, Unit*> name_map_cache;
+        std::unordered_map<std::string, Unit*> name_map_cache;
         mutable std::shared_mutex name_map_cache_rw_mutex;
 
         std::vector<uint32_t> active_index_cache;
