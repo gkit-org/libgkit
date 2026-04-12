@@ -1,6 +1,5 @@
 #pragma once
 
-#include <assert.h>
 #include <atomic>
 #include <cstdint>
 #include <functional>
