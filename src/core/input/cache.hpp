@@ -15,11 +15,10 @@ namespace gkit {
 namespace gkit::input {
     class Cache : public gkit::core::scene::Singleton<Cache> {
         friend class gkit::Input;
-    public:
-        /**
-         * @brief Update the input cache by polling SDL events and updating the current and previous cache states.
-         */
-        auto update_cache() -> void;
+        friend class gkit::core::scene::Singleton<Cache>;
+
+        Cache();
+        virtual ~Cache();
 
     public:
         /**

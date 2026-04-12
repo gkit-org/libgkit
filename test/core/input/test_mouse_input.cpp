@@ -1,5 +1,6 @@
 #include "min_window_for_input_test.hpp"
 #include <gkit/core/input/input.hpp>
+#include <misc/sdl_event_dispatcher.hpp>
 #include <cstdint>
 
 auto main() -> int {
@@ -9,6 +10,7 @@ auto main() -> int {
 
     auto win = gkit::test::Window{};
     auto& input = gkit::Input::instance();
+    auto& event_dispatcher = gkit::misc::SDLEventDispatcher::instance();
 
     auto shoot_action = Action("Shoot");
     shoot_action.set_action(MouseChord{
@@ -33,7 +35,7 @@ auto main() -> int {
     input.register_action(jump_url_action);
 
     while(1) {
-        input.update();
+        event_dispatcher.dispatch_events();
 
         if (input.is_action_pressed("Shoot")) {
             std::cout << "Action Shoot is pressed" << std::endl;

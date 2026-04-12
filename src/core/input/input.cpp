@@ -14,11 +14,6 @@ gkit::Input::Input() {
 }
 
 
-auto gkit::Input::update() -> void {
-    gkit::input::Cache::instance().update_cache();
-}
-
-
 auto gkit::Input::register_action(const input::Action& action) -> void {
     if (action.name.empty()) return;
     this->action_map[action.name] = action;

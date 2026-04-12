@@ -11,6 +11,7 @@ namespace gkit::misc {
      * @brief SDL event dispatcher based on event type to handler list mapping.
      */
     class SDLEventDispatcher : public gkit::core::scene::Singleton<SDLEventDispatcher> {
+        friend class gkit::core::scene::Singleton<SDLEventDispatcher>;
     public:
         /**
          * @brief Registers a callback executed once before polling SDL events in each dispatch cycle.
