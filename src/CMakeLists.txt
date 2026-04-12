@@ -15,6 +15,9 @@ list (APPEND GKIT_OBJS $<TARGET_OBJECTS:gkit_scene>)
 add_subdirectory(utils)
 list (APPEND GKIT_OBJS $<TARGET_OBJECTS:gkit_utils>)
 
+add_subdirectory(misc)
+list (APPEND GKIT_OBJS $<TARGET_OBJECTS:gkit_misc>)
+
 add_library(${PROJECT_NAME} SHARED ${GKIT_OBJS})
 add_library(${PROJECT_NAME}_static STATIC ${GKIT_OBJS})
 
