@@ -10,7 +10,7 @@ namespace gkit::misc {
     class SDLEventDispatcher : public gkit::core::scene::Singleton<SDLEventDispatcher> {
     public:
         auto register_event_handler(SDL_EventType event_type, std::function<void(const SDL_Event&)> handler) -> void;
-        auto unregister_event_handler(SDL_EventType event_type) -> void;
+        auto unregister_event(SDL_EventType event_type) -> void;
 
         /**
          * @brief Dispatches SDL events to the appropriate handlers.
