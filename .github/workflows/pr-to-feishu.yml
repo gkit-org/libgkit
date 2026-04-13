@@ -165,6 +165,65 @@ jobs:
               return null
             }
 
+            async function createTaskWithFallback(tenantToken, taskTitle, taskDescription) {
+              const payloads = [
+                {
+                  summary: taskTitle,
+                  description: taskDescription,
+                  tasklists: [
+                    {
+                      tasklist: {
+                        tasklist_guid: process.env.FEISHU_TASKLIST_GUID
+                      }
+                    }
+                  ]
+                },
+                {
+                  summary: taskTitle,
+                  description: taskDescription,
+                  tasklists: {
+                    tasklist: {
+                      tasklist_guid: process.env.FEISHU_TASKLIST_GUID
+                    }
+                  }
+                },
+                {
+                  summary: taskTitle,
+                  description: taskDescription,
+                  tasklist: {
+                    tasklist_guid: process.env.FEISHU_TASKLIST_GUID
+                  }
+                },
+                {
+                  summary: taskTitle,
+                  description: taskDescription,
+                  tasklists: [
+                    {
+                      tasklist_guid: process.env.FEISHU_TASKLIST_GUID
+                    }
+                  ]
+                }
+              ]
+
+              let lastError = null
+              for (const payload of payloads) {
+                try {
+                  return await feishuRequest('https://open.feishu.cn/open-apis/task/v2/tasks', {
+                    method: 'POST',
+                    headers: {
+                      Authorization: `Bearer ${tenantToken}`,
+                      'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                  })
+                } catch (error) {
+                  lastError = error
+                }
+              }
+
+              throw lastError || new Error('Failed to create Feishu task')
+            }
+
             async function notifyGroup(lines) {
               const resp = await fetch(process.env.FEISHU_WEBHOOK_URL, {
                 method: 'POST',
@@ -231,24 +290,7 @@ jobs:
                   })
                 })
               } else {
-                const createData = await feishuRequest('https://open.feishu.cn/open-apis/task/v2/tasks', {
-                  method: 'POST',
-                  headers: {
-                    Authorization: `Bearer ${tenantToken}`,
-                    'Content-Type': 'application/json'
-                  },
-                  body: JSON.stringify({
-                    summary: taskTitle,
-                    description: taskDescription,
-                    tasklists: [
-                      {
-                        tasklist: {
-                          tasklist_guid: process.env.FEISHU_TASKLIST_GUID
-                        }
-                      }
-                    ]
-                  })
-                })
+                const createData = await createTaskWithFallback(tenantToken, taskTitle, taskDescription)
 
                 finalTaskGuid = createData?.data?.task?.guid || createData?.data?.guid || null
                 actionText = 'created'
