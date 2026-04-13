@@ -1,7 +1,7 @@
 name: pr-to-feishu
 
 on:
-  pull_request:
+  pull_request_target:
     types:
       - opened
       - closed
@@ -13,7 +13,7 @@ permissions:
 jobs:
   sync-task:
     name: Sync PR to Feishu Task
-    if: ${{ github.repository == 'gkit-org/libgkit' && github.event.pull_request.head.repo.full_name == github.repository }}
+    if: ${{ github.repository == 'gkit-org/libgkit' }}
     runs-on: ubuntu-latest
     steps:
       - name: Create/complete Feishu task for PR
