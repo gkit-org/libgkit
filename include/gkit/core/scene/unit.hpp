@@ -1,11 +1,11 @@
 #pragma once
 
-#include <assert.h>
 #include <atomic>
 #include <cstdint>
 #include <functional>
 #include <optional>
 #include <shared_mutex>
+#include <stdexcept>
 #include <string>
 #include <type_traits>
 #include <unordered_map>
@@ -35,9 +35,7 @@ namespace gkit::core::scene {
     class Unit {
     protected:
         Unit() noexcept;
-        // Unit(Unit&&) noexcept;
         Unit(std::string name) noexcept;
-        // Unit(std::string&& name) noexcept;
     public:
         /**
          * @brief Create a instance of the type which is based of class Unit.
@@ -47,7 +45,7 @@ namespace gkit::core::scene {
          * @note It will throw error if the type is not a class which is based of class Unit.
          */
         template <IsUnitExtend T>
-        static auto create(std::string name = "") noexcept -> std::unique_ptr<T>;
+        static auto create(std::string name) noexcept -> std::unique_ptr<T>;
         virtual ~Unit() = default;
 
     public: // virtual methods
@@ -108,7 +106,7 @@ namespace gkit::core::scene {
          * be available after call @ref update_index_cache(), which will be happened when
          * @ref process_handler() is called.
          */
-        auto add_child(std::unique_ptr<Unit>&& child_ptr) noexcept -> void;
+        auto add_child(std::unique_ptr<Unit>&& child_ptr) -> void;
 
         /**
          * @brief Remove a child unit by index
@@ -120,6 +118,17 @@ namespace gkit::core::scene {
          * If the index is out of range, it will do nothing.
          */
         auto remove_child(uint32_t index) noexcept -> void;
+
+        /**
+         * @brief Remove a child unit by name.
+         * @param child_name The name of the child.
+         * @return void
+         * @note It will be marked as deleted, but not deleted immediately.
+         * It will be deleted when the parent all the end of @ref process_handler().
+         *
+         * If the name is not found, it will do nothing.
+         */
+        auto remove_child(const std::string& child_name) noexcept -> void;
 
         /**
          * It is not use in the current version.
@@ -152,9 +161,25 @@ namespace gkit::core::scene {
          * @return the callable method's return value. 
          * If the index is out of range, return std::nullopt.
          */
-        template<typename Unit_T, typename F, typename... Args>
+        template<IsUnitExtend Unit_T, typename F, typename... Args>
         auto with_child(uint32_t index, F&& func, Args&&... args)
-            -> std::optional<std::invoke_result_t<F, Unit_T&, Args...>>;
+            -> std::invoke_result_t<F, Unit_T&, Args...>;
+
+        /**
+         * @brief Do something by a callable method.
+         * @tparam Unit_T The type derived from unit.
+         * @tparam F The callable method.
+         * @tparam Args The arguments of the callable method.
+         * @param child_name The name of the child.
+         * @param func The callable method, which return type is not void.
+         * @param args The arguments of the callable method.
+         * @return the callable method's return value.
+         * @throws std::out_of_range If child name is not found.
+         * @throws std::invalid_argument If child type cast fails.
+         */
+        template<IsUnitExtend Unit_T, typename F, typename... Args>
+        auto with_child(const std::string& child_name, F&& func, Args&&... args)
+            -> std::invoke_result_t<F, Unit_T&, Args...>;
 
         /**
          * @brief Get the unit parent refernce.
@@ -172,7 +197,7 @@ namespace gkit::core::scene {
     private: // children management
         std::atomic<bool> modified = false;
 
-        std::unordered_map<const char*, Unit*> name_map_cache;
+        std::unordered_map<std::string, Unit*> name_map_cache;
         mutable std::shared_mutex name_map_cache_rw_mutex;
 
         std::vector<uint32_t> active_index_cache;
@@ -188,10 +213,18 @@ namespace gkit::core::scene {
         /**
          * @brief Get the available child pointer.
          * @param index The index of the child.
-         * @return std::optional<Unit*> 
-         * If the index is valid, return the pointer to the child, otherwise return std::nullopt.
+         * @return Unit* 
+         * If the index is valid, return the pointer to the child, otherwise return nullptr.
          */
-        auto get_available_child(uint32_t index) noexcept -> std::optional<Unit*>;
+        auto get_available_child(uint32_t index) noexcept -> Unit*;
+
+        /**
+         * @brief Get child pointer by name.
+         * @param child_name The name of the child.
+         * @return Unit*
+         * If the child exists in name cache, return the pointer; otherwise return nullptr.
+         */
+        auto get_child(const std::string& child_name) noexcept -> Unit*;
 
         /**
          * @brief Update the index cache. It will be call substantively when @ref modified is true.
@@ -307,18 +340,35 @@ namespace gkit::core::scene {
         }
     }
 
-    template<typename Unit_T, typename F, typename... Args>
+    template<IsUnitExtend Unit_T, typename F, typename... Args>
     auto Unit::with_child(uint32_t index, F&& func, Args&&... args) 
-    -> std::optional<std::invoke_result_t<F, Unit_T&, Args...>> {
-        static_assert(std::is_base_of_v<Unit, Unit_T>, "T is not derived from Unit");
-        auto child_opt = get_available_child(index);
-        if (!child_opt.has_value()) return std::nullopt;
-        auto* child_ptr = *child_opt;
-        auto child = dynamic_cast<Unit_T*>(child_ptr);
-        if (child == nullptr) return std::nullopt;
-        // return func(*child, std::forward<Args>(args)...);
-        return std::invoke(func, *child, std::forward<Args>(args)...);
+    -> std::invoke_result_t<F, Unit_T&, Args...> {
+        auto* child_ptr = get_available_child(index);
+        if (child_ptr == nullptr) {
+            throw std::out_of_range("Child index is out of range");
+        }
+
+        auto target_child_ptr = dynamic_cast<Unit_T*>(child_ptr);
+        if (target_child_ptr == nullptr) {
+            throw std::invalid_argument("Failed to cast child to requested type");
+        }
+        return std::invoke(func, *target_child_ptr, std::forward<Args>(args)...);
     } // Unit::with_child
+
+    template<IsUnitExtend Unit_T, typename F, typename... Args>
+    auto Unit::with_child(const std::string& child_name, F&& func, Args&&... args)
+    -> std::invoke_result_t<F, Unit_T&, Args...> {
+        auto child_ptr = get_child(child_name);
+        if (child_ptr == nullptr) {
+            throw std::out_of_range("Child name is not found");
+        }
+
+        auto* child = dynamic_cast<Unit_T*>(child_ptr);
+        if (child == nullptr) {
+            throw std::invalid_argument("Failed to cast child to requested type");
+        }
+        return std::invoke(func, *child, std::forward<Args>(args)...);
+    } // Unit::with_child(name)
 
     template<IsUnitExtend T>
     auto Unit::get_parent() noexcept -> std::optional<std::reference_wrapper<T>> {

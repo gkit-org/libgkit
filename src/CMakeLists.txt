@@ -26,6 +26,6 @@ list (APPEND GKIT_LIBS ${PROJECT_NAME}_static)
 foreach(GKIT_LIB ${GKIT_LIBS})
     target_link_libraries(${GKIT_LIB} PRIVATE 
         SDL3::SDL3-static 
-        SDL3_image::SDL3_image
+        SDL3_image::SDL3_image-static
     )
 endforeach()
