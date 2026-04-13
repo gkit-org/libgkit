@@ -1,4 +1,4 @@
-# libgkit -- A simple game library for game development
+# libgkit -- A simple library for game development
 
 <div align="center"><img width=200 src="./gkit_logo.png"></div>
 
