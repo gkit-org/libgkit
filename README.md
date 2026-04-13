@@ -8,7 +8,7 @@
 
 > [!WARNING]
 >
-> - This library is used for technical implementation testing. It is not recommended to use it in production.
+> - This library is used for technical implementation testing now. It is not stable and not recommended to use it in production.
 
 ## What is libgkit
 
