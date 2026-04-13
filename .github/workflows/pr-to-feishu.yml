@@ -159,14 +159,8 @@ jobs:
                   'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                  summary: {
-                    content: taskTitle,
-                    format: 'text'
-                  },
-                  description: {
-                    content: taskDescription,
-                    format: 'text'
-                  },
+                  summary: taskTitle,
+                  description: taskDescription,
                   tasklists: [
                     {
                       guid: process.env.FEISHU_TASKLIST_GUID
