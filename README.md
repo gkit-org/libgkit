@@ -12,7 +12,7 @@
 
 ## What is libgkit
 
-libgkit is a simple game library for game development. It is written in C++ mainly. We will also provide cabi for different script language.
+libgkit is a simple game library for game development. It is written in C++. We will also support for different script language.
 
 ## Contribution
 
