@@ -22,7 +22,7 @@ jobs:
           FEISHU_APP_ID: ${{ secrets.FEISHU_APP_ID }}
           FEISHU_APP_SECRET: ${{ secrets.FEISHU_APP_SECRET }}
           FEISHU_WEBHOOK_URL: ${{ secrets.FEISHU_WEBHOOK_URL }}
-          FEISHU_CODE_REVIEWER_GROUP_ID: ${{ secrets.FEISHU_CODE_REVIEWER_GROUP_ID }}
+          FEISHU_CODE_REVIEWER_ROLE_ID: ${{ secrets.FEISHU_CODE_REVIEWER_ROLE_ID }}
         with:
           script: |
             const pr = context.payload.pull_request
@@ -35,7 +35,7 @@ jobs:
               'FEISHU_APP_ID',
               'FEISHU_APP_SECRET',
               'FEISHU_WEBHOOK_URL',
-              'FEISHU_CODE_REVIEWER_GROUP_ID'
+              'FEISHU_CODE_REVIEWER_ROLE_ID'
             ]
 
             for (const key of requiredSecrets) {
@@ -80,15 +80,14 @@ jobs:
               return token
             }
 
-            async function listGroupMembersOpenId(tenantToken) {
+            async function listRoleMembersOpenId(tenantToken) {
               const members = []
               let pageToken = ''
 
               while (true) {
-                const url = new URL(`https://open.feishu.cn/open-apis/contact/v3/group/${encodeURIComponent(process.env.FEISHU_CODE_REVIEWER_GROUP_ID)}/member/simplelist`)
-                url.searchParams.set('page_size', '50')
-                url.searchParams.set('member_id_type', 'open_id')
-                url.searchParams.set('member_type', 'user')
+                const url = new URL(`https://open.feishu.cn/open-apis/contact/v3/functional_roles/${encodeURIComponent(process.env.FEISHU_CODE_REVIEWER_ROLE_ID)}/members`)
+                url.searchParams.set('page_size', '100')
+                url.searchParams.set('user_id_type', 'open_id')
                 if (pageToken) {
                   url.searchParams.set('page_token', pageToken)
                 }
@@ -101,10 +100,10 @@ jobs:
                   }
                 })
 
-                const list = data?.data?.memberlist || []
+                const list = data?.data?.members || []
                 for (const member of list) {
-                  if (member?.member_type === 'user' && member?.member_id) {
-                    members.push(member.member_id)
+                  if (member?.user_id) {
+                    members.push(member.user_id)
                   }
                 }
 
@@ -160,18 +159,18 @@ jobs:
             const tenantToken = await getTenantToken()
             core.setSecret(tenantToken)
 
-            const reviewerOpenIds = await listGroupMembersOpenId(tenantToken)
+            const reviewerOpenIds = await listRoleMembersOpenId(tenantToken)
             if (reviewerOpenIds.length === 0) {
               await notifyWebhook([
-                'GitHub 有新的 PR，但未查询到 code_reviewer 用户组成员：',
+                'GitHub 有新的 PR，但未查询到 code_reviewer 角色成员：',
                 `- 事件: ${context.payload.action}`,
                 `- 标题: ${pr.title}`,
                 `- 链接: ${pr.html_url}`,
                 `- Contributor: ${pr.user?.login || 'unknown'}`,
                 `- 编号: #${pr.number}`,
-                `- 用户组ID: ${process.env.FEISHU_CODE_REVIEWER_GROUP_ID}`
+                `- 角色ID: ${process.env.FEISHU_CODE_REVIEWER_ROLE_ID}`
               ].join('\n'))
-              core.info('No members found in reviewer group; sent fallback notification.')
+              core.info('No members found in reviewer role; sent fallback notification.')
               return
             }
 
