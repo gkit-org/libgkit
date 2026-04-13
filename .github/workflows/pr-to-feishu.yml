@@ -5,6 +5,7 @@ on:
     types:
       - opened
       - reopened
+      - closed
 
 permissions:
   contents: read
@@ -174,15 +175,23 @@ jobs:
               return
             }
 
-            const mentions = reviewerOpenIds.map((id) => `<at user_id="${id}">code_reviewer</at>`).join(' ')
+            const action = context.payload.action
+            const titleLine = action === 'closed'
+              ? `GitHub PR 已关闭（${pr.merged ? 'merged' : 'closed'}）：`
+              : `GitHub PR 需要 Review（${action}）：`
+
+            const mentions = action === 'closed'
+              ? ''
+              : reviewerOpenIds.map((id) => `<at user_id="${id}">code_reviewer</at>`).join(' ')
+
             const message = [
-              `${mentions}`,
-              `GitHub PR 需要 Review（${context.payload.action}）：`,
+              mentions,
+              titleLine,
               `- 标题: ${pr.title}`,
               `- 链接: ${pr.html_url}`,
               `- Contributor: ${pr.user?.login || 'unknown'}`,
               `- 编号: #${pr.number}`
-            ].join('\n')
+            ].filter((line) => line && line.trim().length > 0).join('\n')
 
             await notifyWebhook(message)
             core.info(`Notified reviewer group members: ${reviewerOpenIds.length}`)
