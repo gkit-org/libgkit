@@ -5,10 +5,11 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 include_directories(${CMAKE_SOURCE_DIR}/src/c_abi/include)
 
 # build core tests
-file(GLOB_RECURSE TEST_SRCS 
+file(GLOB_RECURSE TEST_SRCS
     "core/*.cpp"
     "math/*.cpp"
     "utils/*.cpp"
+    "resource/*.cpp"
 )
 
 foreach(test_file ${TEST_SRCS})

@@ -10,6 +10,7 @@
 #include <gkit/core/scene/object.hpp>
 
 /** Resource **/
+#include <gkit/resource/metadata.hpp>
 #include <gkit/resource/resource.hpp>
 #include <gkit/resource/texture.hpp>
 #include <gkit/resource/resource_loader.hpp>

@@ -21,7 +21,7 @@ namespace gkit::resource {
          * @param void
          * @return std::vector<std::byte> the byte string
          */
-        virtual auto prase() -> std::vector<std::byte> = 0;
+        virtual auto parse() -> std::vector<std::byte> = 0;
 
         /**
          * @brief Dump the resource from a byte string
