@@ -1,5 +1,6 @@
 #include "./min_window_for_input_test.hpp"
 #include <gkit/core/input/input.hpp>
+#include <misc/sdl_event_dispatcher.hpp>
 #include <iostream>
 #include <cstdint>
 
@@ -11,6 +12,7 @@ auto main() -> int {
     using gkit::input::KeyChord;
 
     gkit::test::Window win;
+    auto& event_dispatcher = gkit::misc::SDLEventDispatcher::instance();
     auto& input = gkit::Input::instance();
 
     auto save_action = Action("Save");
@@ -28,7 +30,7 @@ auto main() -> int {
     input.register_action(quit_action);
 
     while(1) {
-        input.update();
+        event_dispatcher.dispatch_events();
 
         if (input.is_key_pressed(Key::A)) {
             std::cout << "Key A is pressed" << std::endl;

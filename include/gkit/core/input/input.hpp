@@ -13,8 +13,6 @@ namespace gkit {
         virtual ~Input() = default;
 
     public:
-        auto update() -> void;
-
         // action related
         auto register_action(const input::Action& action) -> void;
         auto unregister_action(const std::string& name) -> void; 
