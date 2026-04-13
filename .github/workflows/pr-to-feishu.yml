@@ -4,6 +4,9 @@ on:
   pull_request_target:
     types:
       - opened
+      - reopened
+      - ready_for_review
+      - synchronize
       - closed
 
 permissions:
@@ -13,7 +16,7 @@ permissions:
 jobs:
   sync-task:
     name: Sync PR to Feishu Task
-    if: ${{ github.repository == 'gkit-org/libgkit' }}
+    if: ${{ github.event.pull_request.base.repo.full_name == 'gkit-org/libgkit' }}
     runs-on: ubuntu-latest
     steps:
       - name: Create/complete Feishu task for PR
@@ -127,7 +130,18 @@ jobs:
               }
             }
 
-            if (context.payload.action === 'opened') {
+            core.info(`event.action=${context.payload.action}`)
+            core.info(`repo=${context.repo.owner}/${context.repo.repo}`)
+            core.info(`base=${pr.base?.repo?.full_name || 'unknown'}`)
+            core.info(`head=${pr.head?.repo?.full_name || 'unknown'}`)
+
+            if (['opened', 'reopened', 'ready_for_review', 'synchronize'].includes(context.payload.action)) {
+              const existingTaskGuid = await findTaskGuidFromPRComments()
+              if (existingTaskGuid) {
+                core.info(`Task marker already exists for PR #${pr.number}: ${existingTaskGuid}`)
+                return
+              }
+
               const tenantToken = await getTenantToken()
               core.setSecret(tenantToken)
 
@@ -145,14 +159,8 @@ jobs:
                   'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                  summary: {
-                    content: taskTitle,
-                    format: 'text'
-                  },
-                  description: {
-                    content: taskDescription,
-                    format: 'text'
-                  },
+                  summary: taskTitle,
+                  description: taskDescription,
                   tasklists: [
                     {
                       guid: process.env.FEISHU_TASKLIST_GUID
