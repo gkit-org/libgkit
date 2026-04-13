@@ -163,7 +163,9 @@ jobs:
                   description: taskDescription,
                   tasklists: [
                     {
-                      guid: process.env.FEISHU_TASKLIST_GUID
+                      tasklist: {
+                        tasklist_guid: process.env.FEISHU_TASKLIST_GUID
+                      }
                     }
                   ]
                 })
