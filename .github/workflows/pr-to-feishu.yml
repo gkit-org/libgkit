@@ -1,0 +1,275 @@
+name: pr-to-feishu
+
+on:
+  pull_request:
+    types:
+      - opened
+      - closed
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  sync-task:
+    name: Sync PR to Feishu Task
+    if: ${{ github.repository == 'gkit-org/libgkit' && github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create/complete Feishu task for PR
+        uses: actions/github-script@v7
+        env:
+          FEISHU_APP_ID: ${{ secrets.FEISHU_APP_ID }}
+          FEISHU_APP_SECRET: ${{ secrets.FEISHU_APP_SECRET }}
+          FEISHU_TASKLIST_GUID: ${{ secrets.FEISHU_TASKLIST_GUID }}
+          FEISHU_WEBHOOK_URL: ${{ secrets.FEISHU_WEBHOOK_URL }}
+        with:
+          script: |
+            const pr = context.payload.pull_request
+            if (!pr) {
+              core.setFailed('pull_request payload is missing')
+              return
+            }
+
+            const markerPrefix = '<!-- feishu_task_guid:'
+
+            const requiredSecrets = ['FEISHU_APP_ID', 'FEISHU_APP_SECRET', 'FEISHU_WEBHOOK_URL']
+            if (context.payload.action === 'opened') {
+              requiredSecrets.push('FEISHU_TASKLIST_GUID')
+            }
+
+            for (const key of requiredSecrets) {
+              if (!process.env[key]) {
+                core.setFailed(`Missing required secret: ${key}`)
+                return
+              }
+            }
+
+            async function getTenantToken() {
+              const authResp = await fetch('https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  app_id: process.env.FEISHU_APP_ID,
+                  app_secret: process.env.FEISHU_APP_SECRET
+                })
+              })
+
+              if (!authResp.ok) {
+                throw new Error(`Failed to request Feishu access token: HTTP ${authResp.status}`)
+              }
+
+              const authData = await authResp.json()
+              if (authData.code !== 0 || !authData.tenant_access_token) {
+                throw new Error(`Failed to get Feishu access token: ${JSON.stringify(authData)}`)
+              }
+
+              return authData.tenant_access_token
+            }
+
+            async function findTaskGuidFromPRComments() {
+              const comments = await github.paginate(github.rest.issues.listComments, {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                per_page: 100
+              })
+
+              for (const comment of comments) {
+                const body = comment.body || ''
+                const idx = body.indexOf(markerPrefix)
+                if (idx === -1) {
+                  continue
+                }
+
+                const end = body.indexOf('-->', idx)
+                if (end === -1) {
+                  continue
+                }
+
+                const taskGuid = body.slice(idx + markerPrefix.length, end).trim()
+                if (taskGuid) {
+                  return taskGuid
+                }
+              }
+
+              return null
+            }
+
+            async function notifyGroup(lines) {
+              const resp = await fetch(process.env.FEISHU_WEBHOOK_URL, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  msg_type: 'text',
+                  content: {
+                    text: lines.join('\n')
+                  }
+                })
+              })
+
+              const raw = await resp.text()
+              if (!resp.ok) {
+                throw new Error(`Failed to notify Feishu webhook: HTTP ${resp.status}, ${raw}`)
+              }
+
+              let data = null
+              try {
+                data = JSON.parse(raw)
+              } catch {
+                data = null
+              }
+
+              if (data && typeof data.code !== 'undefined' && data.code !== 0) {
+                throw new Error(`Feishu webhook returned error: ${raw}`)
+              }
+            }
+
+            if (context.payload.action === 'opened') {
+              const tenantToken = await getTenantToken()
+              core.setSecret(tenantToken)
+
+              const taskTitle = `[PR #${pr.number}] ${pr.title}`
+              const taskDescription = [
+                `PR: ${pr.html_url}`,
+                `Contributor: ${pr.user?.login || 'unknown'}`,
+                `Created At (UTC): ${pr.created_at}`
+              ].join('\n')
+
+              const createResp = await fetch('https://open.feishu.cn/open-apis/task/v2/tasks', {
+                method: 'POST',
+                headers: {
+                  Authorization: `Bearer ${tenantToken}`,
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  summary: {
+                    content: taskTitle,
+                    format: 'text'
+                  },
+                  description: {
+                    content: taskDescription,
+                    format: 'text'
+                  },
+                  tasklists: [
+                    {
+                      guid: process.env.FEISHU_TASKLIST_GUID
+                    }
+                  ]
+                })
+              })
+
+              const createRaw = await createResp.text()
+              let createData = null
+              try {
+                createData = JSON.parse(createRaw)
+              } catch {
+                createData = null
+              }
+
+              if (!createResp.ok || !createData || createData.code !== 0) {
+                core.setFailed(`Failed to create Feishu task: HTTP ${createResp.status}, ${createRaw}`)
+                return
+              }
+
+              const taskGuid = createData.data?.task?.guid || createData.data?.guid
+              if (!taskGuid) {
+                core.setFailed(`Feishu task created but guid not found: ${createRaw}`)
+                return
+              }
+
+              const marker = `${markerPrefix}${taskGuid} -->`
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                body: [
+                  'Feishu task synced for this PR.',
+                  marker
+                ].join('\n')
+              })
+
+              await notifyGroup([
+                'GitHub 新 PR 已同步到飞书任务清单：',
+                `- 标题: ${pr.title}`,
+                `- 链接: ${pr.html_url}`,
+                `- Contributor: ${pr.user?.login || 'unknown'}`,
+                `- 时间(UTC): ${pr.created_at}`,
+                `- 编号: #${pr.number}`,
+                `- Task GUID: ${taskGuid}`
+              ])
+
+              core.info(`Created Feishu task ${taskGuid} for PR #${pr.number}`)
+              return
+            }
+
+            if (context.payload.action === 'closed') {
+              const taskGuid = await findTaskGuidFromPRComments()
+              if (!taskGuid) {
+                core.info(`No Feishu task marker found for PR #${pr.number}. Skip completion.`)
+                await notifyGroup([
+                  'GitHub PR 已关闭，但未找到关联的飞书任务：',
+                  `- 标题: ${pr.title}`,
+                  `- 链接: ${pr.html_url}`,
+                  `- Contributor: ${pr.user?.login || 'unknown'}`,
+                  `- 状态: ${pr.merged ? 'merged' : 'closed'}`,
+                  `- 编号: #${pr.number}`
+                ])
+                return
+              }
+
+              const tenantToken = await getTenantToken()
+              core.setSecret(tenantToken)
+
+              let completeResp = await fetch(`https://open.feishu.cn/open-apis/task/v2/tasks/${taskGuid}/complete`, {
+                method: 'POST',
+                headers: {
+                  Authorization: `Bearer ${tenantToken}`,
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({})
+              })
+
+              if (!completeResp.ok) {
+                completeResp = await fetch(`https://open.feishu.cn/open-apis/task/v2/tasks/${taskGuid}`, {
+                  method: 'PATCH',
+                  headers: {
+                    Authorization: `Bearer ${tenantToken}`,
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({
+                    completed: true
+                  })
+                })
+              }
+
+              const completeRaw = await completeResp.text()
+              let completeData = null
+              try {
+                completeData = JSON.parse(completeRaw)
+              } catch {
+                completeData = null
+              }
+
+              if (!completeResp.ok || (completeData && completeData.code !== 0)) {
+                core.setFailed(`Failed to complete Feishu task ${taskGuid}: HTTP ${completeResp.status}, ${completeRaw}`)
+                return
+              }
+
+              await notifyGroup([
+                'GitHub PR 已关闭，飞书任务已自动完成：',
+                `- 标题: ${pr.title}`,
+                `- 链接: ${pr.html_url}`,
+                `- Contributor: ${pr.user?.login || 'unknown'}`,
+                `- 状态: ${pr.merged ? 'merged' : 'closed'}`,
+                `- 编号: #${pr.number}`,
+                `- Task GUID: ${taskGuid}`
+              ])
+
+              core.info(`Completed Feishu task ${taskGuid} for PR #${pr.number}`)
+              return
+            }
+
+            core.info(`No handling for action: ${context.payload.action}`)
