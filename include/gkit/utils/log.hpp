@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <fstream>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -102,6 +103,7 @@ namespace gkit::utils {
 
         std::mutex console_log_mutex {};
         std::mutex file_log_mutex {};
+        std::ofstream log_file_stream {};
 
         std::atomic<std::uint64_t> enqueued_count {0};
         std::atomic<std::uint64_t> dropped_full_count {0};

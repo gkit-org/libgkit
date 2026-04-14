@@ -1,11 +1,37 @@
 #include "gkit/utils/log.hpp"
 #include <chrono>
+#include <cstdlib>
 #include <cstdio>
 #include <thread>
 
 static constexpr const char* INFO_LOG_TIP    = "[INFO]";
 static constexpr const char* WARNING_LOG_TIP = "[WARNING]";
 static constexpr const char* ERROR_LOG_TIP   = "[ERROR]";
+
+namespace {
+    /** @brief Keep log level prefix formatting consistent across console and file sinks. */
+    auto level_tip(gkit::utils::Log::LogLevel level) -> const char* {
+        if (level == gkit::utils::Log::LogLevel::Info) {
+            return INFO_LOG_TIP;
+        }
+        if (level == gkit::utils::Log::LogLevel::Warning) {
+            return WARNING_LOG_TIP;
+        }
+        return ERROR_LOG_TIP;
+    }
+
+    /** @brief Expand leading "~/" to HOME so default path works cross-environment. */
+    auto resolve_log_path(const std::filesystem::path& configured_path) -> std::filesystem::path {
+        const auto configured = configured_path.string();
+        if (configured.rfind("~/", 0u) == 0u) {
+            if (const char* home = std::getenv("HOME")) {
+                return std::filesystem::path(home) / configured.substr(2);
+            }
+        }
+
+        return configured_path;
+    }
+} // namespace
 
 gkit::utils::Log::MpscBoundedQueue::MpscBoundedQueue(std::size_t requested_capacity)
     : capacity(1),
@@ -132,23 +158,35 @@ auto gkit::utils::Log::stats() const noexcept -> Stats {
 
 
 auto gkit::utils::Log::log_to_console(const std::string& msg, LogLevel level) -> void {
-    const char* log_tip = INFO_LOG_TIP;
-    if (level == LogLevel::Info) {
-        log_tip = INFO_LOG_TIP;
-    } else if (level == LogLevel::Warning) {
-        log_tip = WARNING_LOG_TIP;
-    } else if (level == LogLevel::Error) {
-        log_tip = ERROR_LOG_TIP;
-    }
-
+    const char* log_tip = level_tip(level);
     std::lock_guard<std::mutex> lck(console_log_mutex);
     std::printf("%s %s\n", log_tip, msg.c_str());
 }
 
 
 auto gkit::utils::Log::log_to_file(const std::string& msg, LogLevel level) -> void {
-    (void)msg;
-    (void)level;
+    std::lock_guard<std::mutex> lck(file_log_mutex);
+
+    if (!log_file_stream.is_open()) {
+        // Lazily open file sink on first use to avoid startup IO on logging-disabled paths.
+        const auto resolved_path = resolve_log_path(log_file_path);
+
+        std::error_code ec;
+        const auto parent = resolved_path.parent_path();
+        if (!parent.empty()) {
+            std::filesystem::create_directories(parent, ec);
+        }
+
+        // Open in append mode so logs survive restarts and preserve historical context.
+        log_file_stream.open(resolved_path, std::ios::out | std::ios::app);
+        if (!log_file_stream.is_open()) {
+            return;
+        }
+    }
+
+    // Flush each record in MVP for correctness-first behavior.
+    log_file_stream << level_tip(level) << ' ' << msg << '\n';
+    log_file_stream.flush();
 }
 
 
