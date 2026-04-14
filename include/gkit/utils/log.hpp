@@ -22,8 +22,8 @@ namespace gkit::utils {
 
         enum class LogFunction : std::uint8_t {
             Console = 1u,
-            File = 1u << 1u,
-            Both = Console | File
+            File    = 1u << 1u,
+            Both    = Console | File
         }; // enum class LogFunction
 
         struct Message {
