@@ -157,6 +157,22 @@ auto gkit::utils::Log::stats() const noexcept -> Stats {
 }
 
 
+auto gkit::utils::Log::set_log_file_path(const std::filesystem::path& path) -> bool {
+    if (path.empty()) {
+        return false;
+    }
+
+    std::lock_guard<std::mutex> lck(file_log_mutex);
+    log_file_path = path;
+
+    if (log_file_stream.is_open()) {
+        log_file_stream.close();
+    }
+
+    return true;
+}
+
+
 auto gkit::utils::Log::log_to_console(const std::string& msg, LogLevel level) -> void {
     const char* log_tip = level_tip(level);
     std::lock_guard<std::mutex> lck(console_log_mutex);

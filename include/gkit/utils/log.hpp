@@ -84,6 +84,11 @@ namespace gkit::utils {
         /** @brief Best-effort wait for queue drain. */
         auto flush(std::chrono::milliseconds timeout = std::chrono::milliseconds(100)) -> void;
         auto stats() const noexcept -> Stats;
+        /**
+         * @brief Set the new log file path and reopen the file stream.
+         * @param path new path
+         */
+        auto set_log_file_path(const std::filesystem::path& path) -> bool;
 
     private:
         // Must be power-of-two effective capacity for ring index masking.

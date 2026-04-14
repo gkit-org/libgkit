@@ -7,6 +7,7 @@ using gkit::utils::Log;
 
 auto main() -> int {
     auto& logger = Log::instance();
+    logger.set_log_file_path("./test_log.txt");
 
     constexpr int producer_count = 8;
     constexpr int logs_per_thread = 50000;
@@ -19,7 +20,7 @@ auto main() -> int {
                 logger.log({
                     .message = "T" + std::to_string(thread_id) + " log " + std::to_string(i),
                     .level = static_cast<Log::LogLevel>(i % 3),
-                    .functions = static_cast<std::uint8_t>(Log::LogFunction::Console)
+                    .functions = static_cast<std::uint8_t>(Log::LogFunction::Both)
                 });
             }
         });

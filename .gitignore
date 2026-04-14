@@ -4,6 +4,8 @@
 
 # temp files
 .cache/
+test_log.txt
+AGENTS.md
 
 # binary files
 bin/
