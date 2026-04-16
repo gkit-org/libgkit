@@ -81,8 +81,8 @@ auto main() -> int {
 
     // Test: colors constants
     std::cout << "\n=== Color Constants Test ===" << std::endl;
-    std::cout << "palette_16[0] = 0x" << std::hex << colors::palette_16[0] << std::dec << std::endl;
-    std::cout << "palette_16[7] = 0x" << std::hex << colors::palette_16[7] << std::dec << std::endl;
+    std::cout << "palette_8[0] = 0x" << std::hex << colors::palette_8[0] << std::dec << std::endl;
+    std::cout << "palette_8[7] = 0x" << std::hex << colors::palette_8[7] << std::dec << std::endl;
 
     std::cout << "\nAll tests completed!" << std::endl;
     return 0;
