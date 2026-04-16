@@ -36,7 +36,19 @@ auto main() -> int {
 
     // other methods
     std::cout << "vec1.length(): " << vec1.length() << std::endl;
-    vec1.normalization();
+    vec1 = vec1.normalize(vec1);
     std::cout << "vec1.normalization(): " << vec_str(vec1) << std::endl;
     std::cout << "vec1.length() after normalization: " << vec1.length() << std::endl;
+
+    // Type aliases test
+    gkit::math::Point3 origin{0.0f, 0.0f, 0.0f};
+    std::cout << "Point3 origin: " << vec_str(origin) << std::endl;
+
+    gkit::math::Color3 red{1.0f, 0.0f, 0.0f};
+    std::cout << "Color3 red: " << vec_str(red) << std::endl;
+
+    gkit::math::Color3 white{1.0f, 1.0f, 1.0f};
+    std::cout << "Color3 white: " << vec_str(white) << std::endl;
+    auto temp = white.to_rgb888();
+    std::cout << "white.to_rgb888: " << temp << std::endl;
 }
