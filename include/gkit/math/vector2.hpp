@@ -28,21 +28,22 @@ namespace gkit::math {
         inline auto operator-(const Vector2& other) noexcept -> Vector2 { return Vector2(this->x - other.x, this->y - other.y); }
         inline auto operator+=(const Vector2& other) noexcept -> const Vector2& { this->x += other.x; this->y += other.y; return *this; }
         inline auto operator-=(const Vector2& other) noexcept -> const Vector2& { this->x -= other.x; this->y -= other.y; return *this; }
-        inline auto operator*(float32 s) noexcept -> Vector2 { return Vector2(this->x * s, this->y * s); }
-        inline auto operator/(float32 s) noexcept -> Vector2 { return Vector2(this->x / s, this->y / s); }
+        inline auto operator*(float32 s) noexcept -> Vector2 { return {this->x * s, this->y * s}; }
+        inline auto operator/(float32 s) noexcept -> Vector2 { return {this->x / s, this->y / s}; }
         inline auto operator*=(float32 s) noexcept -> const Vector2& { this->x *= s; this->y *= s; return *this; }
         inline auto operator/=(float32 s) noexcept -> const Vector2& { this->x /= s; this->y /= s; return *this; }
-        inline auto operator-() noexcept -> Vector2 { return Vector2(-this->x, -this->y); }
+        inline auto operator-() noexcept -> Vector2 { return {-this->x, -this->y}; }
 
     public: // Properties
-        static auto zero() -> const Vector2&;
-        auto normalization() -> void;
-
-        inline constexpr auto length() const -> float32 { return std::sqrt(x * x + y * y); }
-        inline constexpr auto length_sq() const -> float32 { return x * x + y * y; }
+        [[nodiscard]] inline auto length() const -> float32 { return std::sqrt(x * x + y * y); }
+        [[nodiscard]] inline constexpr auto length_sq() const -> float32 { return x * x + y * y; }
         inline auto properties() -> auto { return std::tie(x, y); }
 
     public: // Operations
+        inline static auto zero() noexcept -> Vector2 { return {0.0f, 0.0f}; }
+        inline static auto one() noexcept -> Vector2 { return {1.0f, 1.0f}; }
+
+
         static inline auto dot(const Vector2& a, const Vector2& b) noexcept -> float32 { return a.x * b.x + a.y * b.y; }
         static inline auto cross(const Vector2& a, const Vector2& b) noexcept -> float32 { return a.x * b.y - a.y * b.x; }
         static inline auto normalize(const Vector2& v) noexcept -> Vector2 {

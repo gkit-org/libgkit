@@ -52,9 +52,9 @@ auto main() -> int {
     std::cout << "vec1.length_sq(): " << vec1.length_sq() << std::endl;
     assert(std::abs(vec1.length_sq() - 5.0f) < gkit::math::fp::EPSILON32);
 
-    // Normalization (instance method)
-    vec1.normalization();
-    std::cout << "vec1.normalization(): " << vec_str(vec1) << std::endl;
+    // Normalization
+    vec1 = Vector2::normalize(vec1);
+    std::cout << "vec1 after normalize: " << vec_str(vec1) << std::endl;
     assert(std::abs(vec1.length() - 1.0f) < gkit::math::fp::EPSILON32);
 
     // Reset for further tests

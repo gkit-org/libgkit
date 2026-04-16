@@ -25,33 +25,33 @@ namespace gkit::math {
         static constexpr T epsilon_v = std::numeric_limits<T>::epsilon();
     };
 
-    // Floating-point special values
+    // Floating-point special values using numeric_limits
     namespace fp {
-        constexpr float32 EPSILON32    = 1.1920928955078125e-07f;      // FLT_EPSILON
-        constexpr float32 MIN32     = 1.1754943508222875e-38f;   // FLT_MIN
-        constexpr float32 MAX32    = 3.4028234663852886e+38f;   // FLT_MAX
+        constexpr float32 EPSILON32 = std::numeric_limits<float32>::epsilon();
+        constexpr float32 MIN32     = std::numeric_limits<float32>::min();
+        constexpr float32 MAX32     = std::numeric_limits<float32>::max();
 
-        constexpr float64 EPSILON64 = 2.2204460492503131e-16;     // DBL_EPSILON
-        constexpr float64 MIN64    = 2.2250738585072014e-308;    // DBL_MIN
-        constexpr float64 MAX64    = 1.7976931348623157e+308;    // DBL_MAX
+        constexpr float64 EPSILON64 = std::numeric_limits<float64>::epsilon();
+        constexpr float64 MIN64     = std::numeric_limits<float64>::min();
+        constexpr float64 MAX64     = std::numeric_limits<float64>::max();
     } // namespace fp
 
-    // Integer special values
+    // Integer special values using numeric_limits
     namespace int_limits {
-        constexpr int8  I8_MIN  = -128;
-        constexpr int8  I8_MAX  = 127;
-        constexpr uint8 U8_MAX = 255;
+        constexpr int8  I8_MIN  = std::numeric_limits<int8>::min();
+        constexpr int8  I8_MAX  = std::numeric_limits<int8>::max();
+        constexpr uint8 U8_MAX = std::numeric_limits<uint8>::max();
 
-        constexpr int16 I16_MIN = -32768;
-        constexpr int16 I16_MAX = 32767;
-        constexpr uint16 U16_MAX = 65535;
+        constexpr int16 I16_MIN = std::numeric_limits<int16>::min();
+        constexpr int16 I16_MAX = std::numeric_limits<int16>::max();
+        constexpr uint16 U16_MAX = std::numeric_limits<uint16>::max();
 
-        constexpr int32 I32_MIN = -2147483647 - 1;
-        constexpr int32 I32_MAX = 2147483647;
-        constexpr uint32 U32_MAX = 4294967295u;
+        constexpr int32 I32_MIN = std::numeric_limits<int32>::min();
+        constexpr int32 I32_MAX = std::numeric_limits<int32>::max();
+        constexpr uint32 U32_MAX = std::numeric_limits<uint32>::max();
 
-        constexpr int64 I64_MIN = -9223372036854775807ll - 1;
-        constexpr int64 I64_MAX = 9223372036854775807ll;
-        constexpr uint64 U64_MAX = 18446744073709551615ull;
+        constexpr int64 I64_MIN = std::numeric_limits<int64>::min();
+        constexpr int64 I64_MAX = std::numeric_limits<int64>::max();
+        constexpr uint64 U64_MAX = std::numeric_limits<uint64>::max();
     } // namespace int_limits
 } // namespace gkit::math
