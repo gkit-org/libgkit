@@ -35,7 +35,8 @@ namespace gkit::math {
     public: // Properties
         [[nodiscard]] inline auto length() const -> float { return std::sqrt(x * x + y * y); }
         [[nodiscard]] inline constexpr auto length_sq() const -> float { return x * x + y * y; }
-        inline auto properties() -> auto { return std::tie(x, y); }
+        [[nodiscard]] inline auto properties() const -> auto { return std::tie(x, y); }
+        [[nodiscard]] inline auto properties() -> auto { return std::tie(x, y); }
 
     public: // Operations
         inline static auto zero() noexcept -> Vector2 { return {0.0f, 0.0f}; }

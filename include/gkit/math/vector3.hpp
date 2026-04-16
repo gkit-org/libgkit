@@ -2,7 +2,6 @@
 
 #include "gkit/math/vector2.hpp"
 
-#include <cstdint>
 #include <cmath>
 #include <tuple>
 
@@ -42,7 +41,8 @@ namespace gkit::math {
 
         [[nodiscard]] inline auto length() const -> float { return std::sqrt(x * x + y * y + z * z); }
         [[nodiscard]] inline constexpr auto length_sq() const -> float { return x * x + y * y + z * z; }
-        inline auto properties() -> auto { return std::tie(x, y, z); }
+        [[nodiscard]] inline auto properties() const -> auto { return std::tie(x, y, z); }
+        [[nodiscard]] inline auto properties() -> auto { return std::tie(x, y, z); }
 
     public: // Operations
         static inline auto dot(const Vector3& a, const Vector3& b) noexcept -> float { return a.x * b.x + a.y * b.y + a.z * b.z; }
@@ -86,33 +86,4 @@ namespace gkit::math {
             return {a.x * b.x, a.y * b.y, a.z * b.z};
         }
     }; // class Vector3
-
-    struct Point3 : Vector3 {
-        using Vector3::Vector3;
-    };
-    
-    struct Color3 : Vector3 {
-        using Vector3::Vector3;
-        
-        [[nodiscard]] inline auto to_rgb888() const noexcept -> uint32_t {
-            return (static_cast<uint32_t>(x * 255.0f) << 16) |
-                   (static_cast<uint32_t>(y * 255.0f) << 8) |
-                   (static_cast<uint32_t>(z * 255.0f));
-        }
-        
-        [[nodiscard]] inline auto to_rgba8888(float alpha = 1.0f) const noexcept -> uint32_t {
-            return (static_cast<uint32_t>(x * 255.0f) << 24) |
-                   (static_cast<uint32_t>(y * 255.0f) << 16) |
-                   (static_cast<uint32_t>(z * 255.0f) << 8) |
-                   (static_cast<uint32_t>(alpha * 255.0f));
-        }
-        
-        [[nodiscard]] static inline auto from_rgb888(uint32_t rgb) noexcept -> Color3 {
-            return {
-                ((rgb >> 16) & 0xFF) / 255.0f,
-                ((rgb >> 8) & 0xFF) / 255.0f,
-                (rgb & 0xFF) / 255.0f
-            };
-        }
-    };
 } // namespace gkit::math
