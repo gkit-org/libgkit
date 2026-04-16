@@ -62,15 +62,15 @@ auto main() -> int {
     Vector2 b(0.0f, 1.0f);
 
     // Dot product
-    gkit::math::float32 dot_result = Vector2::dot(a, b);
+    float dot_result = Vector2::dot(a, b);
     std::cout << "Vector2::dot(a, b): " << dot_result << std::endl;
     assert(dot_result == 0.0f);
 
-    gkit::math::float32 dot_a = Vector2::dot(a, a);
+    float dot_a = Vector2::dot(a, a);
     assert(dot_a == 1.0f);
 
     // Cross product
-    gkit::math::float32 cross_result = Vector2::cross(a, b);
+    float cross_result = Vector2::cross(a, b);
     std::cout << "Vector2::cross(a, b): " << cross_result << std::endl;
     assert(cross_result == 1.0f);
 
@@ -111,7 +111,7 @@ auto main() -> int {
     // Distance
     Vector2 p1(0.0f, 0.0f);
     Vector2 p2(3.0f, 4.0f);
-    gkit::math::float32 dist = Vector2::distance(p1, p2);
+    float dist = Vector2::distance(p1, p2);
     std::cout << "Vector2::distance((0,0), (3,4)): " << dist << std::endl;
     assert(std::abs(dist - 5.0f) < gkit::math::fp::EPSILON32);
 
