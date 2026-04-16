@@ -42,20 +42,20 @@ auto main() -> int {
 
     Vector2 vec_div = vec1 / 10.0f;
     std::cout << "vec1 / 10: " << vec_str(vec_div) << std::endl;
-    assert(std::abs(vec_div.x - 0.1f) < gkit::math::fp::EPSILON32 && std::abs(vec_div.y - 0.2f) < gkit::math::fp::EPSILON32);
+    assert(std::abs(vec_div.x - 0.1f) < gkit::math::EPSILON32 && std::abs(vec_div.y - 0.2f) < gkit::math::EPSILON32);
 
     // Length
     std::cout << "vec1.length(): " << vec1.length() << std::endl;
-    assert(std::abs(vec1.length() - std::sqrt(5.0f)) < gkit::math::fp::EPSILON32);
+    assert(std::abs(vec1.length() - std::sqrt(5.0f)) < gkit::math::EPSILON32);
 
     // Length squared
     std::cout << "vec1.length_sq(): " << vec1.length_sq() << std::endl;
-    assert(std::abs(vec1.length_sq() - 5.0f) < gkit::math::fp::EPSILON32);
+    assert(std::abs(vec1.length_sq() - 5.0f) < gkit::math::EPSILON32);
 
     // Normalization
     vec1 = Vector2::normalize(vec1);
     std::cout << "vec1 after normalize: " << vec_str(vec1) << std::endl;
-    assert(std::abs(vec1.length() - 1.0f) < gkit::math::fp::EPSILON32);
+    assert(std::abs(vec1.length() - 1.0f) < gkit::math::EPSILON32);
 
     // Reset for further tests
     Vector2 a(1.0f, 0.0f);
@@ -78,13 +78,13 @@ auto main() -> int {
     Vector2 c(3.0f, 4.0f);
     Vector2 c_normalized = Vector2::normalize(c);
     std::cout << "Vector2::normalize(3,4): " << vec_str(c_normalized) << std::endl;
-    assert(std::abs(c_normalized.length() - 1.0f) < gkit::math::fp::EPSILON32);
+    assert(std::abs(c_normalized.length() - 1.0f) < gkit::math::EPSILON32);
 
     // Lerp
     Vector2 lerp_result = Vector2::lerp(a, b, 0.5f);
     std::cout << "Vector2::lerp((1,0), (0,1), 0.5): " << vec_str(lerp_result) << std::endl;
-    assert(std::abs(lerp_result.x - 0.5f) < gkit::math::fp::EPSILON32);
-    assert(std::abs(lerp_result.y - 0.5f) < gkit::math::fp::EPSILON32);
+    assert(std::abs(lerp_result.x - 0.5f) < gkit::math::EPSILON32);
+    assert(std::abs(lerp_result.y - 0.5f) < gkit::math::EPSILON32);
 
     // Min / Max
     Vector2 min_result = Vector2::min(a, b);
@@ -105,15 +105,15 @@ auto main() -> int {
     Vector2 n(0.0f, 1.0f);  // Reflect off horizontal surface
     Vector2 reflect_result = Vector2::reflect(v, n);
     std::cout << "Vector2::reflect((1,1), (0,1)): " << vec_str(reflect_result) << std::endl;
-    assert(std::abs(reflect_result.x - 1.0f) < gkit::math::fp::EPSILON32);
-    assert(std::abs(reflect_result.y - (-1.0f)) < gkit::math::fp::EPSILON32);
+    assert(std::abs(reflect_result.x - 1.0f) < gkit::math::EPSILON32);
+    assert(std::abs(reflect_result.y - (-1.0f)) < gkit::math::EPSILON32);
 
     // Distance
     Vector2 p1(0.0f, 0.0f);
     Vector2 p2(3.0f, 4.0f);
     float dist = Vector2::distance(p1, p2);
     std::cout << "Vector2::distance((0,0), (3,4)): " << dist << std::endl;
-    assert(std::abs(dist - 5.0f) < gkit::math::fp::EPSILON32);
+    assert(std::abs(dist - 5.0f) < gkit::math::EPSILON32);
 
     std::cout << "\nAll tests passed!" << std::endl;
     return 0;

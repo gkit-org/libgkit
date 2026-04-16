@@ -14,17 +14,17 @@ int main() {
     assert(ScalarLimits<float>::epsilon_v > 0);
 
     // fp constants tests
-    assert(fp::EPSILON32 > 0);
-    assert(fp::MIN32 > 0);
-    assert(fp::MAX32 > fp::MIN32);
+    assert(EPSILON32 > 0);
+    assert(MIN32 > 0);
+    assert(MAX32 > MIN32);
 
     // integer constants tests
-    assert(int_limits::I8_MIN  == -128);
-    assert(int_limits::I8_MAX  == 127);
-    assert(int_limits::U8_MAX == 255);
-    assert(int_limits::I16_MIN == -32768);
-    assert(int_limits::I16_MAX == 32767);
-    assert(int_limits::U16_MAX == 65535);
+    assert(I8_MIN  == -128);
+    assert(I8_MAX  == 127);
+    assert(U8_MAX == 255);
+    assert(I16_MIN == -32768);
+    assert(I16_MAX == 32767);
+    assert(U16_MAX == 65535);
 
     // ====== Test constants.hpp ======
 
