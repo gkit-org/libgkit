@@ -45,13 +45,13 @@ namespace gkit::math {
         [[nodiscard]] inline constexpr auto length_sq() const -> float { return x * x + y * y + z * z + w * w; }
         [[nodiscard]] inline auto properties() const -> auto { return std::tie(x, y, z, w); }
         [[nodiscard]] inline auto properties() -> auto { return std::tie(x, y, z, w); }
-
+        [[nodiscard]] inline auto normalize() noexcept -> Vector4 {
+            float len = this->length();
+            return (len > 0.0f) ? Vector4{x / len, y / len, z / len, w / len} : Vector4{0.0f, 0.0f, 0.0f, 0.0f};
+        }
     public: // Operations
         static inline auto dot(const Vector4& a, const Vector4& b) noexcept -> float { return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w; }
-        static inline auto normalize(const Vector4& v) noexcept -> Vector4 {
-            float len = v.length();
-            return (len > 0.0f) ? Vector4{v.x / len, v.y / len, v.z / len, v.w / len} : Vector4{0.0f, 0.0f, 0.0f, 0.0f};
-        }
+
         static inline auto lerp(const Vector4& a, const Vector4& b, float t) noexcept -> Vector4 {
             return {a.x + t * (b.x - a.x), a.y + t * (b.y - a.y), a.z + t * (b.z - a.z), a.w + t * (b.w - a.w)};
         }
