@@ -43,9 +43,9 @@ namespace gkit::math {
         [[nodiscard]] inline constexpr auto length_sq() const -> float { return x * x + y * y + z * z; }
         [[nodiscard]] inline auto properties() const -> auto { return std::tie(x, y, z); }
         [[nodiscard]] inline auto properties() -> auto { return std::tie(x, y, z); }
-        [[nodiscard]] inline auto normalize() noexcept -> Vector3 {
+        [[nodiscard]] inline auto normalize() const noexcept -> Vector3 {
             float len = this->length();
-            return (len > 1e-6f) ? Vector3{x / len, y / len, z / len} : Vector3{0.0f, 0.0f, 0.0f};
+            return (len > NORMALIZE_TOLERANCE_32) ? Vector3{x / len, y / len, z / len} : Vector3{0.0f, 0.0f, 0.0f};
         }
     public: // Operations
         static inline auto dot(const Vector3& a, const Vector3& b) noexcept -> float { return a.x * b.x + a.y * b.y + a.z * b.z; }

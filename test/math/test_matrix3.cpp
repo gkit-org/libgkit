@@ -11,7 +11,7 @@ using gkit::math::Vector3;
 auto mat_str(const Matrix3& mat) -> std::string {
     auto [m00, m10, m20, m01, m11, m21, m02, m12, m22] = mat.properties();
     return std::format(
-        "|, {:.3f} {:.3f} {:.3f} |\n|  {:.3f} {:.3f} {:.3f} |\n|  {:.3f} {:.3f} {:.3f} |",
+        "|  {:.3f} {:.3f} {:.3f} |\n|  {:.3f} {:.3f} {:.3f} |\n|  {:.3f} {:.3f} {:.3f} |",
         m00, m10, m20, m01, m11, m21, m02, m12, m22
     );
 }

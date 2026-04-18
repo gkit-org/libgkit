@@ -105,7 +105,7 @@ namespace gkit::math {
         // Callers MUST check the return value before using it.
         static inline auto inverse(const Matrix3& mat) noexcept -> std::optional<Matrix3> {
             float det = determinant(mat);
-            if (std::abs(det) < 1e-6f) {
+            if (std::abs(det) < NORMALIZE_TOLERANCE_32) {
                 return std::nullopt; // Singular matrix, no inverse
             }
 
@@ -117,15 +117,16 @@ namespace gkit::math {
             float d = mat.m[0][1], e = mat.m[1][1], f = mat.m[2][1];
             float g = mat.m[0][2], h = mat.m[1][2], i = mat.m[2][2];
 
-            result.m[0][0] = (e * i - f * h) * inv_det;
-            result.m[0][1] = (c * h - b * i) * inv_det;
-            result.m[0][2] = (b * f - c * e) * inv_det;
-            result.m[1][0] = (f * g - d * i) * inv_det;
-            result.m[1][1] = (a * i - c * g) * inv_det;
-            result.m[1][2] = (c * d - a * f) * inv_det;
-            result.m[2][0] = (d * h - e * g) * inv_det;
-            result.m[2][1] = (b * g - a * h) * inv_det;
-            result.m[2][2] = (a * e - b * d) * inv_det;
+            // Adjuge matrix (column-major): result.m[col][row] = cofactor at (row, col)
+            result.m[0][0] = (e * i - f * h) * inv_det; // C00
+            result.m[1][0] = (c * h - b * i) * inv_det; // C01
+            result.m[2][0] = (b * f - c * e) * inv_det; // C02
+            result.m[0][1] = (f * g - d * i) * inv_det; // C10
+            result.m[1][1] = (a * i - c * g) * inv_det; // C11
+            result.m[2][1] = (c * d - a * f) * inv_det; // C12
+            result.m[0][2] = (d * h - e * g) * inv_det; // C20
+            result.m[1][2] = (b * g - a * h) * inv_det; // C21
+            result.m[2][2] = (a * e - b * d) * inv_det; // C22
 
             return result;
         }

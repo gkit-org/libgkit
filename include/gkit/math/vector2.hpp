@@ -1,5 +1,7 @@
 #pragma once
 
+#include "gkit/math/constants.hpp"
+
 #include <cmath>
 #include <tuple>
 
@@ -37,9 +39,9 @@ namespace gkit::math {
         [[nodiscard]] inline constexpr auto length_sq() const -> float { return x * x + y * y; }
         [[nodiscard]] inline auto properties() const -> auto { return std::tie(x, y); }
         [[nodiscard]] inline auto properties() -> auto { return std::tie(x, y); }
-        [[nodiscard]] inline auto normalize() noexcept -> Vector2 {
+        [[nodiscard]] inline auto normalize() const noexcept -> Vector2 {
             float len = this->length();
-            return (len > 0.0f) ? Vector2{x / len, y / len} : Vector2{0.0f, 0.0f};
+            return (len > NORMALIZE_TOLERANCE_32) ? Vector2{x / len, y / len} : Vector2{0.0f, 0.0f};
         }
     public: // Operations
         inline static auto zero() noexcept -> Vector2 { return {0.0f, 0.0f}; }
