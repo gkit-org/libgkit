@@ -1,5 +1,7 @@
 #pragma once
 
+#include "gkit/math/constants.hpp"
+
 #include <cmath>
 #include <tuple>
 
@@ -37,7 +39,10 @@ namespace gkit::math {
         [[nodiscard]] inline constexpr auto length_sq() const -> float { return x * x + y * y; }
         [[nodiscard]] inline auto properties() const -> auto { return std::tie(x, y); }
         [[nodiscard]] inline auto properties() -> auto { return std::tie(x, y); }
-
+        [[nodiscard]] inline auto normalize() const noexcept -> Vector2 {
+            float len = this->length();
+            return (len > NORMALIZE_TOLERANCE_32) ? Vector2{x / len, y / len} : Vector2{0.0f, 0.0f};
+        }
     public: // Operations
         inline static auto zero() noexcept -> Vector2 { return {0.0f, 0.0f}; }
         inline static auto one() noexcept -> Vector2 { return {1.0f, 1.0f}; }
@@ -45,10 +50,7 @@ namespace gkit::math {
 
         static inline auto dot(const Vector2& a, const Vector2& b) noexcept -> float { return a.x * b.x + a.y * b.y; }
         static inline auto cross(const Vector2& a, const Vector2& b) noexcept -> float { return a.x * b.y - a.y * b.x; }
-        static inline auto normalize(const Vector2& v) noexcept -> Vector2 {
-            float len = v.length();
-            return (len > 0.0f) ? Vector2{v.x / len, v.y / len} : Vector2{0.0f, 0.0f};
-        }
+
         static inline auto lerp(const Vector2& a, const Vector2& b, float t) noexcept -> Vector2 {
             return {a.x + t * (b.x - a.x), a.y + t * (b.y - a.y)};
         }

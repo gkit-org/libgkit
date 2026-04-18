@@ -43,7 +43,10 @@ namespace gkit::math {
         [[nodiscard]] inline constexpr auto length_sq() const -> float { return x * x + y * y + z * z; }
         [[nodiscard]] inline auto properties() const -> auto { return std::tie(x, y, z); }
         [[nodiscard]] inline auto properties() -> auto { return std::tie(x, y, z); }
-
+        [[nodiscard]] inline auto normalize() const noexcept -> Vector3 {
+            float len = this->length();
+            return (len > NORMALIZE_TOLERANCE_32) ? Vector3{x / len, y / len, z / len} : Vector3{0.0f, 0.0f, 0.0f};
+        }
     public: // Operations
         static inline auto dot(const Vector3& a, const Vector3& b) noexcept -> float { return a.x * b.x + a.y * b.y + a.z * b.z; }
         static inline auto cross(const Vector3& a, const Vector3& b) noexcept -> Vector3 {
@@ -53,10 +56,7 @@ namespace gkit::math {
                 a.x * b.y - a.y * b.x
             };
         }
-        static inline auto normalize(const Vector3& v) noexcept -> Vector3 {
-            float len = v.length();
-            return (len > 0.0f) ? Vector3{v.x / len, v.y / len, v.z / len} : Vector3{0.0f, 0.0f, 0.0f};
-        }
+
         static inline auto lerp(const Vector3& a, const Vector3& b, float t) noexcept -> Vector3 {
             return {a.x + t * (b.x - a.x), a.y + t * (b.y - a.y), a.z + t * (b.z - a.z)};
         }

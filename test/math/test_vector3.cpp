@@ -36,7 +36,7 @@ auto main() -> int {
 
     // other methods
     std::cout << "vec1.length(): " << vec1.length() << std::endl;
-    vec1 = gkit::math::Vector3::normalize(vec1);
+    vec1 = vec1.normalize();
     std::cout << "normalize(vec1): " << vec_str(vec1) << std::endl;
     std::cout << "vec1.length() after normalize: " << vec1.length() << std::endl;
 }

@@ -78,4 +78,7 @@ namespace gkit::math {
     constexpr int NEG_ONE_I32       = -1;
     constexpr int TWO_I32           = 2;
     constexpr int THREE_I32         = 3;
+
+    // Normalization tolerance to avoid division by near-zero vectors
+    constexpr float NORMALIZE_TOLERANCE_32 = 1e-6f;
 } // namespace gkit::math

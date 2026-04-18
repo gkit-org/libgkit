@@ -53,7 +53,7 @@ auto main() -> int {
     assert(std::abs(vec1.length_sq() - 5.0f) < gkit::math::EPSILON32);
 
     // Normalization
-    vec1 = Vector2::normalize(vec1);
+    vec1 = vec1.normalize();
     std::cout << "vec1 after normalize: " << vec_str(vec1) << std::endl;
     assert(std::abs(vec1.length() - 1.0f) < gkit::math::EPSILON32);
 
@@ -74,10 +74,10 @@ auto main() -> int {
     std::cout << "Vector2::cross(a, b): " << cross_result << std::endl;
     assert(cross_result == 1.0f);
 
-    // Normalize (static)
+    // Normalize
     Vector2 c(3.0f, 4.0f);
-    Vector2 c_normalized = Vector2::normalize(c);
-    std::cout << "Vector2::normalize(3,4): " << vec_str(c_normalized) << std::endl;
+    Vector2 c_normalized = c.normalize();
+    std::cout << "Vector2.normalize(3,4): " << vec_str(c_normalized) << std::endl;
     assert(std::abs(c_normalized.length() - 1.0f) < gkit::math::EPSILON32);
 
     // Lerp
