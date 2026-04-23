@@ -5,6 +5,7 @@ set (MATH_SRC
     "./vector3.cpp"
     "./vector4.cpp"
     "./color.cpp"
+    "./matrix4.cpp"
 )
 
 add_library(${GKIT_MATH} OBJECT ${MATH_SRC})

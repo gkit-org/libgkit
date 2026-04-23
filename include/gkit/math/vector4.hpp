@@ -27,8 +27,8 @@ namespace gkit::math {
         inline auto operator=(const Vector4& other) noexcept -> Vector4& = default;
         inline auto operator==(const Vector4& other) noexcept -> bool { return (this->x == other.x) && (this->y == other.y) && (this->z == other.z) && (this->w == other.w); }
         inline auto operator!=(const Vector4& other) noexcept -> bool { return (this->x != other.x) || (this->y != other.y) || (this->z != other.z) || (this->w != other.w); }
-        inline auto operator+(const Vector4& other) noexcept -> Vector4 { return Vector4(this->x + other.x, this->y + other.y, this->z + other.z, this->w + other.w); }
-        inline auto operator-(const Vector4& other) noexcept -> Vector4 { return Vector4(this->x - other.x, this->y - other.y, this->z - other.z, this->w - other.w); }
+        inline auto operator+(const Vector4& other) const noexcept -> Vector4 { return Vector4(this->x + other.x, this->y + other.y, this->z + other.z, this->w + other.w); }
+        inline auto operator-(const Vector4& other) const noexcept -> Vector4 { return Vector4(this->x - other.x, this->y - other.y, this->z - other.z, this->w - other.w); }
         inline auto operator+=(const Vector4& other) noexcept -> const Vector4& { this->x += other.x; this->y += other.y; this->z += other.z; this->w += other.w; return *this; }
         inline auto operator-=(const Vector4& other) noexcept -> const Vector4& { this->x -= other.x; this->y -= other.y; this->z -= other.z; this->w -= other.w; return *this; }
         inline auto operator*(float s) noexcept -> Vector4 { return {this->x * s, this->y * s, this->z * s, this->w * s}; }
