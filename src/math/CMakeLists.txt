@@ -5,6 +5,7 @@ set (MATH_SRC
     "./vector3.cpp"
     "./vector4.cpp"
     "./color.cpp"
+    "./matrix3.cpp"
     "./matrix4.cpp"
 )
 
