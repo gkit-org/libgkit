@@ -9,12 +9,7 @@
 #include <format>
 #include <iostream>
 
-using gkit::math::Matrix4;
-using gkit::math::Matrix3;
-using gkit::math::Vector3;
-using gkit::math::Vector4;
-
-auto mat4_str(const Matrix4& mat) -> std::string {
+auto mat4_str(const gkit::math::Matrix4& mat) -> std::string {
     std::ostringstream oss;
     oss << std::fixed << std::setprecision(3);
     for (int row = 0; row < 4; ++row) {
@@ -27,7 +22,7 @@ auto mat4_str(const Matrix4& mat) -> std::string {
     return oss.str();
 }
 
-auto mat3_str(const Matrix3& mat) -> std::string {
+auto mat3_str(const gkit::math::Matrix3& mat) -> std::string {
     std::ostringstream oss;
     oss << std::fixed << std::setprecision(3);
     for (int row = 0; row < 3; ++row) {
@@ -40,15 +35,16 @@ auto mat3_str(const Matrix3& mat) -> std::string {
     return oss.str();
 }
 
-auto vec3_str(const Vector3& v) -> std::string {
+auto vec3_str(const gkit::math::Vector3& v) -> std::string {
     return std::format("({:.3f}, {:.3f}, {:.3f})", v.x, v.y, v.z);
 }
 
-auto vec4_str(const Vector4& v) -> std::string {
+auto vec4_str(const gkit::math::Vector4& v) -> std::string {
     return std::format("({:.3f}, {:.3f}, {:.3f}, {:.3f})", v.x, v.y, v.z, v.w);
 }
 
 auto main() -> int {
+    using namespace gkit::math;
     std::cout << "=== Matrix4 Test ===" << std::endl;
 
     // Test 1: Identity matrix

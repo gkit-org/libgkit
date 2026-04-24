@@ -28,30 +28,9 @@ namespace gkit::math {
 
         Matrix4() noexcept = default;
 
-        // Construct diagonal matrix
-        explicit Matrix4(float diag) noexcept {
-            m[0][0] = diag; m[1][1] = diag; m[2][2] = diag; m[3][3] = diag;
-        }
-
-        // Construct from Mat3 (fills last row/column as identity)
-        explicit Matrix4(const Matrix3& mat3) noexcept {
-            for (int col = 0; col < 3; ++col) {
-                for (int row = 0; row < 3; ++row) {
-                    m[col][row] = mat3.m[col][row];
-                }
-            }
-            m[0][3] = 0.0f; m[1][3] = 0.0f; m[2][3] = 0.0f; m[3][3] = 1.0f;
-            m[3][0] = 0.0f; m[3][1] = 0.0f; m[3][2] = 0.0f;
-        }
-
-        // Construct from 16 floats (column-major)
-        explicit Matrix4(const float* data) noexcept {
-            for (int col = 0; col < 4; ++col) {
-                for (int row = 0; row < 4; ++row) {
-                    m[col][row] = data[col * 4 + row];
-                }
-            }
-        }
+        explicit Matrix4(float diag) noexcept;
+        explicit Matrix4(const Matrix3& mat3) noexcept;
+        explicit Matrix4(const float* data) noexcept;
 
     public: // Static factory methods
         static inline auto identity() noexcept -> Matrix4 {
@@ -515,33 +494,7 @@ namespace gkit::math {
             };
         }
 
-        // Decompose into translation, rotation, scale
-        static inline auto decompose(const Matrix4& mat) noexcept -> std::tuple<Vector3, Matrix3, Vector3> {
-            Vector3 translation = get_translation(mat);
-            Vector3 scale = get_scale(mat);
-
-            Matrix3 rotation;
-            // Column 0 / scale.x
-            if (scale.x > NORMALIZE_TOLERANCE_32) {
-                rotation.m[0][0] = mat.m[0][0] / scale.x;
-                rotation.m[0][1] = mat.m[0][1] / scale.x;
-                rotation.m[0][2] = mat.m[0][2] / scale.x;
-            }
-            // Column 1 / scale.y
-            if (scale.y > NORMALIZE_TOLERANCE_32) {
-                rotation.m[1][0] = mat.m[1][0] / scale.y;
-                rotation.m[1][1] = mat.m[1][1] / scale.y;
-                rotation.m[1][2] = mat.m[1][2] / scale.y;
-            }
-            // Column 2 / scale.z
-            if (scale.z > NORMALIZE_TOLERANCE_32) {
-                rotation.m[2][0] = mat.m[2][0] / scale.z;
-                rotation.m[2][1] = mat.m[2][1] / scale.z;
-                rotation.m[2][2] = mat.m[2][2] / scale.z;
-            }
-
-            return {translation, rotation, scale};
-        }
+        static auto decompose(const Matrix4& mat) noexcept -> std::tuple<Vector3, Matrix3, Vector3>;
 
     public: // Property checks
         // Check if affine (last row is [0,0,0,1])
