@@ -210,11 +210,11 @@ namespace gkit::math {
     }
 
     auto Matrix4::perspective(float fov, float aspect, float near, float far) noexcept -> Matrix4 {
-        float tan_half_fov = 1.0f / std::tan(fov * 0.5f);
+        float f = 1.0f / std::tan(fov * 0.5f);
 
         Matrix4 result = zero();
-        result.m[0][0] = 1.0f / (aspect * tan_half_fov);
-        result.m[1][1] = 1.0f / tan_half_fov;
+        result.m[0][0] = f / aspect;
+        result.m[1][1] = f;
         result.m[2][2] = -(far + near) / (far - near);
         result.m[2][3] = -1.0f;
         result.m[3][2] = -(2.0f * far * near) / (far - near);
@@ -305,6 +305,10 @@ namespace gkit::math {
     auto Matrix4::transform_point(const Matrix4& m, const Vector3& point) noexcept -> Vector3 {
         Vector4 p{point.x, point.y, point.z, 1.0f};
         Vector4 result = m * p;
+        float w = result.w;
+        if (std::abs(w) > NORMALIZE_TOLERANCE_32) {
+            return {result.x / w, result.y / w, result.z / w};
+        }
         return {result.x, result.y, result.z};
     }
 
@@ -370,17 +374,19 @@ namespace gkit::math {
         result.m[0][0] = 1.0f - 2.0f * a * a;
         result.m[0][1] = -2.0f * a * b;
         result.m[0][2] = -2.0f * a * c;
-        result.m[0][3] = -2.0f * a * d;
 
         result.m[1][0] = -2.0f * a * b;
         result.m[1][1] = 1.0f - 2.0f * b * b;
         result.m[1][2] = -2.0f * b * c;
-        result.m[1][3] = -2.0f * b * d;
 
         result.m[2][0] = -2.0f * a * c;
         result.m[2][1] = -2.0f * b * c;
         result.m[2][2] = 1.0f - 2.0f * c * c;
-        result.m[2][3] = -2.0f * c * d;
+
+        result.m[3][0] = -2.0f * a * d;
+        result.m[3][1] = -2.0f * b * d;
+        result.m[3][2] = -2.0f * c * d;
+        result.m[3][3] = 1.0f;
 
         return result;
     }
@@ -426,7 +432,7 @@ namespace gkit::math {
         Matrix4 result;
         for (int row = 0; row < 4; ++row) {
             for (int col = 0; col < 4; ++col) {
-                result.m[col][row] = cofactor(mat, row, col);
+                result.m[col][row] = cofactor(mat, col, row);
             }
         }
         return result;
@@ -466,30 +472,27 @@ namespace gkit::math {
         return q.normalize();
     }
 
-    auto Matrix4::set_quaternion(Matrix4& mat, const Vector4& quat) noexcept -> Matrix4 {
+    auto Matrix4::set_quaternion(Matrix4& mat, const Vector4& quat) noexcept -> Matrix4& {
         Vector4 q = quat.normalize();
         float xx = q.x * q.x, yy = q.y * q.y, zz = q.z * q.z;
         float xy = q.x * q.y, xz = q.x * q.z, yz = q.y * q.z;
         float wx = q.w * q.x, wy = q.w * q.y, wz = q.w * q.z;
 
-        Matrix3 rot;
-        rot.m[0][0] = 1.0f - 2.0f * (yy + zz);
-        rot.m[1][0] = 2.0f * (xy + wz);
-        rot.m[2][0] = 2.0f * (xz - wy);
-        rot.m[0][1] = 2.0f * (xy - wz);
-        rot.m[1][1] = 1.0f - 2.0f * (xx + zz);
-        rot.m[2][1] = 2.0f * (yz + wx);
-        rot.m[0][2] = 2.0f * (xz + wy);
-        rot.m[1][2] = 2.0f * (yz - wx);
-        rot.m[2][2] = 1.0f - 2.0f * (xx + yy);
-
-        Matrix4 result = mat;
         for (int col = 0; col < 3; ++col) {
             for (int row = 0; row < 3; ++row) {
-                result.m[col][row] = rot.m[col][row];
+                mat.m[col][row] = 0.0f;
             }
         }
-        return result;
+        mat.m[0][0] = 1.0f - 2.0f * (yy + zz);
+        mat.m[1][0] = 2.0f * (xy + wz);
+        mat.m[2][0] = 2.0f * (xz - wy);
+        mat.m[0][1] = 2.0f * (xy - wz);
+        mat.m[1][1] = 1.0f - 2.0f * (xx + zz);
+        mat.m[2][1] = 2.0f * (yz + wx);
+        mat.m[0][2] = 2.0f * (xz + wy);
+        mat.m[1][2] = 2.0f * (yz - wx);
+        mat.m[2][2] = 1.0f - 2.0f * (xx + yy);
+        return mat;
     }
 
     auto Matrix4::is_affine() const noexcept -> bool {

@@ -21,7 +21,7 @@ namespace gkit::math {
                           {0.0f, 0.0f, 0.0f} };
 
     public: // Constructors
-        // Default constructor (uninitialized)
+        // Default constructor (zero-initialized via in-class member initializer)
         Matrix3() noexcept = default;
 
         // Create identity matrix (1.0 on diagonal)

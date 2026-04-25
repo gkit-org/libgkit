@@ -26,7 +26,7 @@ namespace gkit::math {
                           {0.0f, 0.0f, 0.0f, 0.0f} };
 
     public: // Constructors
-        // Default constructor (uninitialized)
+        // Default constructor (zero-initialized)
         Matrix4() noexcept = default;
 
         // Create diagonal matrix (value on diagonal, zeros elsewhere)
@@ -94,13 +94,14 @@ namespace gkit::math {
         // Reflection matrix across a plane (plane = {nx, ny, nz, d} where n is normal, d is distance from origin)
         static auto reflect(const Vector4& plane) noexcept -> Matrix4;
 
-        // Shear transformation matrix (shear_factors = {x_y, x_z, y_x, ...})
-        // Shear mapping: (x, y, z) -> (x + shear_factors.x*y + shear_factors.y*z, ...)
+        // Shear transformation matrix using three shear components:
+        // shear_factors = {x_y, x_z, y_x}
+        // Shear mapping: (x, y, z) -> (x + shear_factors.z*y, y + shear_factors.x*x, z + shear_factors.y*x)
         static inline auto shear(const Vector3& shear_factors) noexcept -> Matrix4 {
             Matrix4 result = identity();
             result.m[1][0] = shear_factors.x;
             result.m[2][0] = shear_factors.y;
-            result.m[3][0] = shear_factors.z;
+            result.m[0][1] = shear_factors.z;
             return result;
         }
 
@@ -196,7 +197,7 @@ namespace gkit::math {
         static auto adjugate(const Matrix4& mat) noexcept -> Matrix4;
 
     public: // Transformation operations
-        // Transform point (applies translation and rotation/scale)
+        // Transform point (applies translation and rotation/scale, performs perspective division)
         static auto transform_point(const Matrix4& m, const Vector3& point) noexcept -> Vector3;
 
         // Transform direction vector (ignores translation)
@@ -268,7 +269,7 @@ namespace gkit::math {
         static auto get_quaternion(const Matrix4& mat) noexcept -> Vector4;
 
         // Set rotation matrix from quaternion
-        static auto set_quaternion(Matrix4& mat, const Vector4& quat) noexcept -> Matrix4;
+        static auto set_quaternion(Matrix4& mat, const Vector4& quat) noexcept -> Matrix4&;
 
     public: // Output
         // Convert to string representation
