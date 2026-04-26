@@ -6,3 +6,6 @@
 	path = third_party/sdl_image
 	url = https://github.com/libsdl-org/SDL_image.git
 	branch = release-3.4.x
+[submodule "third_party/glad"]
+	path = third_party/glad
+	url = https://github.com/Dav1dde/glad.git
