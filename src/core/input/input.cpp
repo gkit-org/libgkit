@@ -111,7 +111,7 @@ auto gkit::Input::is_action_pressed(std::string name) -> bool {
             }
 
             return gkit::input::Cache::instance().modifiers_pressed(chord.modifiers);
-        }
+        } 
 
         return false;
     }, action.chord);

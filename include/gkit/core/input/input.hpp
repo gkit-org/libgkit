@@ -13,7 +13,9 @@ namespace gkit {
         virtual ~Input() = default;
 
     public:
-        // action related
+        /********************************
+         * action related
+         *******************************/
         auto register_action(const input::Action& action) -> void;
         auto unregister_action(const std::string& name) -> void; 
 
@@ -22,19 +24,25 @@ namespace gkit {
         auto is_action_just_pressed(std::string name)  -> bool;
         auto is_action_just_released(std::string name) -> bool;
 
-        // key related
+        /********************************
+         * key related
+         *******************************/
         auto is_key_pressed(gkit::input::Key key)  -> bool;
         auto is_key_released(gkit::input::Key key) -> bool;
         auto is_key_just_pressed(gkit::input::Key key)  -> bool;
         auto is_key_just_released(gkit::input::Key key) -> bool;
 
-        // mouse button related
+        /********************************
+         * mouse button related
+         *******************************/
         auto is_mouse_button_pressed(input::MouseButton button)  -> bool;
         auto is_mouse_button_released(input::MouseButton button) -> bool;
         auto is_mouse_button_just_pressed(input::MouseButton button)  -> bool;
         auto is_mouse_button_just_released(input::MouseButton button) -> bool;
 
-        // gamepad button related
+        /********************************
+         * gamepad button related
+         *******************************/
         auto is_gamepad_button_pressed(int button)  -> bool;
         auto is_gamepad_button_released(int button) -> bool;
         auto is_gamepad_button_just_pressed(int button)  -> bool;
