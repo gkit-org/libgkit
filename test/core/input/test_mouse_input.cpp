@@ -1,4 +1,3 @@
-#include "gkit/math/vector2.hpp"
 #include "min_window_for_input_test.hpp"
 #include <cstdio>
 #include <gkit/core/input/input.hpp>
