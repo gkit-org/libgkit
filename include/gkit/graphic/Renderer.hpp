@@ -3,8 +3,8 @@
 #include "opengl/IndexBuffer.hpp"
 #include "opengl/VertexArray.hpp"
 #include "Shader.hpp"
-#include "openGL/StateManager.hpp"
-#include "openGL/config.hpp"
+#include "opengl/StateManager.hpp"
+#include "opengl/config.hpp"
 
 #include <cstdint>
 
