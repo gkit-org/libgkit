@@ -40,6 +40,9 @@ namespace gkit {
         [[nodiscard]] auto is_mouse_button_just_pressed(input::MouseButton button)  -> bool;
         [[nodiscard]] auto is_mouse_button_just_released(input::MouseButton button) -> bool;
 
+        [[nodiscard]] auto get_mouse_move()  -> input::MouseMove;
+        [[nodiscard]] auto get_mouse_wheel() -> input::MouseWheel;
+
         /********************************
          * gamepad button related
          *******************************/

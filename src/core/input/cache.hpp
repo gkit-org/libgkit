@@ -44,7 +44,6 @@ namespace gkit::input {
     private:
         struct KeyCache_t {
             std::unordered_set<Key> pressed_keys;
-            /* std::uint32_t pressed_modifiers; */
         };
 
         struct MouseCache_t {
@@ -59,7 +58,7 @@ namespace gkit::input {
 
         struct CacheData {
             KeyCache_t key_cache = {};
-            MouseCache_t mouse_button_cache = {};
+            MouseCache_t mouse_cache = {};
             GamepadCache_t gamepad_button_cache = {};
         };
 
