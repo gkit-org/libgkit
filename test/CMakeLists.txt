@@ -3,6 +3,7 @@ set (EXECUTABLE_OUTPUT_PATH ${BIN_FOLDER}/test)
 include_directories(${CMAKE_SOURCE_DIR}/src)
 include_directories(${CMAKE_SOURCE_DIR}/include)
 include_directories(${CMAKE_SOURCE_DIR}/src/c_abi/include)
+include_directories(${CMAKE_SOURCE_DIR}/third_party/glad_generated/include)
 
 # build core tests
 file(GLOB_RECURSE TEST_SRCS
@@ -10,12 +11,18 @@ file(GLOB_RECURSE TEST_SRCS
     "math/*.cpp"
     "utils/*.cpp"
     "resource/*.cpp"
+    "graphic/*.cpp"
 )
 
 foreach(test_file ${TEST_SRCS})
     get_filename_component(FILE_BASE_NAME ${test_file} NAME_WE)
     add_executable(${FILE_BASE_NAME} ${test_file})
-    target_link_libraries(${FILE_BASE_NAME} PRIVATE gkit_static)
+    target_link_libraries(${FILE_BASE_NAME} PRIVATE
+        gkit_static
+        SDL3::SDL3-static
+        SDL3_image::SDL3_image-static
+        glad_gl
+    )
 endforeach()
 
 # build c-abi tests
