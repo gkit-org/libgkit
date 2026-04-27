@@ -1,4 +1,5 @@
 #include "min_window_for_input_test.hpp"
+#include <cstdio>
 #include <gkit/core/input/input.hpp>
 #include <misc/sdl_event_dispatcher.hpp>
 #include <cstdint>
@@ -56,6 +57,19 @@ auto main() -> int {
         if (input.is_key_just_pressed(gkit::input::Key::Q)) {
             std::cout << "Key Q is just pressed, exiting..." << std::endl;
             break;
+        }
+
+        auto mouse_move = input.get_mouse_move();
+        auto mouse_wheel = input.get_mouse_wheel();
+
+        if (mouse_move != gkit::math::Vector2::zero()) {
+            auto [x, y] = mouse_move.properties();
+            std::printf("Mouse move x = %f, y = %f\n", x, y);
+        }
+
+        if (mouse_wheel != gkit::math::Vector2::zero()) {
+            auto [x, y] = mouse_wheel.properties();
+            std::printf("Mouse wheel x = %f, y = %f\n", x, y);
         }
     }
 }

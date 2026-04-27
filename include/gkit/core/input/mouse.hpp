@@ -21,5 +21,6 @@ namespace gkit::input {
         uint32_t modifiers;
     }; // struct MouseChord
 
+    using MouseMove = gkit::math::Vector2;
     using MouseWheel = gkit::math::Vector2;
 } // namespace gkit::input

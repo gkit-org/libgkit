@@ -1,5 +1,6 @@
 #include "gkit/core/input/input.hpp"
 #include "core/input/cache.hpp"
+#include "gkit/core/input/mouse.hpp"
 #include <SDL3/SDL.h>
 #include <type_traits>
 #include <variant>
@@ -44,34 +45,47 @@ auto gkit::Input::is_key_just_pressed(gkit::input::Key key) -> bool {
 }
 
 
+auto gkit::Input::is_key_just_released(gkit::input::Key key) -> bool {
+    auto& cache = gkit::input::Cache::instance();
+    return !cache.current_cache.key_cache.pressed_keys.contains(key) &&
+           cache.previous_cache.key_cache.pressed_keys.contains(key);
+}
+
+
 auto gkit::Input::is_mouse_button_pressed(input::MouseButton button) -> bool {
-    return gkit::input::Cache::instance().current_cache.mouse_button_cache.pressed_buttons.contains(button);
+    return gkit::input::Cache::instance().current_cache.mouse_cache.pressed_buttons.contains(button);
 }
 
 
 auto gkit::Input::is_mouse_button_released(input::MouseButton button) -> bool {
-    return !gkit::input::Cache::instance().current_cache.mouse_button_cache.pressed_buttons.contains(button);
+    return !gkit::input::Cache::instance().current_cache.mouse_cache.pressed_buttons.contains(button);
 }
 
 
 auto gkit::Input::is_mouse_button_just_pressed(input::MouseButton button) -> bool {
     auto& cache = gkit::input::Cache::instance();
-    return cache.current_cache.mouse_button_cache.pressed_buttons.contains(button) &&
-         !cache.previous_cache.mouse_button_cache.pressed_buttons.contains(button);
+    return cache.current_cache.mouse_cache.pressed_buttons.contains(button) &&
+         !cache.previous_cache.mouse_cache.pressed_buttons.contains(button);
 }
 
 
 auto gkit::Input::is_mouse_button_just_released(input::MouseButton button) -> bool {
     auto& cache = gkit::input::Cache::instance();
-    return !cache.current_cache.mouse_button_cache.pressed_buttons.contains(button) &&
-           cache.previous_cache.mouse_button_cache.pressed_buttons.contains(button);
+    return !cache.current_cache.mouse_cache.pressed_buttons.contains(button) &&
+           cache.previous_cache.mouse_cache.pressed_buttons.contains(button);
 }
 
 
-auto gkit::Input::is_key_just_released(gkit::input::Key key) -> bool {
+auto gkit::Input::get_mouse_move() -> input::MouseMove {
     auto& cache = gkit::input::Cache::instance();
-    return !cache.current_cache.key_cache.pressed_keys.contains(key) &&
-           cache.previous_cache.key_cache.pressed_keys.contains(key);
+    return cache.current_cache.mouse_cache.offset;
+}
+
+
+
+auto gkit::Input::get_mouse_wheel() -> input::MouseWheel {
+    auto& cache = gkit::input::Cache::instance();
+    return cache.current_cache.mouse_cache.wheel;
 }
 
 
@@ -111,7 +125,7 @@ auto gkit::Input::is_action_pressed(std::string name) -> bool {
             }
 
             return gkit::input::Cache::instance().modifiers_pressed(chord.modifiers);
-        }
+        } 
 
         return false;
     }, action.chord);

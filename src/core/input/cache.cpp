@@ -33,13 +33,13 @@ gkit::input::Cache::Cache() {
     event_dispatcher.register_event_handler(SDL_EVENT_MOUSE_BUTTON_DOWN, [this](const SDL_Event& e) {
         auto& frame = this->current_cache;
         auto button = static_cast<MouseButton>(e.button.button);
-        frame.mouse_button_cache.pressed_buttons.insert(button);
+        frame.mouse_cache.pressed_buttons.insert(button);
     });
 
     event_dispatcher.register_event_handler(SDL_EVENT_MOUSE_BUTTON_UP, [this](const SDL_Event& e) {
         auto& frame = this->current_cache;
         auto button = static_cast<MouseButton>(e.button.button);
-        frame.mouse_button_cache.pressed_buttons.erase(button);
+        frame.mouse_cache.pressed_buttons.erase(button);
     });
 
 
@@ -48,7 +48,7 @@ gkit::input::Cache::Cache() {
      ************************************/
     event_dispatcher.register_event_handler(SDL_EVENT_MOUSE_MOTION, [this](const SDL_Event& e) {
         auto& frame = this->current_cache;
-        auto [x, y] = frame.mouse_button_cache.offset.properties();
+        auto [x, y] = frame.mouse_cache.offset.properties();
         x = e.motion.xrel;
         y = e.motion.yrel;
     });
@@ -56,7 +56,7 @@ gkit::input::Cache::Cache() {
 
     event_dispatcher.register_event_handler(SDL_EVENT_MOUSE_WHEEL, [this](const SDL_Event& e) {
         auto& frame = this->current_cache;
-        auto [x, y] = frame.mouse_button_cache.wheel.properties();
+        auto [x, y] = frame.mouse_cache.wheel.properties();
         x = e.wheel.x;
         y = e.wheel.y;
     });
