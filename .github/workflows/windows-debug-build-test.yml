@@ -25,7 +25,7 @@ jobs:
 
     - name: Show build information
       run: |
-        echo "🚀 Starting build for gkit project"
+        echo "Starting build for gkit project"
         echo "Platform: ${{ runner.os }}"
         echo "Workflow: ${{ github.workflow }}"
         echo "Repository: ${{ github.repository }}"
@@ -33,9 +33,13 @@ jobs:
 
     - name: Install dependencies
       run: |
-        echo "📦 Installing Windows dependencies..."
-        
-        echo "✅ Windows dependencies installed successfully"
+        echo "Installing Windows dependencies..."
+
+        # Install Python dependencies for GLAD generator
+        python -m pip install --upgrade pip
+        pip install jinja2
+
+        echo "Windows dependencies installed successfully"
 
     - name: Configure MSVC
       if: ${{ matrix.preset == 'windows-x86_64-msvc-debug' || matrix.preset == 'windows-x86_64-msvc-noabi-debug' }}
