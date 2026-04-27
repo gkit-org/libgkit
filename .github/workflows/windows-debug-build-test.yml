@@ -37,7 +37,10 @@ jobs:
 
         # Install Python dependencies for GLAD generator
         python -m pip install --upgrade pip
-        pip install jinja2
+        python -m pip install jinja2
+
+        # Verify installation
+        python -c "import jinja2; print('jinja2 version:', jinja2.__version__)"
 
         echo "Windows dependencies installed successfully"
 
