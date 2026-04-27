@@ -4,28 +4,23 @@
 #include "gkit/math/vector4.hpp"
 #include "gkit/math/matrix4.hpp"
 
-gkit::graphic::opengl::VertexArray::VertexArray()
-{
+gkit::graphic::opengl::VertexArray::VertexArray() {
 	glGenVertexArrays(1, &m_RendererID);
 }
 
-gkit::graphic::opengl::VertexArray::~VertexArray()
-{
-	if(m_RendererID != 0)
-	{
+gkit::graphic::opengl::VertexArray::~VertexArray() {
+	if(m_RendererID != 0) {
 		glDeleteVertexArrays(1, &m_RendererID);
 		m_RendererID = 0;
 	}
 }
 
-auto gkit::graphic::opengl::VertexArray::AddBuffer(const buffer::VertexBuffer& vb, const buffer::VertexBufferLayout& layout) -> void
-{
+auto gkit::graphic::opengl::VertexArray::AddBuffer(const buffer::VertexBuffer& vb, const buffer::VertexBufferLayout& layout) -> void {
 	Bind();
 	vb.Bind();
 	const auto& elements = layout.GetElements();
 	size_t offset = 0;
-	for (int i = 0; i < elements.size(); i++)
-	{
+	for (int i = 0; i < elements.size(); i++) {
 		const auto& element = elements[i];
 		glEnableVertexAttribArray(i);
 		//Specify the reading rules for the incoming data, the meaning of the arrays (coordinates, textures, etc.)
@@ -37,15 +32,13 @@ auto gkit::graphic::opengl::VertexArray::AddBuffer(const buffer::VertexBuffer& v
 
 }
 
-auto gkit::graphic::opengl::VertexArray::AddInstanceBuffer(const buffer::VertexBuffer& vb) -> void
-{
+auto gkit::graphic::opengl::VertexArray::AddInstanceBuffer(const buffer::VertexBuffer& vb) -> void {
     Bind();
 	vb.Bind();
 
     size_t vec4Size = sizeof(gkit::math::Vector4);
 
-    for (uint32_t i = 0; i < 4; i++)
-    {
+    for (uint32_t i = 0; i < 4; i++) {
         glEnableVertexAttribArray(m_AttribIndex);
         glVertexAttribPointer(
 			m_AttribIndex,
@@ -60,12 +53,10 @@ auto gkit::graphic::opengl::VertexArray::AddInstanceBuffer(const buffer::VertexB
     }
 }
 
-auto gkit::graphic::opengl::VertexArray::Bind() const -> void
-{
+auto gkit::graphic::opengl::VertexArray::Bind() const -> void {
 	glBindVertexArray(m_RendererID);
 }
 
-auto gkit::graphic::opengl::VertexArray::Unbind() const -> void
-{
+auto gkit::graphic::opengl::VertexArray::Unbind() const -> void {
 	glBindVertexArray(0);
 }

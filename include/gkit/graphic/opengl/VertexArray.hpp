@@ -13,40 +13,39 @@
  */
 namespace gkit::graphic::opengl {
 	
-	class VertexArray
-	{
+	class VertexArray {
 	public:
 		/**
-		* @brief Construct a vertex array object
-		*/
+		 * @brief Construct a vertex array object
+		 */
 		VertexArray();
 
 		/**
-		* @brief Destructor - deletes the vertex array object
-		*/
+		 * @brief Destructor - deletes the vertex array object
+		 */
 		~VertexArray();
 
 		/**
-		* @brief Add a vertex buffer with a layout
-		* @param vb Vertex buffer to add
-		* @param layout Layout defining the vertex attributes
-		*/
+		 * @brief Add a vertex buffer with a layout
+		 * @param vb Vertex buffer to add
+		 * @param layout Layout defining the vertex attributes
+		 */
 		auto AddBuffer(const buffer::VertexBuffer& vb, const buffer::VertexBufferLayout& layout) -> void;
 
 		/**
-		* @brief Add an instance buffer for instanced rendering
-		* @param vb Vertex buffer containing instance data
-		*/
+		 * @brief Add an instance buffer for instanced rendering
+		 * @param vb Vertex buffer containing instance data
+		 */
 		auto AddInstanceBuffer(const buffer::VertexBuffer& vb) -> void;
 
 		/**
-		* @brief Bind this vertex array to the current OpenGL context
-		*/
+		 * @brief Bind this vertex array to the current OpenGL context
+		 */
 		auto Bind() const -> void;
 
 		/**
-		* @brief Unbind this vertex array from the current OpenGL context
-		*/
+		 * @brief Unbind this vertex array from the current OpenGL context
+		 */
 		auto Unbind() const -> void;
 
 	private:

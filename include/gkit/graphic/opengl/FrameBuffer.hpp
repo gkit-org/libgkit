@@ -12,21 +12,22 @@
  */
 namespace gkit::graphic::opengl::buffer{
 
-	class FrameBuffer
-	{
+	class FrameBuffer {
 	private:
-		uint32_t m_RendererID;  ///< OpenGL framebuffer ID
-		unsigned int fb_height, fb_width;	///< frameBuffer size
-		unsigned int leftX = 0, bottomY = 0;	///< left bottom coordinate of frameBuffer
+		uint32_t       m_RendererID;              ///< OpenGL framebuffer ID
+		unsigned int   fb_height;                 ///< Framebuffer height
+		unsigned int   fb_width;                  ///< Framebuffer width
+		unsigned int   leftX      = 0;            ///< Left coordinate
+		unsigned int   bottomY    = 0;            ///< Bottom coordinate
 	public:
 		/**
-		* @brief Construct a framebuffer
-		*/
+		 * @brief Construct a framebuffer
+		 */
 		FrameBuffer(int width, int height);
 
 		/**
-		* @brief Destructor - deletes the framebuffer
-		*/
+		 * @brief Destructor - deletes the framebuffer
+		 */
 		~FrameBuffer();
 
 		/**
@@ -42,7 +43,7 @@ namespace gkit::graphic::opengl::buffer{
 		 */
 		auto DetachColorTexture(int slot = 0) -> void;
 
-			/**
+		/**
 		 * @brief Attach a depth-stencil renderbuffer to this framebuffer
 		 * @param rbo The renderbuffer to attach as depth-stencil attachment
 		 */
@@ -54,11 +55,11 @@ namespace gkit::graphic::opengl::buffer{
 		auto DetachDepthStencil() -> void;
 		
 		/**
-		* @brief Check if the framebuffer is complete
-		*
-		* Verifies that the framebuffer is properly configured and ready for rendering.
-		* Prints status message to console.
-		*/
+		 * @brief Check if the framebuffer is complete
+		 *
+		 * Verifies that the framebuffer is properly configured and ready for rendering.
+		 * Prints status message to console.
+		 */
 		auto Check() -> void;
 
 		/**
@@ -85,16 +86,15 @@ namespace gkit::graphic::opengl::buffer{
 		auto SetViewport(int x, int y, int width, int height) -> void;
 
 		/**
-		* @brief Bind this framebuffer as the rendering target
-		*/
+		 * @brief Bind this framebuffer as the rendering target
+		 */
 		auto Bind() const -> void;
 
 		/**
-		* @brief Unbind this framebuffer, revert to default framebuffer (screen)
-		*/
+		 * @brief Unbind this framebuffer, revert to default framebuffer (screen)
+		 */
 		auto Unbind() const -> void;
-
 
 	};
 
-}
+} // namespace gkit::graphic::opengl::buffer

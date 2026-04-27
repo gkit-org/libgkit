@@ -11,32 +11,31 @@
  */
 namespace gkit::graphic::opengl::buffer{
 
-	class RenderBuffer
-	{
+	class RenderBuffer {
 	private:
 		uint32_t m_RendererID;  ///< OpenGL renderbuffer ID
 	public:
 		/**
-		* @brief Construct a renderbuffer
-		*/
+		 * @brief Construct a renderbuffer
+		 */
 		RenderBuffer(int width, int height);
 
 		/**
-		* @brief Destructor - deletes the renderbuffer
-		*/
+		 * @brief Destructor - deletes the renderbuffer
+		 */
 		~RenderBuffer();
 
 		/**
-		* @brief Bind this renderbuffer to the current OpenGL context
-		*/
+		 * @brief Bind this renderbuffer to the current OpenGL context
+		 */
 		auto Bind() const -> void;
 
 		/**
-		* @brief Unbind this renderbuffer from the current OpenGL context
-		*/
+		 * @brief Unbind this renderbuffer from the current OpenGL context
+		 */
 		auto Unbind() const -> void;
 
 		[[nodiscard]] auto GetRenderID() const -> uint32_t { return m_RendererID; }
 	};
 
-}
+} // namespace gkit::graphic::opengl::buffer

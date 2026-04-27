@@ -7,143 +7,184 @@
 namespace gkit::graphic::opengl {
 
 	/**
-	* @brief OpenGL state manager with dirty flag mechanism
-	*
-	* Tracks current OpenGL state and only calls GL functions when state actually changes.
-	* Uses singleton pattern for global access.
-	*/
-	class StateManager
-	{
+	 * @brief OpenGL state manager with dirty flag mechanism
+	 *
+	 * Tracks current OpenGL state and only calls GL functions when state actually changes.
+	 * Uses singleton pattern for global access.
+	 */
+	class StateManager {
 	public:
-		// Delete copy/move
 		StateManager(const StateManager&) = delete;
 		StateManager& operator=(const StateManager&) = delete;
 		StateManager(StateManager&&) = delete;
 		StateManager& operator=(StateManager&&) = delete;
 
-		/// @brief Get singleton instance
+		/** @brief Get singleton instance */
 		static auto Get() -> StateManager&;
 
-		// ============================================
-		// State Structures
-		// ============================================
-
+		/** @brief Depth test state structure */
 		struct DepthState {
-			bool enabled = false;
-			CompareFunc compareFunc = CompareFunc::Less;
-			bool writeMask = true;
+			bool        enabled      = false;                     ///< Whether depth test is enabled
+			CompareFunc compareFunc  = CompareFunc::Less;         ///< Depth comparison function
+			bool        writeMask    = true;                      ///< Depth write mask
 		};
 
+		/** @brief Blend state structure */
 		struct BlendState {
-			bool enabled = false;
-			BlendFunc srcRGB = BlendFunc::One;
-			BlendFunc dstRGB = BlendFunc::Zero;
-			BlendFunc srcAlpha = BlendFunc::One;
-			BlendFunc dstAlpha = BlendFunc::Zero;
-			BlendEquation equation = BlendEquation::Add;
+			bool          enabled    = false;                     ///< Whether blending is enabled
+			BlendFunc     srcRGB     = BlendFunc::One;            ///< Source RGB blend factor
+			BlendFunc     dstRGB     = BlendFunc::Zero;           ///< Destination RGB blend factor
+			BlendFunc     srcAlpha   = BlendFunc::One;            ///< Source alpha blend factor
+			BlendFunc     dstAlpha   = BlendFunc::Zero;           ///< Destination alpha blend factor
+			BlendEquation equation   = BlendEquation::Add;       ///< Blend equation
 		};
 
+		/** @brief Cull face state structure */
 		struct CullFaceState {
-			bool enabled = false;
-			CullFaceMode mode = CullFaceMode::Back;
-			FrontFace frontFace = FrontFace::CounterClockwise;
+			bool          enabled    = false;                      ///< Whether cull face is enabled
+			CullFaceMode  mode       = CullFaceMode::Back;         ///< Cull face mode
+			FrontFace     frontFace  = FrontFace::CounterClockwise;///< Front face winding order
 		};
 
+		/** @brief Stencil state structure */
 		struct StencilState {
-			bool enabled = false;
-			CompareFunc compareFunc = CompareFunc::Always;
-			uint32_t ref = 0;
-			uint32_t readMask = 0xFF;
-			uint32_t writeMask = 0xFF;
-			StencilOp fail = StencilOp::Keep;
-			StencilOp zFail = StencilOp::Keep;
-			StencilOp zPass = StencilOp::Keep;
+			bool        enabled      = false;                     ///< Whether stencil test is enabled
+			CompareFunc compareFunc  = CompareFunc::Always;       ///< Stencil comparison function
+			uint32_t    ref          = 0;                         ///< Stencil reference value
+			uint32_t    readMask     = 0xFF;                      ///< Stencil read mask
+			uint32_t    writeMask    = 0xFF;                      ///< Stencil write mask
+			StencilOp   fail         = StencilOp::Keep;           ///< Stencil fail operation
+			StencilOp   zFail        = StencilOp::Keep;           ///< Stencil depth fail operation
+			StencilOp   zPass        = StencilOp::Keep;           ///< Stencil depth pass operation
 		};
 
-		// ============================================
-		// State Setters
-		// ============================================
-
-		/// @brief Enable or disable depth testing
+		/** @brief Enable or disable depth testing
+		 *  @param enable True to enable depth testing, false to disable
+		 */
 		auto SetDepthTest(bool enable) -> void;
 
-		/// @brief Set depth test compare function
+		/** @brief Set depth test compare function
+		 *  @param func The comparison function to use
+		 */
 		auto SetDepthFunc(CompareFunc func) -> void;
 
-		/// @brief Set depth write mask
+		/** @brief Set depth write mask
+		 *  @param write True to enable depth writes, false to disable
+		 */
 		auto SetDepthMask(bool write) -> void;
 
-		/// @brief Enable or disable blending
+		/** @brief Enable or disable blending
+		 *  @param enable True to enable blending, false to disable
+		 */
 		auto SetBlend(bool enable) -> void;
 
-		/// @brief Set blend factors for RGB and Alpha
+		/** @brief Set blend factors for RGB and Alpha
+		 *  @param srcRGB Source RGB blend factor
+		 *  @param dstRGB Destination RGB blend factor
+		 *  @param srcAlpha Source alpha blend factor
+		 *  @param dstAlpha Destination alpha blend factor
+		 */
 		auto SetBlendFunc(BlendFunc srcRGB, BlendFunc dstRGB, BlendFunc srcAlpha, BlendFunc dstAlpha) -> void;
 
-		/// @brief Set blend equation
+		/** @brief Set blend equation
+		 *  @param equation The blend equation to use
+		 */
 		auto SetBlendEquation(BlendEquation equation) -> void;
 
-		/// @brief Enable or disable face culling
+		/** @brief Enable or disable face culling
+		 *  @param enable True to enable culling, false to disable
+		 */
 		auto SetCullFace(bool enable) -> void;
 
-		/// @brief Set cull face mode
+		/** @brief Set cull face mode
+		 *  @param mode The cull face mode
+		 */
 		auto SetCullFaceMode(CullFaceMode mode) -> void;
 
-		/// @brief Set front face winding order
+		/** @brief Set front face winding order
+		 *  @param frontFace The front face winding order
+		 */
 		auto SetFrontFace(FrontFace frontFace) -> void;
 
-		/// @brief Enable or disable stencil testing
+		/** @brief Enable or disable stencil testing
+		 *  @param enable True to enable stencil testing, false to disable
+		 */
 		auto SetStencilTest(bool enable) -> void;
 
-		/// @brief Set stencil state
+		/** @brief Set stencil state
+		 *  @param func Stencil comparison function
+		 *  @param ref Stencil reference value
+		 *  @param mask Stencil read mask
+		 */
 		auto SetStencil(CompareFunc func, uint32_t ref, uint32_t mask) -> void;
 
-		/// @brief Set stencil write mask
+		/** @brief Set stencil write mask
+		 *  @param mask Stencil write mask
+		 */
 		auto SetStencilMask(uint32_t mask) -> void;
 
-		/// @brief Set stencil operations
+		/** @brief Set stencil operations
+		 *  @param fail Operation when stencil test fails
+		 *  @param zFail Operation when stencil passes but depth fails
+		 *  @param zPass Operation when both stencil and depth pass
+		 */
 		auto SetStencilOp(StencilOp fail, StencilOp zFail, StencilOp zPass) -> void;
 
-		// ============================================
-		// Batch Apply
-		// ============================================
-
-		/// @brief Apply all dirty states to OpenGL
+		/** @brief Apply all dirty states to OpenGL */
 		auto Apply() -> void;
 
-		/// @brief Force apply all states (ignore dirty flags)
+		/** @brief Force apply all states (ignore dirty flags) */
 		auto ForceApplyAll() -> void;
 
-		// ============================================
-		// Getters (for querying current state)
-		// ============================================
-
+		/** @brief Get current depth state
+		 *  @return Reference to the current depth state
+		 */
 		[[nodiscard]] auto GetDepthState() const -> const DepthState&;
+
+		/** @brief Get current blend state
+		 *  @return Reference to the current blend state
+		 */
 		[[nodiscard]] auto GetBlendState() const -> const BlendState&;
+
+		/** @brief Get current cull face state
+		 *  @return Reference to the current cull face state
+		 */
 		[[nodiscard]] auto GetCullFaceState() const -> const CullFaceState&;
+
+		/** @brief Get current stencil state
+		 *  @return Reference to the current stencil state
+		 */
 		[[nodiscard]] auto GetStencilState() const -> const StencilState&;
 
 	private:
+		/** @brief Private constructor for singleton pattern */
 		StateManager() = default;
 
-		/// @brief Apply a single state if dirty
+		/** @brief Apply depth state if dirty */
 		auto ApplyDepthState() -> void;
+
+		/** @brief Apply blend state if dirty */
 		auto ApplyBlendState() -> void;
+
+		/** @brief Apply cull face state if dirty */
 		auto ApplyCullFaceState() -> void;
+
+		/** @brief Apply stencil state if dirty */
 		auto ApplyStencilState() -> void;
 
-		// Current (shadow) states
-		DepthState m_DepthState;
-		BlendState m_BlendState;
-		CullFaceState m_CullFaceState;
-		StencilState m_StencilState;
+		/// @brief Current shadow states
+		DepthState    m_DepthState;      ///< Current depth state
+		BlendState    m_BlendState;      ///< Current blend state
+		CullFaceState m_CullFaceState;   ///< Current cull face state
+		StencilState  m_StencilState;    ///< Current stencil state
 
-		// Dirty flags (bitmask)
-		uint32_t m_DirtyFlags = 0;
+		/// @brief Dirty flags bitmask
+		uint32_t m_DirtyFlags = 0;       ///< Bitmask indicating which states need updating
 
-		static constexpr uint32_t DIRTY_DEPTH   = 1 << 0;
-		static constexpr uint32_t DIRTY_BLEND   = 1 << 1;
-		static constexpr uint32_t DIRTY_CULL    = 1 << 2;
-		static constexpr uint32_t DIRTY_STENCIL = 1 << 3;
+		static constexpr uint32_t DIRTY_DEPTH   = 1 << 0;    ///< Dirty flag for depth state
+		static constexpr uint32_t DIRTY_BLEND   = 1 << 1;    ///< Dirty flag for blend state
+		static constexpr uint32_t DIRTY_CULL    = 1 << 2;    ///< Dirty flag for cull face state
+		static constexpr uint32_t DIRTY_STENCIL = 1 << 3;    ///< Dirty flag for stencil state
 	};
 
 } // namespace gkit::graphic::opengl
