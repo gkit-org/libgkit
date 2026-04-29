@@ -2,11 +2,6 @@
 
 namespace gkit::graphic::opengl {
 
-	auto StateManager::Get() -> StateManager& {
-		static StateManager instance;
-		return instance;
-	}
-
 	auto StateManager::SetDepthTest(bool enable) -> void {
 		if (m_DepthState.enabled != enable) {
 			m_DepthState.enabled = enable;

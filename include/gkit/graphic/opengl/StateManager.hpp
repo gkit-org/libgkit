@@ -1,6 +1,7 @@
 #pragma once
 
 #include "config.hpp"
+#include "gkit/core/scene/singleton.hpp"
 
 #include <cstdint>
 
@@ -12,15 +13,12 @@ namespace gkit::graphic::opengl {
 	 * Tracks current OpenGL state and only calls GL functions when state actually changes.
 	 * Uses singleton pattern for global access.
 	 */
-	class StateManager {
+	class StateManager : public core::scene::Singleton<StateManager> {
 	public:
-		StateManager(const StateManager&) = delete;
-		StateManager& operator=(const StateManager&) = delete;
-		StateManager(StateManager&&) = delete;
-		StateManager& operator=(StateManager&&) = delete;
+		StateManager() = default;
 
 		/** @brief Get singleton instance */
-		static auto Get() -> StateManager&;
+		static auto Get() -> StateManager& { return instance(); }
 
 		/** @brief Depth test state structure */
 		struct DepthState {
@@ -157,9 +155,6 @@ namespace gkit::graphic::opengl {
 		[[nodiscard]] auto GetStencilState() const -> const StencilState&;
 
 	private:
-		/** @brief Private constructor for singleton pattern */
-		StateManager() = default;
-
 		/** @brief Apply depth state if dirty */
 		auto ApplyDepthState() -> void;
 

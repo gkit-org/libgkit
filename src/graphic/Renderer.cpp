@@ -1,20 +1,10 @@
 #include "gkit/graphic/opengl/VertexArray.hpp"
 #include "gkit/graphic/opengl/IndexBuffer.hpp"
-#include "gkit/graphic/opengl/StateManager.hpp"
 #include "gkit/graphic/opengl/config.hpp"
 #include "gkit/graphic/Renderer.hpp"
 #include "gkit/graphic/Shader.hpp"
 
 #include <glad/gl.h>
-
-auto gkit::graphic::Renderer::Get() -> Renderer& {
-	static Renderer instance;
-	return instance;
-}
-
-auto gkit::graphic::Renderer::GetStateManager() -> opengl::StateManager& {
-	return opengl::StateManager::Get();
-}
 
 auto gkit::graphic::Renderer::Clear(opengl::ClearFlags flags) const -> void {
     auto mask = static_cast<GLbitfield>(flags);

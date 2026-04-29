@@ -3,8 +3,8 @@
 #include "opengl/IndexBuffer.hpp"
 #include "opengl/VertexArray.hpp"
 #include "Shader.hpp"
-#include "opengl/StateManager.hpp"
 #include "opengl/config.hpp"
+#include "gkit/core/scene/singleton.hpp"
 
 #include <cstdint>
 
@@ -16,15 +16,12 @@
  */
 namespace gkit::graphic {
 
-	class Renderer {
+	class Renderer : public core::scene::Singleton<Renderer> {
 	public:
-		Renderer(const Renderer&) = delete;
-		Renderer& operator=(const Renderer&) = delete;
-		Renderer(Renderer&&) = delete;
-		Renderer& operator=(Renderer&&) = delete;
+		Renderer() = default;
 
-		/// @brief Get singleton instance
-		static auto Get() -> Renderer&;
+		/** @brief Get singleton instance */
+		static auto Get() -> Renderer& { return instance(); }
 
 		/**
 		 * @brief Clear the current framebuffer
@@ -57,12 +54,6 @@ namespace gkit::graphic {
 		 * @param instanceCount Number of instances to draw
 		 */
 		auto DrawInstance(const gkit::graphic::opengl::VertexArray& va, const gkit::graphic::opengl::buffer::IndexBuffer& ib, const gkit::graphic::Shader& shader, uint32_t instanceCount) const -> void;
-
-		/// @brief Get state manager reference
-		[[nodiscard]] auto GetStateManager() -> opengl::StateManager&;
-
-	private:
-		Renderer() = default;
 	};
 
 } // namespace gkit::graphic

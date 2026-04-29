@@ -1,3 +1,4 @@
+#include "gkit/graphic/opengl/StateManager.hpp"
 #include "gkit/graphic/opengl/VertexArray.hpp"
 #include "gkit/graphic/opengl/IndexBuffer.hpp"
 #include "gkit/graphic/opengl/FrameBuffer.hpp"
@@ -133,7 +134,7 @@ int main(int argc, char* argv[])
         #pragma endregion
 
         auto& renderer = gkit::graphic::Renderer::Get();
-        auto& stateManager = renderer.GetStateManager();
+        auto& stateManager = gkit::graphic::opengl::StateManager::Get();
         
         // Main loop
         bool quit = false;
