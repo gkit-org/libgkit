@@ -40,13 +40,6 @@ namespace gkit::graphic {
 		auto Draw(const gkit::graphic::opengl::VertexArray& va, const gkit::graphic::opengl::buffer::IndexBuffer& ib, const gkit::graphic::Shader& shader) const -> void;
 
 		/**
-		 * @brief Draw non-indexed geometry
-		 * @param va Vertex array containing vertex data
-		 * @param shader Shader program to use for rendering
-		 */
-		auto Draw(const gkit::graphic::opengl::VertexArray& va, const gkit::graphic::Shader& shader) const -> void;
-
-		/**
 		 * @brief Draw multiple instances of indexed geometry
 		 * @param va Vertex array containing vertex data
 		 * @param ib Index buffer containing indices
