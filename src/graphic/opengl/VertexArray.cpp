@@ -40,7 +40,7 @@ auto gkit::graphic::opengl::VertexArray::AddBuffer(const buffer::VertexBuffer& v
 	size_t offset = 0;
 	for (int i = 0; i < elements.size(); i++) {
 		const auto& element = elements[i];
-		glEnableVertexAttribArray(i);
+		glEnableVertexAttribArray(m_AttribIndex);
 		//Specify the reading rules for the incoming data, the meaning of the arrays (coordinates, textures, etc.)
 		glVertexAttribPointer(m_AttribIndex, element.count, element.type,
 			element.normalized, layout.GetStride(), (const void*)offset);
