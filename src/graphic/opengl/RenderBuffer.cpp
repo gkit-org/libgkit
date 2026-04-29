@@ -16,6 +16,22 @@ gkit::graphic::opengl::buffer::RenderBuffer::~RenderBuffer() {
 	}
 }
 
+gkit::graphic::opengl::buffer::RenderBuffer::RenderBuffer(RenderBuffer&& other) noexcept
+    : m_RendererID(other.m_RendererID) {
+    other.m_RendererID = 0;
+}
+
+auto gkit::graphic::opengl::buffer::RenderBuffer::operator=(RenderBuffer&& other) noexcept -> RenderBuffer& {
+    if (this != &other) {
+        if (m_RendererID != 0) {
+            glDeleteRenderbuffers(1, &m_RendererID);
+        }
+        m_RendererID = other.m_RendererID;
+        other.m_RendererID = 0;
+    }
+    return *this;
+}
+
 auto gkit::graphic::opengl::buffer::RenderBuffer::Bind() const -> void {
 	glBindRenderbuffer(GL_RENDERBUFFER, m_RendererID);
 }

@@ -10,6 +10,21 @@ namespace gkit::graphic::opengl::buffer{
 	* are drawn, enabling efficient rendering of indexed geometry.
 	*/
 	class IndexBuffer {
+	public:
+		IndexBuffer(const IndexBuffer&) = delete;
+		IndexBuffer& operator=(const IndexBuffer&) = delete;
+
+		/** @brief Move constructor - transfers ownership of GL buffer
+		 *  @param other Source object to move from (will be invalidated)
+		 */
+		IndexBuffer(IndexBuffer&& other) noexcept;
+
+		/** @brief Move assignment - transfers ownership of GL buffer
+		 *  @param other Source object to move from (will be invalidated)
+		 *  @note Releases any existing GL buffer before taking ownership
+		 */
+		auto operator=(IndexBuffer&& other) noexcept -> IndexBuffer&;
+
 	private:
 		uint32_t m_RendererID;	///< OpenGL buffer ID
 		uint32_t m_Count;     	///< Number of indices in the buffer

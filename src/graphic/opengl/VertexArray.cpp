@@ -15,6 +15,24 @@ gkit::graphic::opengl::VertexArray::~VertexArray() {
 	}
 }
 
+gkit::graphic::opengl::VertexArray::VertexArray(VertexArray&& other) noexcept
+    : m_RendererID(other.m_RendererID)
+    , m_AttribIndex(other.m_AttribIndex) {
+    other.m_RendererID = 0;
+}
+
+auto gkit::graphic::opengl::VertexArray::operator=(VertexArray&& other) noexcept -> VertexArray& {
+    if (this != &other) {
+        if (m_RendererID != 0) {
+            glDeleteVertexArrays(1, &m_RendererID);
+        }
+        m_RendererID = other.m_RendererID;
+        m_AttribIndex = other.m_AttribIndex;
+        other.m_RendererID = 0;
+    }
+    return *this;
+}
+
 auto gkit::graphic::opengl::VertexArray::AddBuffer(const buffer::VertexBuffer& vb, const buffer::VertexBufferLayout& layout) -> void {
 	Bind();
 	vb.Bind();

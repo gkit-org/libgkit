@@ -10,7 +10,7 @@ namespace gkit::graphic{
 	 */
 	struct ShaderProgramSource {
 		std::string vertexShader;    ///< Vertex shader source code
-		std::string fragmenShader;   ///< Fragment shader source code (note: typo in original)
+		std::string fragmentShader;   ///< Fragment shader source code (note: typo in original)
 	};
 
 	/**
@@ -20,6 +20,21 @@ namespace gkit::graphic{
 	 * including uniform variable manipulation.
 	 */
 	class Shader {
+	public:
+		Shader(const Shader&) = delete;
+		Shader& operator=(const Shader&) = delete;
+
+		/** @brief Move constructor - transfers ownership of GL shader program
+		 *  @param other Source object to move from (will be invalidated)
+		 */
+		Shader(Shader&& other) noexcept;
+
+		/** @brief Move assignment - transfers ownership of GL shader program
+		 *  @param other Source object to move from (will be invalidated)
+		 *  @note Releases any existing GL shader program before taking ownership
+		 */
+		auto operator=(Shader&& other) noexcept -> Shader&;
+
 	private:
 		uint32_t m_RendererID;                                  ///< OpenGL shader program ID
 		std::string m_FilePath;                                   ///< Path to the shader file

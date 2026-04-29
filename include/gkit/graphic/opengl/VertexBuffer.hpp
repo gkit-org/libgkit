@@ -11,6 +11,21 @@
 namespace gkit::graphic::opengl::buffer {
 
 	class VertexBuffer {
+	public:
+		VertexBuffer(const VertexBuffer&) = delete;
+		VertexBuffer& operator=(const VertexBuffer&) = delete;
+
+		/** @brief Move constructor - transfers ownership of GL buffer
+		 *  @param other Source object to move from (will be invalidated)
+		 */
+		VertexBuffer(VertexBuffer&& other) noexcept;
+
+		/** @brief Move assignment - transfers ownership of GL buffer
+		 *  @param other Source object to move from (will be invalidated)
+		 *  @note Releases any existing GL buffer before taking ownership
+		 */
+		auto operator=(VertexBuffer&& other) noexcept -> VertexBuffer&;
+
 	private:
 		uint32_t m_RendererID;                      ///< OpenGL buffer ID
 		uint32_t m_Size;                            ///< Buffer size in bytes

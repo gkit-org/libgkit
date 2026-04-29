@@ -17,6 +17,30 @@ gkit::graphic::opengl::buffer::FrameBuffer::~FrameBuffer() {
 	}
 }
 
+gkit::graphic::opengl::buffer::FrameBuffer::FrameBuffer(FrameBuffer&& other) noexcept
+    : m_RendererID(other.m_RendererID)
+    , fb_height(other.fb_height)
+    , fb_width(other.fb_width)
+    , leftX(other.leftX)
+    , bottomY(other.bottomY) {
+    other.m_RendererID = 0;
+}
+
+auto gkit::graphic::opengl::buffer::FrameBuffer::operator=(FrameBuffer&& other) noexcept -> FrameBuffer& {
+    if (this != &other) {
+        if (m_RendererID != 0) {
+            glDeleteFramebuffers(1, &m_RendererID);
+        }
+        m_RendererID = other.m_RendererID;
+        fb_height = other.fb_height;
+        fb_width = other.fb_width;
+        leftX = other.leftX;
+        bottomY = other.bottomY;
+        other.m_RendererID = 0;
+    }
+    return *this;
+}
+
 auto gkit::graphic::opengl::buffer::FrameBuffer::AttachColorTexture(const gkit::graphic::opengl::Texture& texture, int slot) -> void {
 	Bind();
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + slot, GL_TEXTURE_2D, texture.GetRenderID(), 0);

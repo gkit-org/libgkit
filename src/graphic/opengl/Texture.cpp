@@ -18,6 +18,34 @@ gkit::graphic::opengl::Texture::~Texture() {
     }
 }
 
+gkit::graphic::opengl::Texture::Texture(Texture&& other) noexcept
+    : m_RendererID(other.m_RendererID)
+    , m_FilePath(std::move(other.m_FilePath))
+    , m_LocalBuffer(other.m_LocalBuffer)
+    , m_Width(other.m_Width)
+    , m_Height(other.m_Height)
+    , m_BPP(other.m_BPP)
+    , m_Type(other.m_Type) {
+    other.m_RendererID = 0;
+    other.m_LocalBuffer = nullptr;
+}
+
+auto gkit::graphic::opengl::Texture::operator=(Texture&& other) noexcept -> Texture& {
+    if (this != &other) {
+        glDeleteTextures(1, &m_RendererID);
+        m_RendererID = other.m_RendererID;
+        m_FilePath = std::move(other.m_FilePath);
+        m_LocalBuffer = other.m_LocalBuffer;
+        m_Width = other.m_Width;
+        m_Height = other.m_Height;
+        m_BPP = other.m_BPP;
+        m_Type = other.m_Type;
+        other.m_RendererID = 0;
+        other.m_LocalBuffer = nullptr;
+    }
+    return *this;
+}
+
 auto gkit::graphic::opengl::Texture::Bind(unsigned int slot) const -> void {
 	if (m_Type == TextureType::TEXTURE_CUBE_MAP) {
 		glActiveTexture(GL_TEXTURE0 + slot);

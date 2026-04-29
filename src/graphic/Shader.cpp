@@ -9,11 +9,29 @@
 gkit::graphic::Shader::Shader(const std::string& filepath)
 	: m_FilePath(filepath), m_RendererID(0) {
     ShaderProgramSource source = ParseShader(filepath);
-    m_RendererID = CreateShader(source.vertexShader, source.fragmenShader);
+    m_RendererID = CreateShader(source.vertexShader, source.fragmentShader);
 }
 
 gkit::graphic::Shader::~Shader() {
     glDeleteProgram(m_RendererID);
+}
+
+gkit::graphic::Shader::Shader(Shader&& other) noexcept
+    : m_RendererID(other.m_RendererID)
+    , m_FilePath(std::move(other.m_FilePath))
+    , m_UniformLocationCach(std::move(other.m_UniformLocationCach)) {
+    other.m_RendererID = 0;
+}
+
+auto gkit::graphic::Shader::operator=(Shader&& other) noexcept -> Shader& {
+    if (this != &other) {
+        glDeleteProgram(m_RendererID);
+        m_RendererID = other.m_RendererID;
+        m_FilePath = std::move(other.m_FilePath);
+        m_UniformLocationCach = std::move(other.m_UniformLocationCach);
+        other.m_RendererID = 0;
+    }
+    return *this;
 }
 
 auto gkit::graphic::Shader::CreateShader(const std::string& vertexShader, const std::string& fragmentShader) -> uint32_t {
@@ -64,7 +82,7 @@ auto gkit::graphic::Shader::ParseShader(const std::string& filePath) -> ShaderPr
     std::cout << ss[0].str() << std::endl;
     std::cout << ss[1].str() << std::endl;
 
-    return { .vertexShader=ss[0].str(), .fragmenShader=ss[1].str() };
+    return { .vertexShader=ss[0].str(), .fragmentShader=ss[1].str() };
 }
 
 auto gkit::graphic::Shader::CompileShader(uint32_t type, const std::string& source) -> uint32_t {

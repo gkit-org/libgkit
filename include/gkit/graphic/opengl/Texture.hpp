@@ -14,6 +14,21 @@
 namespace gkit::graphic::opengl{
 
 	class Texture {
+	public:
+		Texture(const Texture&) = delete;
+		Texture& operator=(const Texture&) = delete;
+
+		/** @brief Move constructor - transfers ownership of GL texture
+		 *  @param other Source object to move from (will be invalidated)
+		 */
+		Texture(Texture&& other) noexcept;
+
+		/** @brief Move assignment - transfers ownership of GL texture
+		 *  @param other Source object to move from (will be invalidated)
+		 *  @note Releases any existing GL texture before taking ownership
+		 */
+		auto operator=(Texture&& other) noexcept -> Texture&;
+
 	private:
 		uint32_t          m_RendererID;    ///< OpenGL texture ID
 		std::string       m_FilePath;      ///< Path to the texture file
