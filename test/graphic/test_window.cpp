@@ -92,8 +92,8 @@ int main(int argc, char* argv[])
         gkit::graphic::opengl::buffer::IndexBuffer picIBO(picIndices, 6);
 
         gkit::graphic::opengl::buffer::VertexBufferLayout picLayout;
-        picLayout.Push<float>(3);
-        picLayout.Push<float>(2);
+        picLayout.push<float>(3);
+        picLayout.push<float>(2);
         picVAO.add_buffer(picVBO, picLayout);
 
         // load shader source
@@ -116,8 +116,8 @@ int main(int argc, char* argv[])
         gkit::graphic::opengl::buffer::IndexBuffer quadIB(quadIndices, 6);
 
         gkit::graphic::opengl::buffer::VertexBufferLayout quadLayout;
-        quadLayout.Push<float>(3);
-        quadLayout.Push<float>(2);
+        quadLayout.push<float>(3);
+        quadLayout.push<float>(2);
         quadVAO.add_buffer(quadVB, quadLayout);
 
         // load post-processing shader

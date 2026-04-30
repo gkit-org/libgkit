@@ -36,15 +36,15 @@ auto gkit::graphic::opengl::VertexArray::operator=(VertexArray&& other) noexcept
 auto gkit::graphic::opengl::VertexArray::add_buffer(const buffer::VertexBuffer& vb, const buffer::VertexBufferLayout& layout) -> void {
 	bind();
 	vb.bind();
-	const auto& elements = layout.GetElements();
+	const auto& elements = layout.get_elements();
 	size_t offset = 0;
 	for (int i = 0; i < elements.size(); i++) {
 		const auto& element = elements[i];
 		glEnableVertexAttribArray(m_AttribIndex);
 		//Specify the reading rules for the incoming data, the meaning of the arrays (coordinates, textures, etc.)
 		glVertexAttribPointer(m_AttribIndex, element.count, element.type,
-			element.normalized, layout.GetStride(), (const void*)offset);
-		offset += element.count * buffer::VertexBufferElement::GetSizeOfType(element.type);
+			element.normalized, layout.get_stride(), (const void*)offset);
+		offset += element.count * buffer::VertexBufferElement::get_size_of_type(element.type);
 		m_AttribIndex++;
 	}
 
