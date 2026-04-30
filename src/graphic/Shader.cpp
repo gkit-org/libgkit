@@ -92,7 +92,7 @@ auto gkit::graphic::Shader::parse_shader(const std::string& filePath) -> ShaderP
     };
 
     std::string line;
-    std::stringstream ss[2];//shader string stream
+    std::stringstream ss[2];
     ShaderType type = ShaderType::NONE;
     while (getline(stream, line)) {
         if (line.find("#shader") != std::string::npos) {
@@ -100,9 +100,24 @@ auto gkit::graphic::Shader::parse_shader(const std::string& filePath) -> ShaderP
                 type = ShaderType::VERTEX;
             else if (line.find("fragment") != std::string::npos)
                 type = ShaderType::FRAGMENT;
-        } else {
+        } else if (type != ShaderType::NONE) {
             ss[(int)type] << line << '\n';
         }
+    }
+
+    if (ss[0].str().empty()) {
+        gkit::utils::Log::Message msg;
+        msg.level = gkit::utils::Log::LogLevel::Error;
+        msg.functions = static_cast<std::uint8_t>(gkit::utils::Log::LogFunction::Both);
+        msg.message = "No vertex shader found in: " + filePath;
+        gkit::utils::Log::instance().log(std::move(msg));
+    }
+    if (ss[1].str().empty()) {
+        gkit::utils::Log::Message msg;
+        msg.level = gkit::utils::Log::LogLevel::Error;
+        msg.functions = static_cast<std::uint8_t>(gkit::utils::Log::LogFunction::Both);
+        msg.message = "No fragment shader found in: " + filePath;
+        gkit::utils::Log::instance().log(std::move(msg));
     }
 
     gkit::utils::Log::Message vsMsg;

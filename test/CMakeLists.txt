@@ -17,12 +17,7 @@ file(GLOB_RECURSE TEST_SRCS
 foreach(test_file ${TEST_SRCS})
     get_filename_component(FILE_BASE_NAME ${test_file} NAME_WE)
     add_executable(${FILE_BASE_NAME} ${test_file})
-    target_link_libraries(${FILE_BASE_NAME} PRIVATE
-        gkit_static
-        SDL3::SDL3-static
-        SDL3_image::SDL3_image-static
-        glad_gl
-    )
+    target_link_libraries(${FILE_BASE_NAME} PRIVATE gkit_static)
 endforeach()
 
 # build c-abi tests
