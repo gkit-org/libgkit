@@ -10,3 +10,6 @@ AGENTS.md
 # binary files
 bin/
 build/
+
+# third party generated
+third_party/glad_generated/

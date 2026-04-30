@@ -18,6 +18,9 @@ list (APPEND GKIT_OBJS $<TARGET_OBJECTS:gkit_utils>)
 add_subdirectory(misc)
 list (APPEND GKIT_OBJS $<TARGET_OBJECTS:gkit_misc>)
 
+add_subdirectory(graphic)
+list (APPEND GKIT_OBJS $<TARGET_OBJECTS:gkit_graphic>)
+
 add_library(${PROJECT_NAME} SHARED ${GKIT_OBJS})
 add_library(${PROJECT_NAME}_static STATIC ${GKIT_OBJS})
 
@@ -27,8 +30,9 @@ list (APPEND GKIT_LIBS ${PROJECT_NAME}_static)
 
 # link third party static libraries
 foreach(GKIT_LIB ${GKIT_LIBS})
-    target_link_libraries(${GKIT_LIB} PRIVATE 
-        SDL3::SDL3-static 
+    target_link_libraries(${GKIT_LIB} PRIVATE
+        SDL3::SDL3-static
         SDL3_image::SDL3_image-static
+        glad_gl
     )
 endforeach()

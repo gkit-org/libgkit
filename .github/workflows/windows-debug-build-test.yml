@@ -12,11 +12,11 @@ jobs:
     name: Build and Test on Windows
     runs-on: windows-latest
     strategy:
-      matrix: 
+      matrix:
         preset: [ "windows-x86_64-mingw64-debug",
                   "windows-x86_64-llvm-debug",
                   "windows-x86_64-msvc-debug",]
-      
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -31,18 +31,19 @@ jobs:
         echo "Repository: ${{ github.repository }}"
         echo "Commit SHA: ${{ github.sha }}"
 
-    - name: Install dependencies
+    - name: Install Python dependencies
+      shell: cmd
       run: |
-        echo "📦 Installing Windows dependencies..."
-        
-        echo "✅ Windows dependencies installed successfully"
+        echo "📦 Installing Python dependencies..."
+        C:\hostedtoolcache\windows\Python\3.14.4\x64\python3.exe -m pip install jinja2
+        echo "✅ Python dependencies installed successfully"
 
     - name: Configure MSVC
       if: ${{ matrix.preset == 'windows-x86_64-msvc-debug' || matrix.preset == 'windows-x86_64-msvc-noabi-debug' }}
       uses: TheMrMilchmann/setup-msvc-dev@v4.0.0
-      with: 
+      with:
         arch: x64
-      
+
     - name: Configure CMake
       run: |
         echo "⚙️ Configuring CMake ..."
@@ -64,11 +65,3 @@ jobs:
         echo "🎉 Build process completed!"
         echo "Platform: ${{ runner.os }}"
         echo "Job status: ${{ job.status }}"
-        
-        # # List built files
-        # echo "📁 Built files:"
-        # find ${{ github.workspace }}/build -name "*.so" -o -name "*.dll" -o -name "*.a" -o -name "*.lib" 2>/dev/null || echo "No library files found"
-        
-        # # Show disk usage
-        # echo "💾 Disk usage:"
-        # du -sh ${{ github.workspace }}/build 2>/dev/null || echo "Build directory size info not available"
