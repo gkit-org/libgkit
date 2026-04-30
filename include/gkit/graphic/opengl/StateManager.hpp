@@ -17,9 +17,6 @@ namespace gkit::graphic::opengl {
 	public:
 		StateManager() = default;
 
-		/** @brief Get singleton instance */
-		static auto Get() -> StateManager& { return instance(); }
-
 		/** @brief Depth test state structure */
 		struct DepthState {
 			bool        enabled      = false;                     ///< Whether depth test is enabled

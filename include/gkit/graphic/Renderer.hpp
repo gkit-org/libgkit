@@ -20,9 +20,6 @@ namespace gkit::graphic {
 	public:
 		Renderer() = default;
 
-		/** @brief Get singleton instance */
-		static auto Get() -> Renderer& { return instance(); }
-
 		/**
 		 * @brief Clear the current framebuffer
 		 *

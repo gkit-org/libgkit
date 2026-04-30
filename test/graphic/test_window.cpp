@@ -133,8 +133,8 @@ int main(int argc, char* argv[])
         fbo.check();
         #pragma endregion
 
-        auto& renderer = gkit::graphic::Renderer::Get();
-        auto& stateManager = gkit::graphic::opengl::StateManager::Get();
+        auto& renderer = gkit::graphic::Renderer::instance();
+        auto& stateManager = gkit::graphic::opengl::StateManager::instance();
         
         // Main loop
         bool quit = false;
