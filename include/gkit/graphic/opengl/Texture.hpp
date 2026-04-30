@@ -57,30 +57,30 @@ namespace gkit::graphic::opengl{
 		 * @brief Bind this texture to a specific slot
 		 * @param slot Texture slot (0-15)
 		 */
-		auto Bind(unsigned int slot = 0) const -> void;
+		auto bind(unsigned int slot = 0) const -> void;
 
 		/**
 		 * @brief Unbind this texture
 		 */
-		auto Unbind() const -> void;
+		auto unbind() const -> void;
 
 		/**
 		 * @brief Get the texture width
 		 * @return Width in pixels
 		 */
-		[[nodiscard]] inline auto GetWidth() const -> int { return m_Width; }
+		[[nodiscard]] inline auto get_width() const -> int { return m_Width; }
 
 		/**
 		 * @brief Get the texture height
 		 * @return Height in pixels
 		 */
-		[[nodiscard]] inline auto GetHeight() const -> int { return m_Height; }
+		[[nodiscard]] inline auto get_height() const -> int { return m_Height; }
 
 		/**
 		 * @brief Get the Render ID object
-		 * @return ID 
+		 * @return ID
 		 */
-		[[nodiscard]] inline auto GetRenderID() const -> uint32_t { return m_RendererID; }
+		[[nodiscard]] inline auto get_render_id() const -> uint32_t { return m_RendererID; }
 
 	private:
 		/**

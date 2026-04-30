@@ -33,10 +33,10 @@ auto gkit::graphic::opengl::buffer::IndexBuffer::operator=(IndexBuffer&& other) 
     return *this;
 }
 
-auto gkit::graphic::opengl::buffer::IndexBuffer::Bind() const -> void {
+auto gkit::graphic::opengl::buffer::IndexBuffer::bind() const -> void {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_RendererID);
 }
 
-auto gkit::graphic::opengl::buffer::IndexBuffer::Unbind() const -> void {
+auto gkit::graphic::opengl::buffer::IndexBuffer::unbind() const -> void {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }

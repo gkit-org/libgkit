@@ -46,7 +46,7 @@ auto gkit::graphic::opengl::Texture::operator=(Texture&& other) noexcept -> Text
     return *this;
 }
 
-auto gkit::graphic::opengl::Texture::Bind(unsigned int slot) const -> void {
+auto gkit::graphic::opengl::Texture::bind(unsigned int slot) const -> void {
 	if (m_Type == TextureType::TEXTURE_CUBE_MAP) {
 		glActiveTexture(GL_TEXTURE0 + slot);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, m_RendererID);
@@ -56,7 +56,7 @@ auto gkit::graphic::opengl::Texture::Bind(unsigned int slot) const -> void {
 	}
 }
 
-auto gkit::graphic::opengl::Texture::Unbind() const -> void {
+auto gkit::graphic::opengl::Texture::unbind() const -> void {
 	if (m_Type == TextureType::TEXTURE_CUBE_MAP) {
 		glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 	} else if (m_Type == TextureType::TEXTURE_2D || m_Type == TextureType::TEXTURE_FRAMEBUFFER) {

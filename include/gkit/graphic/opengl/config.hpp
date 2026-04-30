@@ -124,7 +124,7 @@ namespace gkit::graphic::opengl::viewport {
 	 * @param width Viewport width
 	 * @param height Viewport height
 	 */
-	auto SetViewport(int x, int y, int width, int height) -> void;
+	auto set_viewport(int x, int y, int width, int height) -> void;
 
 	/**
 	 * @brief Set viewport with custom size (origin at 0, 0)
@@ -132,7 +132,7 @@ namespace gkit::graphic::opengl::viewport {
 	 * @param width Viewport width
 	 * @param height Viewport height
 	 */
-	auto SetViewport(int width, int height) -> void;
+	auto set_viewport(int width, int height) -> void;
 
 } // namespace gkit::graphic::opengl::viewport
 #endif

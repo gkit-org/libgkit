@@ -6,7 +6,7 @@ gkit::graphic::opengl::buffer::RenderBuffer::RenderBuffer(int width, int height)
 	glGenRenderbuffers(1, &m_RendererID);
 	glBindRenderbuffer(GL_RENDERBUFFER, m_RendererID);
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
-	Unbind();
+	unbind();
 }
 
 gkit::graphic::opengl::buffer::RenderBuffer::~RenderBuffer() {
@@ -32,10 +32,10 @@ auto gkit::graphic::opengl::buffer::RenderBuffer::operator=(RenderBuffer&& other
     return *this;
 }
 
-auto gkit::graphic::opengl::buffer::RenderBuffer::Bind() const -> void {
+auto gkit::graphic::opengl::buffer::RenderBuffer::bind() const -> void {
 	glBindRenderbuffer(GL_RENDERBUFFER, m_RendererID);
 }
 
-auto gkit::graphic::opengl::buffer::RenderBuffer::Unbind() const -> void {
+auto gkit::graphic::opengl::buffer::RenderBuffer::unbind() const -> void {
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 }

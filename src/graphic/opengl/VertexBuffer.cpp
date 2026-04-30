@@ -38,7 +38,7 @@ auto gkit::graphic::opengl::buffer::VertexBuffer::operator=(VertexBuffer&& other
     return *this;
 }
 
-auto gkit::graphic::opengl::buffer::VertexBuffer::UpdateData(const void* data, uint32_t size) -> void {
+auto gkit::graphic::opengl::buffer::VertexBuffer::update_data(const void* data, uint32_t size) -> void {
     glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
     if (size == m_Size) {
         glBufferSubData(GL_ARRAY_BUFFER, 0, size, data);
@@ -48,15 +48,15 @@ auto gkit::graphic::opengl::buffer::VertexBuffer::UpdateData(const void* data, u
     }
 }
 
-auto gkit::graphic::opengl::buffer::VertexBuffer::UpdateSubData(uint32_t offset, const void* data, uint32_t size) -> void {
+auto gkit::graphic::opengl::buffer::VertexBuffer::update_sub_data(uint32_t offset, const void* data, uint32_t size) -> void {
     glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
     glBufferSubData(GL_ARRAY_BUFFER, offset, size, data);
 }
 
-auto gkit::graphic::opengl::buffer::VertexBuffer::Bind() const -> void {
+auto gkit::graphic::opengl::buffer::VertexBuffer::bind() const -> void {
     glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
 }
 
-auto gkit::graphic::opengl::buffer::VertexBuffer::Unbind() const -> void {
+auto gkit::graphic::opengl::buffer::VertexBuffer::unbind() const -> void {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }

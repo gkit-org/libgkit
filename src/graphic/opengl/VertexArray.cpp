@@ -33,9 +33,9 @@ auto gkit::graphic::opengl::VertexArray::operator=(VertexArray&& other) noexcept
     return *this;
 }
 
-auto gkit::graphic::opengl::VertexArray::AddBuffer(const buffer::VertexBuffer& vb, const buffer::VertexBufferLayout& layout) -> void {
-	Bind();
-	vb.Bind();
+auto gkit::graphic::opengl::VertexArray::add_buffer(const buffer::VertexBuffer& vb, const buffer::VertexBufferLayout& layout) -> void {
+	bind();
+	vb.bind();
 	const auto& elements = layout.GetElements();
 	size_t offset = 0;
 	for (int i = 0; i < elements.size(); i++) {
@@ -50,9 +50,9 @@ auto gkit::graphic::opengl::VertexArray::AddBuffer(const buffer::VertexBuffer& v
 
 }
 
-auto gkit::graphic::opengl::VertexArray::AddInstanceBuffer(const buffer::VertexBuffer& vb) -> void {
-    Bind();
-	vb.Bind();
+auto gkit::graphic::opengl::VertexArray::add_instance_buffer(const buffer::VertexBuffer& vb) -> void {
+    bind();
+	vb.bind();
 
     size_t vec4Size = sizeof(gkit::math::Vector4);
 
@@ -71,10 +71,10 @@ auto gkit::graphic::opengl::VertexArray::AddInstanceBuffer(const buffer::VertexB
     }
 }
 
-auto gkit::graphic::opengl::VertexArray::Bind() const -> void {
+auto gkit::graphic::opengl::VertexArray::bind() const -> void {
 	glBindVertexArray(m_RendererID);
 }
 
-auto gkit::graphic::opengl::VertexArray::Unbind() const -> void {
+auto gkit::graphic::opengl::VertexArray::unbind() const -> void {
 	glBindVertexArray(0);
 }

@@ -46,19 +46,19 @@ namespace gkit::graphic::opengl::buffer {
 		/**
 		 * @brief Bind this vertex buffer to the current OpenGL context
 		 */
-		auto Bind() const -> void;
+		auto bind() const -> void;
 
 		/**
 		 * @brief Unbind this vertex buffer from the current OpenGL context
 		 */
-		auto Unbind() const -> void;
+		auto unbind() const -> void;
 
 		/**
 		 * @brief Update all buffer data
 		 * @param data Pointer to the new data
 		 * @param size Size of the data in bytes (if size is same, uses SubData; if different, reallocates)
 		 */
-		auto UpdateData(const void* data, uint32_t size) -> void;
+		auto update_data(const void* data, uint32_t size) -> void;
 
 		/**
 		 * @brief Update partial buffer data
@@ -66,7 +66,7 @@ namespace gkit::graphic::opengl::buffer {
 		 * @param data Pointer to the new data
 		 * @param size Size of the data in bytes
 		 */
-		auto UpdateSubData(uint32_t offset, const void* data, uint32_t size) -> void;
+		auto update_sub_data(uint32_t offset, const void* data, uint32_t size) -> void;
 
 	};
 

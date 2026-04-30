@@ -44,18 +44,18 @@ namespace gkit::graphic::opengl::buffer{
 		/**
 		 * @brief Bind this index buffer to the current OpenGL context
 		 */
-		auto Bind() const -> void;
+		auto bind() const -> void;
 
 		/**
 		 * @brief Unbind this index buffer from the current OpenGL context
 		 */
-		auto Unbind() const -> void;
+		auto unbind() const -> void;
 
 		/**
 		 * @brief Get the number of indices in this buffer
 		 * @return Number of indices
 		 */
-		[[nodiscard]] inline uint32_t GetCount() const { return m_Count; }
+		[[nodiscard]] inline auto get_count() const -> uint32_t { return m_Count; }
 	};
 
 } // namespace gkit::graphic::opengl::buffer

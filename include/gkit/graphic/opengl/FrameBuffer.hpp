@@ -50,46 +50,46 @@ namespace gkit::graphic::opengl::buffer{
 		 * @param texture The texture to attach as color attachment
 		 * @param slot Attachment slot (typically 0 for GL_COLOR_ATTACHMENT0)
 		 */
-		auto AttachColorTexture(const gkit::graphic::opengl::Texture& texture, int slot = 0) -> void;
+		auto attach_color_texture(const gkit::graphic::opengl::Texture& texture, int slot = 0) -> void;
 
 		/**
 		 * @brief Detach a color texture from this framebuffer
 		 * @param slot Attachment slot to detach
 		 */
-		auto DetachColorTexture(int slot = 0) -> void;
+		auto detach_color_texture(int slot = 0) -> void;
 
 		/**
 		 * @brief Attach a depth-stencil renderbuffer to this framebuffer
 		 * @param rbo The renderbuffer to attach as depth-stencil attachment
 		 */
-		auto AttachDepthStencil(const gkit::graphic::opengl::buffer::RenderBuffer& rbo) -> void;
+		auto attach_depth_stencil(const gkit::graphic::opengl::buffer::RenderBuffer& rbo) -> void;
 
 		/**
 		 * @brief Detach the depth-stencil attachment from this framebuffer
 		 */
-		auto DetachDepthStencil() -> void;
-		
+		auto detach_depth_stencil() -> void;
+
 		/**
 		 * @brief Check if the framebuffer is complete
 		 *
 		 * Verifies that the framebuffer is properly configured and ready for rendering.
 		 * Prints status message to console.
 		 */
-		auto Check() -> void;
+		auto check() -> void;
 
 		/**
 		 * @brief Set viewport to the framebuffer's default size
 		 *
 		 * Uses the stored framebuffer dimensions (fb_width, fb_height).
 		 */
-		auto SetViewport() -> void;
+		auto set_viewport() -> void;
 
 		/**
 		 * @brief Set viewport to custom dimensions
 		 * @param width Viewport width
 		 * @param height Viewport height
 		 */
-		auto SetViewport(int width, int height) -> void;
+		auto set_viewport(int width, int height) -> void;
 
 		/**
 		 * @brief Set custom viewport with offset
@@ -98,17 +98,17 @@ namespace gkit::graphic::opengl::buffer{
 		 * @param width Viewport width
 		 * @param height Viewport height
 		 */
-		auto SetViewport(int x, int y, int width, int height) -> void;
+		auto set_viewport(int x, int y, int width, int height) -> void;
 
 		/**
 		 * @brief Bind this framebuffer as the rendering target
 		 */
-		auto Bind() const -> void;
+		auto bind() const -> void;
 
 		/**
 		 * @brief Unbind this framebuffer, revert to default framebuffer (screen)
 		 */
-		auto Unbind() const -> void;
+		auto unbind() const -> void;
 
 	};
 

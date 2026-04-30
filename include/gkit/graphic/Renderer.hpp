@@ -29,7 +29,7 @@ namespace gkit::graphic {
 		 * @param flags Bitmask specifying which buffers to clear (e.g., ClearFlags::Color | ClearFlags::Depth)
 		 *              Defaults to ClearFlags::All (clears all buffers)
 		 */
-		auto Clear(opengl::ClearFlags flags = opengl::ClearFlags::All) const -> void;
+		auto clear(opengl::ClearFlags flags = opengl::ClearFlags::All) const -> void;
 
 		/**
 		 * @brief Draw indexed geometry
@@ -37,7 +37,7 @@ namespace gkit::graphic {
 		 * @param ib Index buffer containing indices
 		 * @param shader Shader program to use for rendering
 		 */
-		auto Draw(const gkit::graphic::opengl::VertexArray& va, const gkit::graphic::opengl::buffer::IndexBuffer& ib, const gkit::graphic::Shader& shader) const -> void;
+		auto draw(const gkit::graphic::opengl::VertexArray& va, const gkit::graphic::opengl::buffer::IndexBuffer& ib, const gkit::graphic::Shader& shader) const -> void;
 
 		/**
 		 * @brief Draw multiple instances of indexed geometry
@@ -46,7 +46,7 @@ namespace gkit::graphic {
 		 * @param shader Shader program to use for rendering
 		 * @param instanceCount Number of instances to draw
 		 */
-		auto DrawInstance(const gkit::graphic::opengl::VertexArray& va, const gkit::graphic::opengl::buffer::IndexBuffer& ib, const gkit::graphic::Shader& shader, uint32_t instanceCount) const -> void;
+		auto draw_instance(const gkit::graphic::opengl::VertexArray& va, const gkit::graphic::opengl::buffer::IndexBuffer& ib, const gkit::graphic::Shader& shader, uint32_t instanceCount) const -> void;
 	};
 
 } // namespace gkit::graphic

@@ -59,22 +59,22 @@ namespace gkit::graphic::opengl {
 		/** @brief Enable or disable depth testing
 		 *  @param enable True to enable depth testing, false to disable
 		 */
-		auto SetDepthTest(bool enable) -> void;
+		auto set_depth_test(bool enable) -> void;
 
 		/** @brief Set depth test compare function
 		 *  @param func The comparison function to use
 		 */
-		auto SetDepthFunc(CompareFunc func) -> void;
+		auto set_depth_func(CompareFunc func) -> void;
 
 		/** @brief Set depth write mask
 		 *  @param write True to enable depth writes, false to disable
 		 */
-		auto SetDepthMask(bool write) -> void;
+		auto set_depth_mask(bool write) -> void;
 
 		/** @brief Enable or disable blending
 		 *  @param enable True to enable blending, false to disable
 		 */
-		auto SetBlend(bool enable) -> void;
+		auto set_blend(bool enable) -> void;
 
 		/** @brief Set blend factors for RGB and Alpha
 		 *  @param srcRGB Source RGB blend factor
@@ -82,90 +82,90 @@ namespace gkit::graphic::opengl {
 		 *  @param srcAlpha Source alpha blend factor
 		 *  @param dstAlpha Destination alpha blend factor
 		 */
-		auto SetBlendFunc(BlendFunc srcRGB, BlendFunc dstRGB, BlendFunc srcAlpha, BlendFunc dstAlpha) -> void;
+		auto set_blend_func(BlendFunc srcRGB, BlendFunc dstRGB, BlendFunc srcAlpha, BlendFunc dstAlpha) -> void;
 
 		/** @brief Set blend equation
 		 *  @param equation The blend equation to use
 		 */
-		auto SetBlendEquation(BlendEquation equation) -> void;
+		auto set_blend_equation(BlendEquation equation) -> void;
 
 		/** @brief Enable or disable face culling
 		 *  @param enable True to enable culling, false to disable
 		 */
-		auto SetCullFace(bool enable) -> void;
+		auto set_cull_face(bool enable) -> void;
 
 		/** @brief Set cull face mode
 		 *  @param mode The cull face mode
 		 */
-		auto SetCullFaceMode(CullFaceMode mode) -> void;
+		auto set_cull_face_mode(CullFaceMode mode) -> void;
 
 		/** @brief Set front face winding order
 		 *  @param frontFace The front face winding order
 		 */
-		auto SetFrontFace(FrontFace frontFace) -> void;
+		auto set_front_face(FrontFace frontFace) -> void;
 
 		/** @brief Enable or disable stencil testing
 		 *  @param enable True to enable stencil testing, false to disable
 		 */
-		auto SetStencilTest(bool enable) -> void;
+		auto set_stencil_test(bool enable) -> void;
 
 		/** @brief Set stencil state
 		 *  @param func Stencil comparison function
 		 *  @param ref Stencil reference value
 		 *  @param mask Stencil read mask
 		 */
-		auto SetStencil(CompareFunc func, uint32_t ref, uint32_t mask) -> void;
+		auto set_stencil(CompareFunc func, uint32_t ref, uint32_t mask) -> void;
 
 		/** @brief Set stencil write mask
 		 *  @param mask Stencil write mask
 		 */
-		auto SetStencilMask(uint32_t mask) -> void;
+		auto set_stencil_mask(uint32_t mask) -> void;
 
 		/** @brief Set stencil operations
 		 *  @param fail Operation when stencil test fails
 		 *  @param zFail Operation when stencil passes but depth fails
 		 *  @param zPass Operation when both stencil and depth pass
 		 */
-		auto SetStencilOp(StencilOp fail, StencilOp zFail, StencilOp zPass) -> void;
+		auto set_stencil_op(StencilOp fail, StencilOp zFail, StencilOp zPass) -> void;
 
 		/** @brief Apply all dirty states to OpenGL */
-		auto Apply() -> void;
+		auto apply() -> void;
 
 		/** @brief Force apply all states (ignore dirty flags) */
-		auto ForceApplyAll() -> void;
+		auto force_apply_all() -> void;
 
 		/** @brief Get current depth state
 		 *  @return Reference to the current depth state
 		 */
-		[[nodiscard]] auto GetDepthState() const -> const DepthState&;
+		[[nodiscard]] auto get_depth_state() const -> const DepthState&;
 
 		/** @brief Get current blend state
 		 *  @return Reference to the current blend state
 		 */
-		[[nodiscard]] auto GetBlendState() const -> const BlendState&;
+		[[nodiscard]] auto get_blend_state() const -> const BlendState&;
 
 		/** @brief Get current cull face state
 		 *  @return Reference to the current cull face state
 		 */
-		[[nodiscard]] auto GetCullFaceState() const -> const CullFaceState&;
+		[[nodiscard]] auto get_cull_face_state() const -> const CullFaceState&;
 
 		/** @brief Get current stencil state
 		 *  @return Reference to the current stencil state
 		 */
-		[[nodiscard]] auto GetStencilState() const -> const StencilState&;
+		[[nodiscard]] auto get_stencil_state() const -> const StencilState&;
 
 	private:
 		/** @brief Apply depth state if dirty */
-		auto ApplyDepthState() -> void;
+		auto apply_depth_state() -> void;
 
 		/** @brief Apply blend state if dirty */
-		auto ApplyBlendState() -> void;
+		auto apply_blend_state() -> void;
 
 		/** @brief Apply cull face state if dirty */
-		auto ApplyCullFaceState() -> void;
+		auto apply_cull_face_state() -> void;
 
 		/** @brief Apply stencil state if dirty */
-		auto ApplyStencilState() -> void;
+		auto apply_stencil_state() -> void;
 
 		/// @brief Current shadow states
 		DepthState    m_DepthState;      ///< Current depth state

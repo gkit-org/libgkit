@@ -43,14 +43,14 @@ namespace gkit::graphic::opengl::buffer{
 		/**
 		 * @brief Bind this renderbuffer to the current OpenGL context
 		 */
-		auto Bind() const -> void;
+		auto bind() const -> void;
 
 		/**
 		 * @brief Unbind this renderbuffer from the current OpenGL context
 		 */
-		auto Unbind() const -> void;
+		auto unbind() const -> void;
 
-		[[nodiscard]] auto GetRenderID() const -> uint32_t { return m_RendererID; }
+		[[nodiscard]] auto get_render_id() const -> uint32_t { return m_RendererID; }
 	};
 
 } // namespace gkit::graphic::opengl::buffer
