@@ -1,10 +1,10 @@
 #include "gkit/graphic/Shader.hpp"
+#include "gkit/utils/log.hpp"
 
 #include <glad/gl.h>
 
 #include <sstream>
 #include <fstream>
-#include <iostream>
 
 gkit::graphic::Shader::Shader(const std::string& filepath)
 	: m_FilePath(filepath), m_RendererID(0) {
@@ -39,17 +39,47 @@ auto gkit::graphic::Shader::create_shader(const std::string& vertexShader, const
     uint32_t vs = compile_shader(GL_VERTEX_SHADER, vertexShader);
     uint32_t fs = compile_shader(GL_FRAGMENT_SHADER, fragmentShader);
 
+    if (vs == 0 || fs == 0) {
+        glDeleteProgram(program);
+        return 0;
+    }
+
     glAttachShader(program, vs);
     glAttachShader(program, fs);
     glLinkProgram(program);
 
-    glValidateProgram(program);
+    int linkResult;
+    glGetProgramiv(program, GL_LINK_STATUS, &linkResult);
+    if (linkResult == GL_FALSE) {
+        int length;
+        glGetProgramiv(program, GL_INFO_LOG_LENGTH, &length);
+        char* message = (char*)alloca(length * sizeof(char));
+        glGetProgramInfoLog(program, length, &length, message);
+        gkit::utils::Log::Message msg;
+        msg.level = gkit::utils::Log::LogLevel::Error;
+        msg.functions = static_cast<std::uint8_t>(gkit::utils::Log::LogFunction::Both);
+        msg.message = "Failed to link shader program: " + std::string(message);
+        gkit::utils::Log::instance().log(std::move(msg));
+        glDeleteProgram(program);
+        glDeleteShader(vs);
+        glDeleteShader(fs);
+        return 0;
+    }
+
+    glDetachShader(program, vs);
+    glDetachShader(program, fs);
+    glDeleteShader(vs);
+    glDeleteShader(fs);
 
     return program;
 }
 
 auto gkit::graphic::Shader::parse_shader(const std::string& filePath) -> ShaderProgramSource {
-    std::cout << filePath << std::endl;
+    gkit::utils::Log::Message pathMsg;
+    pathMsg.level = gkit::utils::Log::LogLevel::Info;
+    pathMsg.functions = static_cast<std::uint8_t>(gkit::utils::Log::LogFunction::Both);
+    pathMsg.message = "Parsing shader: " + filePath;
+    gkit::utils::Log::instance().log(std::move(pathMsg));
     std::ifstream stream(filePath);
 
     /**
@@ -64,23 +94,28 @@ auto gkit::graphic::Shader::parse_shader(const std::string& filePath) -> ShaderP
     std::string line;
     std::stringstream ss[2];//shader string stream
     ShaderType type = ShaderType::NONE;
-    while (getline(stream, line))
-    {
-        if (line.find("#shader") != std::string::npos)
-        {
+    while (getline(stream, line)) {
+        if (line.find("#shader") != std::string::npos) {
             if (line.find("vertex") != std::string::npos)
                 type = ShaderType::VERTEX;
             else if (line.find("fragment") != std::string::npos)
                 type = ShaderType::FRAGMENT;
-        }
-        else
-        {
+        } else {
             ss[(int)type] << line << '\n';
         }
     }
 
-    std::cout << ss[0].str() << std::endl;
-    std::cout << ss[1].str() << std::endl;
+    gkit::utils::Log::Message vsMsg;
+    vsMsg.level = gkit::utils::Log::LogLevel::Info;
+    vsMsg.functions = static_cast<std::uint8_t>(gkit::utils::Log::LogFunction::Both);
+    vsMsg.message = ss[0].str();
+    gkit::utils::Log::instance().log(std::move(vsMsg));
+
+    gkit::utils::Log::Message fsMsg;
+    fsMsg.level = gkit::utils::Log::LogLevel::Info;
+    fsMsg.functions = static_cast<std::uint8_t>(gkit::utils::Log::LogFunction::Both);
+    fsMsg.message = ss[1].str();
+    gkit::utils::Log::instance().log(std::move(fsMsg));
 
     return { .vertexShader=ss[0].str(), .fragmentShader=ss[1].str() };
 }
@@ -91,7 +126,6 @@ auto gkit::graphic::Shader::compile_shader(uint32_t type, const std::string& sou
     glShaderSource(id, 1, &src, nullptr);
     glCompileShader(id);
 
-    //Get Error Info
     int result;
     glGetShaderiv(id, GL_COMPILE_STATUS, &result);
     if (result == GL_FALSE) {
@@ -99,10 +133,11 @@ auto gkit::graphic::Shader::compile_shader(uint32_t type, const std::string& sou
         glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length);
         char* message = (char*)alloca(length * sizeof(char));
         glGetShaderInfoLog(id, length, &length, message);
-        std::cout << "==================================================" << std::endl;
-        std::cout << "Failed to compile " << (type == GL_VERTEX_SHADER ? "vertex" : "fragment") << std::endl;
-        std::cout << "==================================================" << std::endl;
-        std::cout << message << std::endl;
+        gkit::utils::Log::Message msg;
+        msg.level = gkit::utils::Log::LogLevel::Error;
+        msg.functions = static_cast<std::uint8_t>(gkit::utils::Log::LogFunction::Both);
+        msg.message = "Failed to compile " + std::string(type == GL_VERTEX_SHADER ? "vertex" : "fragment") + " shader: " + message;
+        gkit::utils::Log::instance().log(std::move(msg));
         glDeleteShader(id);
         return 0;
     }
@@ -145,20 +180,20 @@ auto gkit::graphic::Shader::set_uniform_vec_3f(const std::string& name, const fl
     glUniform3fv(get_uniform_location(name), 1, vector3);
 }
 
-
 auto gkit::graphic::Shader::set_uniform_1iv(const std::string& name, const int sz, const int* ind) -> void {
     glUniform1iv(get_uniform_location(name), sz, ind);
 }
-
 
 auto gkit::graphic::Shader::get_uniform_location(const std::string& name) -> int {
     if (m_UniformLocationCach.find(name) != m_UniformLocationCach.end())
         return m_UniformLocationCach[name];
     int location = glGetUniformLocation(m_RendererID, name.c_str());
     if (location == -1) {
-        std::cout << "==================================================" << std::endl;
-        std::cout << "Warning: uniform '" << name << "' doesn't exist!" << std::endl;
-        std::cout << "==================================================" << std::endl;
+        gkit::utils::Log::Message msg;
+        msg.level = gkit::utils::Log::LogLevel::Warning;
+        msg.functions = static_cast<std::uint8_t>(gkit::utils::Log::LogFunction::Both);
+        msg.message = "Warning: uniform '" + name + "' doesn't exist!";
+        gkit::utils::Log::instance().log(std::move(msg));
     }
     m_UniformLocationCach[name] = location;
     return location;

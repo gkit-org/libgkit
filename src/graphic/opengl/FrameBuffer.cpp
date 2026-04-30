@@ -1,9 +1,8 @@
 #include "gkit/graphic/opengl/FrameBuffer.hpp"
 #include "gkit/graphic/opengl/Texture.hpp"
+#include "gkit/utils/log.hpp"
 
 #include <glad/gl.h>
-
-#include <iostream>
 
 gkit::graphic::opengl::buffer::FrameBuffer::FrameBuffer(int width, int height)
 	: fb_width(width), fb_height(height) {
@@ -65,13 +64,16 @@ auto gkit::graphic::opengl::buffer::FrameBuffer::detach_depth_stencil() -> void 
 
 auto gkit::graphic::opengl::buffer::FrameBuffer::check() -> void {
 	bind();
+	gkit::utils::Log::Message msg;
+	msg.functions = static_cast<std::uint8_t>(gkit::utils::Log::LogFunction::Both);
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-		std::cout << "==================================================" << std::endl;
-		std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
-		std::cout << "==================================================" << std::endl;
+		msg.level = gkit::utils::Log::LogLevel::Error;
+		msg.message = "ERROR::FRAMEBUFFER:: Framebuffer is not complete!";
 	} else {
-		std::cout << "FRAMEBUFFER:: Framebuffer is complete!" << std::endl;
+		msg.level = gkit::utils::Log::LogLevel::Info;
+		msg.message = "FRAMEBUFFER:: Framebuffer is complete!";
 	}
+	gkit::utils::Log::instance().log(std::move(msg));
 	unbind();
 }
 
