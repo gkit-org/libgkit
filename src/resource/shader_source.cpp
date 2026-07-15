@@ -44,11 +44,8 @@ namespace gkit::resource {
 
     ShaderSource::ShaderSource() : gkit::resource::Resource(), data(std::make_unique<Data>()) {}
 
-    ShaderSource::ShaderSource(const std::filesystem::path& path) :
-        gkit::resource::Resource(path), data(std::make_unique<Data>()) {}
-
-    ShaderSource::ShaderSource(std::filesystem::path&& path) :
-        gkit::resource::Resource(path), data(std::make_unique<Data>()) {}
+    ShaderSource::ShaderSource(ResourceId id, std::filesystem::path path) :
+        gkit::resource::Resource(id, std::move(path)), data(std::make_unique<Data>()) {}
 
     ShaderSource::~ShaderSource() = default;
 

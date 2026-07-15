@@ -12,7 +12,7 @@
 /** Resource **/
 #include <gkit/resource/metadata.hpp>
 #include <gkit/resource/resource.hpp>
-#include <gkit/resource/resource_loader.hpp>
+#include <gkit/resource/resource_manager.hpp>
 #include <gkit/resource/texture.hpp>
 
 /** Math **/

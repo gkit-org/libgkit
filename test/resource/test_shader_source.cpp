@@ -3,7 +3,7 @@
 #include <iostream>
 #include <string_view>
 
-#include <gkit/resource/resource_loader.hpp>
+#include <gkit/resource/resource_manager.hpp>
 #include <gkit/resource/shader_source.hpp>
 
 namespace fs = std::filesystem;
@@ -19,15 +19,21 @@ namespace {
 
 } // anonymous namespace
 
-auto test_load_vertex_and_fragment() -> void {
-    std::cout << "=== Test: Load Vertex and Fragment Shader ===" << '\n';
+auto test_load_and_get_by_id() -> void {
+    std::cout << "=== Test: Load and Get by ID ===" << '\n';
 
     const auto path = resource_dir() / "basic.shader";
-    auto result     = gkit::resource::ResourceLoader::instance().load<gkit::resource::ShaderSource>(path);
+    auto id_opt     = gkit::resource::ResourceManager::instance().load<gkit::resource::ShaderSource>(path);
 
+    assert(id_opt.has_value());
+    auto id = id_opt.value();
+
+    // Retrieve by ID
+    auto result = gkit::resource::ResourceManager::instance().get<gkit::resource::ShaderSource>(id);
     assert(result.has_value());
     const auto& shader = result.value();
     assert(shader->is_loaded());
+    assert(shader->get_id() == id);
 
     // Print raw file content
     auto full = shader->source();
@@ -59,31 +65,49 @@ auto test_load_vertex_and_fragment() -> void {
     std::cout << "Test passed!" << '\n' << '\n';
 }
 
-auto test_cache_returns_same_instance() -> void {
-    std::cout << "=== Test: Cache Returns Same Instance ===" << '\n';
+auto test_load_twice_returns_same_id() -> void {
+    std::cout << "=== Test: Load Twice Returns Same ID ===" << '\n';
 
     const auto path = resource_dir() / "basic.shader";
 
-    auto first  = gkit::resource::ResourceLoader::instance().load<gkit::resource::ShaderSource>(path);
-    auto second = gkit::resource::ResourceLoader::instance().load<gkit::resource::ShaderSource>(path);
+    auto first  = gkit::resource::ResourceManager::instance().load<gkit::resource::ShaderSource>(path);
+    auto second = gkit::resource::ResourceManager::instance().load<gkit::resource::ShaderSource>(path);
 
     assert(first.has_value());
     assert(second.has_value());
+    assert(first.value() == second.value());
 
-    // Same pointer — cached instance
-    assert(first.value().get() == second.value().get());
+    // Retrieve by ID — should get same instance
+    auto shader1 = gkit::resource::ResourceManager::instance().get<gkit::resource::ShaderSource>(first.value());
+    auto shader2 = gkit::resource::ResourceManager::instance().get<gkit::resource::ShaderSource>(second.value());
 
-    std::cout << "  Loading same path twice returns cached instance: OK" << '\n';
+    assert(shader1.has_value());
+    assert(shader2.has_value());
+    assert(shader1.value().get() == shader2.value().get());
+
+    std::cout << "  Same path -> same ID -> same cached instance: OK" << '\n';
+    std::cout << "Test passed!" << '\n' << '\n';
+}
+
+auto test_get_nonexistent_id() -> void {
+    std::cout << "=== Test: Get Nonexistent ID ===" << '\n';
+
+    auto id     = gkit::resource::ResourceId::from_string("never_loaded");
+    auto result = gkit::resource::ResourceManager::instance().get<gkit::resource::ShaderSource>(id);
+
+    assert(!result.has_value());
+
+    std::cout << "  Nonexistent ID returns nullopt: OK" << '\n';
     std::cout << "Test passed!" << '\n' << '\n';
 }
 
 auto test_load_missing_file() -> void {
     std::cout << "=== Test: Load Missing File ===" << '\n';
 
-    auto result = gkit::resource::ResourceLoader::instance().load<gkit::resource::ShaderSource>(
+    auto id_opt = gkit::resource::ResourceManager::instance().load<gkit::resource::ShaderSource>(
         resource_dir() / "does_not_exist.shader");
 
-    assert(!result.has_value());
+    assert(!id_opt.has_value());
 
     std::cout << "  Missing file returns nullopt: OK" << '\n';
     std::cout << "Test passed!" << '\n' << '\n';
@@ -94,8 +118,9 @@ auto main() -> int {
     std::cout << "   gkit::resource::ShaderSource Tests   " << '\n';
     std::cout << "========================================" << '\n' << '\n';
 
-    test_load_vertex_and_fragment();
-    test_cache_returns_same_instance();
+    test_load_and_get_by_id();
+    test_load_twice_returns_same_id();
+    test_get_nonexistent_id();
     test_load_missing_file();
 
     std::cout << "========================================" << '\n';

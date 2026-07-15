@@ -1,6 +1,7 @@
 #pragma once
 
 #include "gkit/resource/resource.hpp"
+#include "gkit/resource/resource_id.hpp"
 
 #include <cstdint>
 #include <filesystem>
@@ -33,7 +34,7 @@ namespace gkit::resource {
      * @brief Shader source resource managed by the resource system
      *
      * Represents shader source code loaded from a file through
-     * the ResourceLoader. A single file may contain multiple stages
+     * the ResourceManager. A single file may contain multiple stages
      * separated by markers (e.g. #shader vertex / #shader fragment),
      * with each stage's source accessible independently.
      *
@@ -44,8 +45,7 @@ namespace gkit::resource {
     class ShaderSource : public gkit::resource::Resource {
     public:
         ShaderSource();
-        explicit ShaderSource(const std::filesystem::path& path);
-        explicit ShaderSource(std::filesystem::path&& path);
+        ShaderSource(ResourceId id, std::filesystem::path path);
         ~ShaderSource() override;
 
         /**

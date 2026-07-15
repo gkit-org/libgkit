@@ -2,7 +2,7 @@ set (GKIT_RESOURCE "gkit_resource")
 
 set (RESOURCE_SRC
     "./resource.cpp"
-    "./resource_loader.cpp"
+    "./resource_manager.cpp"
     "./texture.cpp"
     "./shader_source.cpp"
     "./metadata.cpp"
