@@ -4,6 +4,7 @@
 
 #include <functional>
 #include <map>
+#include <memory>
 #include <optional>
 #include <stdexcept>
 #include <string>
@@ -61,14 +62,16 @@ namespace gkit::core {
     class Value final {
     public:
         /**
-         * @brief Variant storage backing the Value. Object is held as raw pointer
-         *        (non-owning when set via raw pointer, owning when set via unique_ptr or copy-construct).
+         * @brief Variant storage backing the Value. Object is held via std::unique_ptr
+         *        for exclusive ownership and automatic lifetime management.
          */
-        using Storage = std::variant<Null, bool, Number, std::string, Array, Map, gkit::core::scene::Object*>;
+        using Storage =
+            std::variant<Null, bool, Number, std::string, Array, Map, std::unique_ptr<gkit::core::scene::Object>>;
 
     public: // Constructors
-        Value() noexcept        = default;
-        Value(const Value&)     = default;
+        Value() noexcept = default;
+        /// @brief Copy constructor. Throws std::logic_error if the source holds a non-copyable Object.
+        Value(const Value&);
         Value(Value&&) noexcept = default;
         ~Value()                = default;
 
@@ -82,18 +85,15 @@ namespace gkit::core {
         Value(Array value); // NOLINT(google-explicit-constructor)
         Value(Map value); // NOLINT(google-explicit-constructor)
 
-        /// @brief Store an Object by raw pointer (non-owning, the Value does not manage lifetime).
-        explicit Value(gkit::core::scene::Object* value) noexcept;
-
-        /// @brief Store an Object by unique_ptr (the Value takes exclusive ownership).
+        /** @brief Store an Object by unique_ptr (the Value takes exclusive ownership). */
         explicit Value(std::unique_ptr<gkit::core::scene::Object> value) noexcept;
 
-        /// @brief Copy-construct a Value from a derived Object type. Allocates a new copy on the heap.
+        /**  @brief Copy-construct a Value from a derived Object type. Allocates a new copy on the heap. */
         template<gkit::core::scene::IsObject T>
         explicit Value(const T& value);
 
     public: // Assignment operators
-        auto operator=(const Value&) -> Value&     = default;
+        auto operator=(const Value&) -> Value&;
         auto operator=(Value&&) noexcept -> Value& = default;
 
         auto operator=(Null) noexcept -> Value&;
@@ -106,10 +106,7 @@ namespace gkit::core {
         auto operator=(Array value) -> Value&;
         auto operator=(Map value) -> Value&;
 
-        /// @brief Assign a raw Object pointer (non-owning).
-        auto operator=(gkit::core::scene::Object* value) noexcept -> Value&;
-
-        /// @brief Assign a unique_ptr, taking ownership of the Object.
+        /** @brief Assign a unique_ptr, taking ownership of the Object. */ 
         auto operator=(std::unique_ptr<gkit::core::scene::Object> value) noexcept -> Value&;
 
     public: // Type checking
@@ -134,7 +131,7 @@ namespace gkit::core {
         }
         [[nodiscard]] constexpr auto is_map() const noexcept -> bool { return std::holds_alternative<Map>(storage); }
         [[nodiscard]] constexpr auto is_object() const noexcept -> bool {
-            return std::holds_alternative<gkit::core::scene::Object*>(storage);
+            return std::holds_alternative<std::unique_ptr<gkit::core::scene::Object>>(storage);
         }
 
     public: // Value accessors (unchecked - behavior undefined if wrong type)
@@ -258,7 +255,7 @@ namespace gkit::core {
                     if constexpr (std::is_same_v<T, std::string>) return Type::String;
                     if constexpr (std::is_same_v<T, Array>) return Type::Array;
                     if constexpr (std::is_same_v<T, Map>) return Type::Map;
-                    if constexpr (std::is_same_v<T, gkit::core::scene::Object*>) return Type::Object;
+                    if constexpr (std::is_same_v<T, std::unique_ptr<gkit::core::scene::Object>>) return Type::Object;
                     return Type::Null; // unreachable
                 },
                 storage);
@@ -277,13 +274,12 @@ namespace gkit::core {
 
     template<gkit::core::scene::IsObject T>
     Value::Value(const T& value) {
-        auto* value_ptr = new T(value);
-        this->storage   = value_ptr;
+        this->storage = std::make_unique<T>(value);
     }
 
     template<gkit::core::scene::IsObject T>
     auto Value::as() -> T& {
-        auto* ptr  = std::get<gkit::core::scene::Object*>(this->storage);
+        auto* ptr  = std::get<std::unique_ptr<gkit::core::scene::Object>>(this->storage).get();
         auto* cast = dynamic_cast<T*>(ptr);
         if (cast == nullptr) {
             throw std::invalid_argument("Value::as<T>() failed: stored object is not of requested type");
@@ -293,7 +289,7 @@ namespace gkit::core {
 
     template<gkit::core::scene::IsObject T>
     auto Value::as() const -> const T& {
-        const auto* ptr  = std::get<gkit::core::scene::Object*>(this->storage);
+        const auto* ptr  = std::get<std::unique_ptr<gkit::core::scene::Object>>(this->storage).get();
         const auto* cast = dynamic_cast<const T*>(ptr);
         if (cast == nullptr) {
             throw std::invalid_argument("Value::as<T>() const failed: stored object is not of requested type");
@@ -304,14 +300,14 @@ namespace gkit::core {
     template<gkit::core::scene::IsObject T>
     auto Value::try_as() noexcept -> T* {
         if (!this->is_object()) return nullptr;
-        auto* ptr = std::get<gkit::core::scene::Object*>(this->storage);
+        auto* ptr = std::get<std::unique_ptr<gkit::core::scene::Object>>(this->storage).get();
         return dynamic_cast<T*>(ptr);
     }
 
     template<gkit::core::scene::IsObject T>
     auto Value::try_as() const noexcept -> const T* {
         if (!this->is_object()) return nullptr;
-        const auto* ptr = std::get<gkit::core::scene::Object*>(this->storage);
+        const auto* ptr = std::get<std::unique_ptr<gkit::core::scene::Object>>(this->storage).get();
         return dynamic_cast<const T*>(ptr);
     }
 } // namespace gkit::core

@@ -14,9 +14,39 @@ namespace gkit::core {
     Value::Value(Array value) : storage(std::move(value)) {}
     Value::Value(Map value) : storage(std::move(value)) {}
 
-    Value::Value(gkit::core::scene::Object* value) noexcept : storage(value) {}
+    Value::Value(std::unique_ptr<gkit::core::scene::Object> value) noexcept : storage(std::move(value)) {}
 
-    Value::Value(std::unique_ptr<gkit::core::scene::Object> value) noexcept : storage(value.release()) {}
+    Value::Value(const Value& other) {
+        std::visit(
+            [this](const auto& v) {
+                using T = std::decay_t<decltype(v)>;
+                if constexpr (std::is_same_v<T, std::unique_ptr<gkit::core::scene::Object>>) {
+                    throw std::logic_error("Cannot copy Value holding a non-copyable scene::Object");
+                } else {
+                    this->storage = v;
+                }
+            },
+            other.storage);
+    }
+
+    // =========================================================================
+    // Value - Assignment Operators
+    // =========================================================================
+
+    auto Value::operator=(const Value& other) -> Value& {
+        if (this == &other) return *this;
+        std::visit(
+            [this](const auto& v) {
+                using T = std::decay_t<decltype(v)>;
+                if constexpr (std::is_same_v<T, std::unique_ptr<gkit::core::scene::Object>>) {
+                    throw std::logic_error("Cannot copy Value holding a non-copyable scene::Object");
+                } else {
+                    this->storage = v;
+                }
+            },
+            other.storage);
+        return *this;
+    }
 
     // =========================================================================
     // Value - Assignment Operators
@@ -62,13 +92,8 @@ namespace gkit::core {
         return *this;
     }
 
-    auto Value::operator=(gkit::core::scene::Object* value) noexcept -> Value& {
-        storage = value;
-        return *this;
-    }
-
     auto Value::operator=(std::unique_ptr<gkit::core::scene::Object> value) noexcept -> Value& {
-        storage = value.release();
+        storage = std::move(value);
         return *this;
     }
 
@@ -101,9 +126,9 @@ namespace gkit::core {
     // =========================================================================
 
     auto Value::as_object() -> std::unique_ptr<gkit::core::scene::Object> {
-        auto* ptr = std::get<gkit::core::scene::Object*>(storage);
-        storage   = Null{};
-        return std::unique_ptr<gkit::core::scene::Object>(ptr);
+        auto ptr = std::move(std::get<std::unique_ptr<gkit::core::scene::Object>>(storage));
+        storage  = Null{};
+        return ptr;
     }
 
     // =========================================================================
@@ -115,7 +140,7 @@ namespace gkit::core {
     }
 
     auto Value::as_object_or(gkit::core::scene::Object* fallback) const noexcept -> gkit::core::scene::Object* {
-        return is_object() ? std::get<gkit::core::scene::Object*>(storage) : fallback;
+        return is_object() ? std::get<std::unique_ptr<gkit::core::scene::Object>>(storage).get() : fallback;
     }
 
     // =========================================================================
