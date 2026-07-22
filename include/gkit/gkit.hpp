@@ -1,7 +1,7 @@
 #pragma once
 
 /** Core **/
-#include <gkit/core/input/action.hpp>
+#include ""
 #include <gkit/core/input/input.hpp>
 #include <gkit/core/input/keys.hpp>
 #include <gkit/core/input/mouse.hpp>

@@ -1,8 +1,6 @@
 set (GKIT_CORE "gkit_core")
 
 set (CORE_SRC
-    # Runner
-    "./processer.cpp"
 
     # Input module
     "./input/action.cpp"
@@ -12,6 +10,9 @@ set (CORE_SRC
     # Scene module
     "./scene/object.cpp"
     "./scene/unit.cpp"
+
+    "./processer.cpp"
+    "./value.cpp"
 )
 
 add_library(${GKIT_CORE} OBJECT ${CORE_SRC})
