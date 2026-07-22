@@ -11,6 +11,9 @@ set (CORE_SRC
     "./scene/object.cpp"
     "./scene/unit.cpp"
 
+    # Reflect module
+    "./reflect/registry.cpp"
+
     "./processer.cpp"
     "./value.cpp"
 )
