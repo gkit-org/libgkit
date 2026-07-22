@@ -55,21 +55,23 @@ namespace gkit::core {
     using Map = std::map<std::string, Value>;
 
     /**
-     * @brief The core Value type representing any JSON value
+     * @brief Dynamically typed value container capable of holding null, bool,
+     *        number (int64/double), string, array, map, or a scene::Object（abd Object extended）.
      */
     class Value final {
     public:
         /**
-         * @brief Underlying variant type holding all JSON value types
+         * @brief Variant storage backing the Value. Object is held as raw pointer
+         *        (non-owning when set via raw pointer, owning when set via unique_ptr or copy-construct).
          */
         using Storage = std::variant<Null, bool, Number, std::string, Array, Map, gkit::core::scene::Object*>;
 
+    public: // Constructors
         Value() noexcept        = default;
         Value(const Value&)     = default;
         Value(Value&&) noexcept = default;
         ~Value()                = default;
 
-        /** Convenience constructors for each JSON type **/
         explicit Value(Null) noexcept;
         explicit Value(bool value) noexcept;
         explicit Value(std::int64_t value) noexcept;
@@ -80,17 +82,17 @@ namespace gkit::core {
         Value(Array value); // NOLINT(google-explicit-constructor)
         Value(Map value); // NOLINT(google-explicit-constructor)
 
-        /// @brief Store an Object by raw pointer (non-owning)
+        /// @brief Store an Object by raw pointer (non-owning, the Value does not manage lifetime).
         explicit Value(gkit::core::scene::Object* value) noexcept;
 
-        /// @brief Store an Object by unique_ptr (takes ownership)
+        /// @brief Store an Object by unique_ptr (the Value takes exclusive ownership).
         explicit Value(std::unique_ptr<gkit::core::scene::Object> value) noexcept;
 
-        /// @brief Copy-construct from a derived Object type
+        /// @brief Copy-construct a Value from a derived Object type. Allocates a new copy on the heap.
         template<gkit::core::scene::IsObject T>
         explicit Value(const T& value);
 
-        /** Assignment operators **/
+    public: // Assignment operators
         auto operator=(const Value&) -> Value&     = default;
         auto operator=(Value&&) noexcept -> Value& = default;
 
@@ -104,7 +106,10 @@ namespace gkit::core {
         auto operator=(Array value) -> Value&;
         auto operator=(Map value) -> Value&;
 
+        /// @brief Assign a raw Object pointer (non-owning).
         auto operator=(gkit::core::scene::Object* value) noexcept -> Value&;
+
+        /// @brief Assign a unique_ptr, taking ownership of the Object.
         auto operator=(std::unique_ptr<gkit::core::scene::Object> value) noexcept -> Value&;
 
     public: // Type checking
@@ -154,18 +159,36 @@ namespace gkit::core {
         [[nodiscard]] auto as_map() noexcept -> Map&;
 
     public: // Object accessors
-        /// @brief Transfer ownership of the stored Object. The Value becomes Null after call.
+        /**
+         * @brief Release the stored Object and transfer ownership to the caller.
+         *        The Value becomes Null after this call.
+         * @pre is_object() must be true; otherwise throws std::bad_variant_access.
+         */
         [[nodiscard]] auto as_object() -> std::unique_ptr<gkit::core::scene::Object>;
 
+        /**
+         * @brief Access the stored Object by reference, downcasting to T via dynamic_cast.
+         * @throws std::invalid_argument if the stored Object is not of type T.
+         */
         template<gkit::core::scene::IsObject T>
         [[nodiscard]] auto as() -> T&;
 
+        /**
+         * @brief Const version of as<T>().
+         */
         template<gkit::core::scene::IsObject T>
         [[nodiscard]] auto as() const -> const T&;
 
+        /**
+         * @brief Try to access the stored Object as type T. Returns nullptr on mismatch
+         *        or if the Value does not hold an Object.
+         */
         template<gkit::core::scene::IsObject T>
         [[nodiscard]] auto try_as() noexcept -> T*;
 
+        /**
+         * @brief Const version of try_as<T>().
+         */
         template<gkit::core::scene::IsObject T>
         [[nodiscard]] auto try_as() const noexcept -> const T*;
 
@@ -181,6 +204,10 @@ namespace gkit::core {
         }
         [[nodiscard]] auto as_string_or(const std::string& fallback) const noexcept -> const std::string&;
 
+        /**
+         * @brief Return the stored Object pointer, or the given fallback if the Value
+         *        does not hold an Object. Does not transfer ownership.
+         */
         [[nodiscard]] auto as_object_or(gkit::core::scene::Object* fallback) const noexcept
             -> gkit::core::scene::Object*;
 
