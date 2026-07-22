@@ -1,13 +1,15 @@
 #include "gkit/math/constants.hpp"
+
+#include <format>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <string>
+
+#include <gkit/math/matrix3.hpp>
 #include <gkit/math/matrix4.hpp>
 #include <gkit/math/vector3.hpp>
 #include <gkit/math/vector4.hpp>
-#include <gkit/math/matrix3.hpp>
-#include <string>
-#include <sstream>
-#include <iomanip>
-#include <format>
-#include <iostream>
 
 auto mat4_str(const gkit::math::Matrix4& mat) -> std::string {
     std::ostringstream oss;
@@ -111,19 +113,22 @@ auto main() -> int {
     std::cout << mat4_str(rot_x) << '\n';
 
     // Verify rotation
-    std::cout << "rot_x * (0,1,0) = " << vec3_str(Matrix4::transform_point(rot_x, {0.0f, 1.0f, 0.0f})) << " (expected: ~ (0,0,1))" << '\n';
+    std::cout << "rot_x * (0,1,0) = " << vec3_str(Matrix4::transform_point(rot_x, {0.0f, 1.0f, 0.0f}))
+              << " (expected: ~ (0,0,1))" << '\n';
 
     // Test 13: Rotation Y
     std::cout << "\n13. Rotation Y (90 degrees):" << '\n';
     auto rot_y = Matrix4::rotate_y(gkit::math::PI_32 / 2.0f);
     std::cout << mat4_str(rot_y) << '\n';
-    std::cout << "rot_y * (1,0,0) = " << vec3_str(Matrix4::transform_point(rot_y, {1.0f, 0.0f, 0.0f})) << " (expected: ~ (0,0,-1))" << '\n';
+    std::cout << "rot_y * (1,0,0) = " << vec3_str(Matrix4::transform_point(rot_y, {1.0f, 0.0f, 0.0f}))
+              << " (expected: ~ (0,0,-1))" << '\n';
 
     // Test 14: Rotation Z
     std::cout << "\n14. Rotation Z (90 degrees):" << '\n';
     auto rot_z = Matrix4::rotate_z(gkit::math::PI_32 / 2.0f);
     std::cout << mat4_str(rot_z) << '\n';
-    std::cout << "rot_z * (1,0,0) = " << vec3_str(Matrix4::transform_point(rot_z, {1.0f, 0.0f, 0.0f})) << " (expected: ~ (0,1,0))" << '\n';
+    std::cout << "rot_z * (1,0,0) = " << vec3_str(Matrix4::transform_point(rot_z, {1.0f, 0.0f, 0.0f}))
+              << " (expected: ~ (0,1,0))" << '\n';
 
     // Test 15: Arbitrary axis rotation
     std::cout << "\n15. Rotation around (1,1,1) axis 90 degrees:" << '\n';
@@ -196,7 +201,7 @@ auto main() -> int {
 
     // Test 26: Perspective projection
     std::cout << "\n26. Perspective projection (fov=60deg, aspect=1.778, near=0.1, far=100):" << '\n';
-    auto persp = Matrix4::perspective(gkit::math::PI_32 / 3.0f, 16.0f/9.0f, 0.1f, 100.0f);
+    auto persp = Matrix4::perspective(gkit::math::PI_32 / 3.0f, 16.0f / 9.0f, 0.1f, 100.0f);
     std::cout << mat4_str(persp) << '\n';
 
     // Test 27: Orthographic projection
@@ -216,7 +221,8 @@ auto main() -> int {
 
     // Test 30: Is orthonormal
     std::cout << "\n30. Is orthonormal check:" << '\n';
-    std::cout << "rot_x.is_orthonormal() = " << (rot_x.is_orthonormal() ? "true" : "false") << " (expected: true)" << '\n';
+    std::cout << "rot_x.is_orthonormal() = " << (rot_x.is_orthonormal() ? "true" : "false") << " (expected: true)"
+              << '\n';
 
     // Test 31: Trace
     std::cout << "\n31. Trace:" << '\n';
@@ -225,11 +231,7 @@ auto main() -> int {
     // Test 32: From rows/columns
     std::cout << "\n32. From rows:" << '\n';
     auto from_rows = Matrix4::from_rows(
-        {1.0f, 0.0f, 0.0f, 0.0f},
-        {0.0f, 2.0f, 0.0f, 0.0f},
-        {0.0f, 0.0f, 3.0f, 0.0f},
-        {4.0f, 5.0f, 6.0f, 1.0f}
-    );
+        {1.0f, 0.0f, 0.0f, 0.0f}, {0.0f, 2.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 3.0f, 0.0f}, {4.0f, 5.0f, 6.0f, 1.0f});
     std::cout << mat4_str(from_rows) << '\n';
 
     // Test 33: Lerp
@@ -275,7 +277,8 @@ auto main() -> int {
     std::cout << "\n39. Rotation between vectors:" << '\n';
     auto rot_between = Matrix4::rotation_between_vectors({1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f});
     std::cout << mat4_str(rot_between) << '\n';
-    std::cout << "rot_between * (1,0,0) = " << vec3_str(Matrix4::transform_vector(rot_between, {1.0f, 0.0f, 0.0f})) << '\n';
+    std::cout << "rot_between * (1,0,0) = " << vec3_str(Matrix4::transform_vector(rot_between, {1.0f, 0.0f, 0.0f}))
+              << '\n';
 
     // Test 40: Get quaternion
     std::cout << "\n40. Get quaternion from rotation:" << '\n';

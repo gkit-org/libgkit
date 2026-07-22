@@ -1,15 +1,16 @@
-#include <cstdio>
-#include <cassert>
 #include "gkit/math/constants.hpp"
 #include "gkit/math/scalar.hpp"
+
+#include <cassert>
+#include <cstdio>
 
 int main() {
     using namespace gkit::math; // NOLINT(google-build-using-namespace
     // ====== test scalar.hpp ======
 
     // ScalarLimits tests
-    assert(ScalarLimits<int32_t>::MIN_V    == -2147483647 - 1);
-    assert(ScalarLimits<int32_t>::MAX_V    == 2147483647);
+    assert(ScalarLimits<int32_t>::MIN_V == -2147483647 - 1);
+    assert(ScalarLimits<int32_t>::MAX_V == 2147483647);
     assert(ScalarLimits<float>::EPSILON_V > 0);
 
     // fp constants tests
@@ -18,8 +19,8 @@ int main() {
     assert(MAX32 > MIN32);
 
     // integer constants tests
-    assert(I8_MIN  == -128);
-    assert(I8_MAX  == 127);
+    assert(I8_MIN == -128);
+    assert(I8_MAX == 127);
     assert(U8_MAX == 255);
     assert(I16_MIN == -32768);
     assert(I16_MAX == 32767);
@@ -56,9 +57,8 @@ int main() {
 
     // Print test output
     printf("=== scalar.hpp tests ===\n");
-    printf("int32 min: %d, max: %d\n",
-           gkit::math::ScalarLimits<int32_t>::MIN_V,
-           gkit::math::ScalarLimits<int32_t>::MAX_V);
+    printf(
+        "int32 min: %d, max: %d\n", gkit::math::ScalarLimits<int32_t>::MIN_V, gkit::math::ScalarLimits<int32_t>::MAX_V);
     printf("float32 epsilon: %.10f\n", gkit::math::ScalarLimits<float>::EPSILON_V);
 
     printf("\n=== constants.hpp tests ===\n");

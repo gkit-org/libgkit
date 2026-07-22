@@ -106,7 +106,7 @@ namespace gkit::core {
         auto operator=(Array value) -> Value&;
         auto operator=(Map value) -> Value&;
 
-        /** @brief Assign a unique_ptr, taking ownership of the Object. */ 
+        /** @brief Assign a unique_ptr, taking ownership of the Object. */
         auto operator=(std::unique_ptr<gkit::core::scene::Object> value) noexcept -> Value&;
 
     public: // Type checking

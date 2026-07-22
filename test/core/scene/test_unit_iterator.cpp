@@ -1,39 +1,38 @@
 #include <algorithm>
-#include <gkit/gkit.hpp>
 #include <iostream>
+#include <iterator>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
-#include <iterator>
+
+#include <gkit/gkit.hpp>
 
 using gkit::core::scene::Unit;
 
-#define TEST(cond, msg) do { \
-    if (!(cond)) { \
-        std::cerr << "FAIL: " << msg << " (" << __FILE__ << ":" << __LINE__ << ")\n"; \
-        return false; \
-    } else { \
-        std::cout << "PASS: " << msg << '\n'; \
-    } \
-} while(0)
-
+#define TEST(cond, msg)                                                                   \
+    do {                                                                                  \
+        if (!(cond)) {                                                                    \
+            std::cerr << "FAIL: " << msg << " (" << __FILE__ << ":" << __LINE__ << ")\n"; \
+            return false;                                                                 \
+        } else {                                                                          \
+            std::cout << "PASS: " << msg << '\n';                                         \
+        }                                                                                 \
+    } while (0)
 
 class TestUnit : public Unit {
 public:
-    using Unit::ready_handler;
-    using Unit::process_handler;
     using Unit::exit_handler;
     using Unit::parent;
+    using Unit::process_handler;
+    using Unit::ready_handler;
 
-    static auto create(std::string name = "") {
-        return Unit::create<TestUnit>(std::move(name));
-    }
+    static auto create(std::string name = "") { return Unit::create<TestUnit>(std::move(name)); }
 
-    int ready_calls = 0;
+    int ready_calls   = 0;
     int process_calls = 0;
     int physics_calls = 0;
-    int exit_calls = 0;
+    int exit_calls    = 0;
     std::string name_storage;
 
     // Custom constructor
@@ -47,9 +46,7 @@ public:
         process_calls++;
         std::cout << "TestUnit[" << name_storage << "] _process()\n";
     }
-    void physics_process() override {
-        physics_calls++;
-    }
+    void physics_process() override { physics_calls++; }
     void exit() override {
         exit_calls++;
         std::cout << "TestUnit[" << name_storage << "] _exit()\n";
@@ -96,7 +93,7 @@ bool test_iterator() {
     TEST(&(*it) == children[0], "pre-decrement");
 
     const auto& const_parent = *parent;
-    idx = 0;
+    idx                      = 0;
     for (auto& u : const_parent) {
         TEST(&u == children[idx], "const iterator works");
         idx++;

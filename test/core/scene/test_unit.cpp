@@ -1,22 +1,24 @@
 // NOLINTBEGIN(google-readability-avoid-underscore-in-googletest-name)
 #include "gkit/core/scene/object.hpp"
-#include <gkit/core/scene/unit.hpp>
 
 #include <iostream>
 #include <memory>
 #include <string>
 #include <vector>
 
+#include <gkit/core/scene/unit.hpp>
+
 using gkit::core::scene::Unit;
 
-#define TEST(cond, msg) do { \
-    if (!(cond)) { \
-        std::cerr << "FAIL: " << msg << " (" << __FILE__ << ":" << __LINE__ << ")\n"; \
-        return false; \
-    } else { \
-        std::cout << "PASS: " << msg << '\n'; \
-    } \
-} while(0) 
+#define TEST(cond, msg)                                                                   \
+    do {                                                                                  \
+        if (!(cond)) {                                                                    \
+            std::cerr << "FAIL: " << msg << " (" << __FILE__ << ":" << __LINE__ << ")\n"; \
+            return false;                                                                 \
+        } else {                                                                          \
+            std::cout << "PASS: " << msg << '\n';                                         \
+        }                                                                                 \
+    } while (0)
 
 class OtherUnit : public Unit {
 public:
@@ -25,10 +27,10 @@ public:
 
 class TestUnit : public Unit {
 public:
-    using Unit::ready_handler;
-    using Unit::process_handler;
-    using Unit::physics_process_handler;
     using Unit::exit_handler;
+    using Unit::physics_process_handler;
+    using Unit::process_handler;
+    using Unit::ready_handler;
 
     explicit TestUnit(std::string&& unit_name) : Unit(std::move(unit_name)), id(unit_name) {}
 
@@ -57,11 +59,11 @@ public:
     }
 
     std::string id;
-    int ready_calls = 0;
-    int process_calls = 0;
-    int physics_calls = 0;
-    int exit_calls = 0;
-    int value = 0;
+    int ready_calls      = 0;
+    int process_calls    = 0;
+    int physics_calls    = 0;
+    int exit_calls       = 0;
+    int value            = 0;
     bool drop_on_process = false;
 
     static std::vector<std::string> timeline;
@@ -77,21 +79,27 @@ auto test_create_and_with_child() -> bool {
     auto parent = Object::create<TestUnit>("parent");
     TEST(parent != nullptr, "create<TestUnit> returns non-null");
 
-    auto child = Object::create<TestUnit>("child");
+    auto child      = Object::create<TestUnit>("child");
     auto* child_ptr = child.get();
     parent->add_child(std::move(child));
 
     TEST(child_ptr->ready_calls == 1, "add_child triggers child ready once");
 
-    auto value_opt = parent->with_child<TestUnit>(0, [](TestUnit& c) -> int { return c.value; });
+    auto value_opt = parent->with_child<TestUnit>(0, [](TestUnit& c) -> int {
+        return c.value;
+    });
     TEST(value_opt == 0, "with_child(index) returns callable result");
 
-    auto value_by_name = parent->with_child<TestUnit>("child", [](TestUnit& c) { return c.value; });
+    auto value_by_name = parent->with_child<TestUnit>("child", [](TestUnit& c) {
+        return c.value;
+    });
     TEST(value_by_name == 0, "with_child(name) returns callable result");
 
     bool wrong_type_thrown = false;
     try {
-        (void)parent->with_child<OtherUnit>(0, [](OtherUnit&) { return 1; });
+        (void)parent->with_child<OtherUnit>(0, [](OtherUnit&) {
+            return 1;
+        });
     } catch (const std::invalid_argument&) {
         wrong_type_thrown = true;
     }
@@ -99,7 +107,9 @@ auto test_create_and_with_child() -> bool {
 
     bool out_of_range_thrown = false;
     try {
-        (void)parent->with_child<TestUnit>(99, [](TestUnit&) { return 1; });
+        (void)parent->with_child<TestUnit>(99, [](TestUnit&) {
+            return 1;
+        });
     } catch (const std::out_of_range&) {
         out_of_range_thrown = true;
     }
@@ -107,7 +117,9 @@ auto test_create_and_with_child() -> bool {
 
     bool name_not_found_thrown = false;
     try {
-        (void)parent->with_child<TestUnit>("missing", [](TestUnit&) { return 1; });
+        (void)parent->with_child<TestUnit>("missing", [](TestUnit&) {
+            return 1;
+        });
     } catch (const std::out_of_range&) {
         name_not_found_thrown = true;
     }
@@ -119,9 +131,9 @@ auto test_create_and_with_child() -> bool {
 auto test_handlers_and_drop_flow() -> bool {
     std::cout << "\n=== test_handlers_and_drop_flow ===\n";
 
-    auto root =  Unit::create<TestUnit>("root");
-    auto keep =  Unit::create<TestUnit>("keep");
-    auto drop_later =  Unit::create<TestUnit>("drop_later");
+    auto root       = Unit::create<TestUnit>("root");
+    auto keep       = Unit::create<TestUnit>("keep");
+    auto drop_later = Unit::create<TestUnit>("drop_later");
 
     auto* keep_ptr = keep.get();
     auto* drop_ptr = drop_later.get();
@@ -131,7 +143,9 @@ auto test_handlers_and_drop_flow() -> bool {
     root->add_child(std::move(keep));
     root->add_child(std::move(drop_later));
 
-    auto cache_sync = root->with_child<TestUnit>(0, [](TestUnit& c) { return c.process_calls; });
+    auto cache_sync = root->with_child<TestUnit>(0, [](TestUnit& c) {
+        return c.process_calls;
+    });
 
     TestUnit::timeline.clear();
     root->ready_handler();
@@ -153,17 +167,23 @@ auto test_handlers_and_drop_flow() -> bool {
     TEST(root->process_calls == 1, "process_handler calls process on root");
     TEST(drop_ptr->exit_calls == 1, "child dropped during process receives exit");
 
-    auto remain_0 = root->with_child<TestUnit>(0, [](TestUnit& c) { return c.id; });
+    auto remain_0 = root->with_child<TestUnit>(0, [](TestUnit& c) {
+        return c.id;
+    });
     TEST(remain_0 == "keep", "remaining child is accessible at index 0");
     bool dropped_missing = false;
     try {
-        (void)root->with_child<TestUnit>(1, [](TestUnit& c) { return c.id; });
+        (void)root->with_child<TestUnit>(1, [](TestUnit& c) {
+            return c.id;
+        });
     } catch (const std::out_of_range&) {
         dropped_missing = true;
     }
     TEST(dropped_missing, "dropped child is no longer accessible");
 
-    auto remain_by_name = root->with_child<TestUnit>("keep", [](TestUnit& c) { return c.id; });
+    auto remain_by_name = root->with_child<TestUnit>("keep", [](TestUnit& c) {
+        return c.id;
+    });
     TEST(remain_by_name == "keep", "remaining child is accessible by name");
 
     root->physics_process_handler();
@@ -176,11 +196,11 @@ auto test_handlers_and_drop_flow() -> bool {
 auto test_remove_child_and_iterators() -> bool {
     std::cout << "\n=== test_remove_child_and_iterators ===\n";
 
-    auto root =  Unit::create<TestUnit>("root");
+    auto root = Unit::create<TestUnit>("root");
     std::vector<TestUnit*> children;
 
     for (int i = 0; i < 3; ++i) {
-        auto child =  Unit::create<TestUnit>("child" + std::to_string(i));
+        auto child = Unit::create<TestUnit>("child" + std::to_string(i));
         children.push_back(child.get());
         root->add_child(std::move(child));
     }
@@ -202,7 +222,7 @@ auto test_remove_child_and_iterators() -> bool {
     TEST(idx == -1, "reverse iterator visits all children");
 
     const auto& const_root = *root;
-    idx = 0;
+    idx                    = 0;
     for (auto& unit : const_root) {
         TEST(&unit == children[static_cast<size_t>(idx)], "const iterator works");
         ++idx;
@@ -215,7 +235,9 @@ auto test_remove_child_and_iterators() -> bool {
     TEST(removed->exit_calls == 1, "remove_child marks and removes target child");
     bool missing = false;
     try {
-        (void)root->with_child<TestUnit>(2, [](TestUnit& c) { return c.id; });
+        (void)root->with_child<TestUnit>(2, [](TestUnit& c) {
+            return c.id;
+        });
     } catch (const std::out_of_range&) {
         missing = true;
     }
@@ -239,14 +261,16 @@ auto test_remove_child_and_iterators() -> bool {
 auto test_exit_handler_order() -> bool {
     std::cout << "\n=== test_exit_handler_order ===\n";
 
-    auto root =  Unit::create<TestUnit>("root");
-    auto child0 =  Unit::create<TestUnit>("child0");
-    auto child1 =  Unit::create<TestUnit>("child1");
+    auto root   = Unit::create<TestUnit>("root");
+    auto child0 = Unit::create<TestUnit>("child0");
+    auto child1 = Unit::create<TestUnit>("child1");
 
     root->add_child(std::move(child0));
     root->add_child(std::move(child1));
 
-    auto cache_sync = root->with_child<TestUnit>(0, [](TestUnit& c) { return c.ready_calls; });
+    auto cache_sync = root->with_child<TestUnit>(0, [](TestUnit& c) {
+        return c.ready_calls;
+    });
 
     TestUnit::timeline.clear();
     root->exit_handler();

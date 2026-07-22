@@ -5,11 +5,9 @@
 #include <memory>
 #include <mutex>
 #include <optional>
-#include <mutex>
 #include <utility>
 #include <vector>
 
-    
 gkit::core::scene::Unit::Unit(std::string&& name) noexcept : gkit::core::scene::Unit() {
     this->name = name;
 }
@@ -61,7 +59,7 @@ auto gkit::core::scene::Unit::add_child(std::unique_ptr<Unit>&& child_ptr) -> vo
     child_ptr->ready();
     {
         std::unique_lock<std::mutex> lock(this->children_mutex);
-        auto& child_name = this->children.back()->name;
+        auto& child_name    = this->children.back()->name;
         auto& new_child_ptr = this->children.back();
         if (this->name_map_cache.contains(child_name)) {
             throw std::invalid_argument("child_ptr name is already exist");
@@ -82,7 +80,6 @@ auto gkit::core::scene::Unit::remove_child(const std::string& child_name) noexce
     child_ptr->ready_to_drop();
 }
 
-
 auto gkit::core::scene::Unit::get_child(uint32_t index) noexcept -> Unit* {
     std::unique_lock<std::mutex> lock(this->children_mutex);
 
@@ -100,7 +97,6 @@ auto gkit::core::scene::Unit::get_child(const std::string& child_name) noexcept 
     }
     return iter->second;
 }
-
 
 auto gkit::core::scene::Unit::drop_children() -> void {
     std::vector<std::unique_ptr<Unit>> to_exit;
@@ -133,8 +129,8 @@ auto gkit::core::scene::Unit::get_parent<gkit::core::scene::Unit>() noexcept
 // UnitIterator
 
 template<bool IsConst>
-gkit::core::scene::Unit::UnitIterator<IsConst>::UnitIterator(const Unit* owner, size_t pos)
-    : m_owner(owner), m_pos(pos) {}
+gkit::core::scene::Unit::UnitIterator<IsConst>::UnitIterator(const Unit* owner, size_t pos) :
+    m_owner(owner), m_pos(pos) {}
 
 template<bool IsConst>
 auto gkit::core::scene::Unit::UnitIterator<IsConst>::operator*() const -> reference {
@@ -177,16 +173,27 @@ auto gkit::core::scene::Unit::UnitIterator<IsConst>::operator==(const UnitIterat
     return m_owner == other.m_owner && m_pos == other.m_pos;
 }
 
-
 template class gkit::core::scene::Unit::UnitIterator<true>;
 template class gkit::core::scene::Unit::UnitIterator<false>;
 
-auto gkit::core::scene::Unit::begin() -> iterator { return iterator(this, 0); }
-auto gkit::core::scene::Unit::end() -> iterator { return iterator(this, children.size()); }
-auto gkit::core::scene::Unit::begin() const -> const_iterator { return const_iterator(this, 0); }
-auto gkit::core::scene::Unit::end() const -> const_iterator { return const_iterator(this, children.size()); }
-auto gkit::core::scene::Unit::cbegin() const -> const_iterator { return begin(); }
-auto gkit::core::scene::Unit::cend() const -> const_iterator { return end(); }
+auto gkit::core::scene::Unit::begin() -> iterator {
+    return iterator(this, 0);
+}
+auto gkit::core::scene::Unit::end() -> iterator {
+    return iterator(this, children.size());
+}
+auto gkit::core::scene::Unit::begin() const -> const_iterator {
+    return const_iterator(this, 0);
+}
+auto gkit::core::scene::Unit::end() const -> const_iterator {
+    return const_iterator(this, children.size());
+}
+auto gkit::core::scene::Unit::cbegin() const -> const_iterator {
+    return begin();
+}
+auto gkit::core::scene::Unit::cend() const -> const_iterator {
+    return end();
+}
 
 auto gkit::core::scene::Unit::rbegin() -> reverse_iterator {
     return reverse_iterator(end());

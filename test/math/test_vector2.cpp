@@ -1,12 +1,11 @@
-#include "gkit/math/vector2.hpp"
 #include "gkit/math/scalar.hpp"
+#include "gkit/math/vector2.hpp"
 
 #include <cassert>
 #include <cmath>
-#include <iostream>
 #include <format>
+#include <iostream>
 #include <string>
-
 
 using gkit::math::Vector2;
 
@@ -102,7 +101,7 @@ auto main() -> int {
 
     // Reflect
     Vector2 v(1.0f, 1.0f);
-    Vector2 n(0.0f, 1.0f);  // Reflect off horizontal surface
+    Vector2 n(0.0f, 1.0f); // Reflect off horizontal surface
     Vector2 reflect_result = Vector2::reflect(v, n);
     std::cout << "Vector2::reflect((1,1), (0,1)): " << vec_str(reflect_result) << '\n';
     assert(std::abs(reflect_result.x - 1.0f) < gkit::math::EPSILON32);

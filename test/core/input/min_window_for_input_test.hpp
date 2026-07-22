@@ -1,10 +1,11 @@
 #pragma once
 
 #include <SDL3/SDL.h>
+
 #include <iostream>
 
 namespace gkit::test {
-    // A window for event system to work 
+    // A window for event system to work
     struct Window {
         Window() {
             SDL_Init(SDL_INIT_VIDEO);
@@ -35,7 +36,7 @@ namespace gkit::test {
             SDL_DestroyWindow(win_ptr);
         }
 
-        SDL_Window* win_ptr = nullptr;
+        SDL_Window* win_ptr    = nullptr;
         SDL_Renderer* renderer = nullptr;
     };
 } // namespace gkit::test

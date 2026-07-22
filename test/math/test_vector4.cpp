@@ -1,7 +1,8 @@
-#include <gkit/math/vector4.hpp>
-#include <string>
 #include <format>
 #include <iostream>
+#include <string>
+
+#include <gkit/math/vector4.hpp>
 
 using gkit::math::Vector4;
 

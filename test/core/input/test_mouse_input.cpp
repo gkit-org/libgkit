@@ -1,41 +1,37 @@
 #include "min_window_for_input_test.hpp"
+
+#include <cstdint>
 #include <cstdio>
+
 #include <gkit/core/input/input.hpp>
 #include <misc/sdl_event_dispatcher.hpp>
-#include <cstdint>
 
 auto main() -> int {
     using gkit::input::Action;
     using gkit::input::Mod;
     using gkit::input::MouseChord;
 
-    auto win = gkit::test::Window{};
-    auto& input = gkit::Input::instance();
+    auto win               = gkit::test::Window{};
+    auto& input            = gkit::Input::instance();
     auto& event_dispatcher = gkit::misc::SDLEventDispatcher::instance();
 
     auto shoot_action = Action("Shoot");
-    shoot_action.set_action(MouseChord{
-        .buttons = {gkit::input::MouseButton::Left},
-        .modifiers = static_cast<uint32_t>(Mod::None)
-    });
+    shoot_action.set_action(
+        MouseChord{.buttons = {gkit::input::MouseButton::Left}, .modifiers = static_cast<uint32_t>(Mod::None)});
 
     auto aim_action = Action("Aim");
-    aim_action.set_action(MouseChord{
-        .buttons = {gkit::input::MouseButton::Right},
-        .modifiers = static_cast<uint32_t>(Mod::None)
-    });
+    aim_action.set_action(
+        MouseChord{.buttons = {gkit::input::MouseButton::Right}, .modifiers = static_cast<uint32_t>(Mod::None)});
 
     auto jump_url_action = Action("JumpUrl");
-    jump_url_action.set_action(MouseChord{
-        .buttons = {gkit::input::MouseButton::Left},
-        .modifiers = static_cast<uint32_t>(Mod::LCtrl)
-    });
+    jump_url_action.set_action(
+        MouseChord{.buttons = {gkit::input::MouseButton::Left}, .modifiers = static_cast<uint32_t>(Mod::LCtrl)});
 
     input.register_action(shoot_action);
     input.register_action(aim_action);
     input.register_action(jump_url_action);
 
-    while(1) {
+    while (1) {
         event_dispatcher.dispatch_events();
 
         if (input.is_action_pressed("Shoot")) {
@@ -59,7 +55,7 @@ auto main() -> int {
             break;
         }
 
-        auto mouse_move = input.get_mouse_move();
+        auto mouse_move  = input.get_mouse_move();
         auto mouse_wheel = input.get_mouse_wheel();
 
         if (mouse_move != gkit::math::Vector2::zero()) {

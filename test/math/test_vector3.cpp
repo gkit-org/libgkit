@@ -1,7 +1,8 @@
-#include <gkit/math/vector3.hpp>
-#include <string>
 #include <format>
 #include <iostream>
+#include <string>
+
+#include <gkit/math/vector3.hpp>
 
 using gkit::math::Vector3;
 

@@ -1,6 +1,6 @@
-#include <gkit/math/color.hpp>
 #include <iostream>
 
+#include <gkit/math/color.hpp>
 
 auto main() -> int {
     using namespace gkit::math; // NOLINT(google-build-using-namespace
@@ -8,7 +8,7 @@ auto main() -> int {
 
     // Test: RGB -> RGBA
     uint32_t rgb = 0xFF8040;
-    auto rgba = rgb_to_rgba(rgb, 128);
+    auto rgba    = rgb_to_rgba(rgb, 128);
     std::cout << "rgb_to_rgba(0xFF8040, 128) = 0x" << std::hex << rgba << std::dec << '\n';
 
     // Test: get_r/g/b
@@ -20,7 +20,7 @@ auto main() -> int {
 
     // Test: alpha_blend
     uint32_t src = 0x80FF0000; // Red with 50% alpha
-    uint32_t dst = 0xFF0000FF;   // Blue
+    uint32_t dst = 0xFF0000FF; // Blue
     auto blended = alpha_blend(src, dst);
     std::cout << "alpha_blend(0x80FF0000, 0xFF0000FF) = 0x" << std::hex << blended << std::dec << '\n';
 
@@ -53,7 +53,7 @@ auto main() -> int {
     std::cout << "rgb_to_hsv(0xFF8040): H=" << hsv.h << " S=" << hsv.s << " V=" << hsv.v << '\n';
 
     // Test: hsv_to_rgb
-    HSV hsv2{ .h=180.0f, .s=1.0f, .v=0.5f };
+    HSV hsv2{.h = 180.0f, .s = 1.0f, .v = 0.5f};
     auto rgb2 = hsv_to_rgb(hsv2);
     std::cout << "hsv_to_rgb(180, 1.0, 0.5) = 0x" << std::hex << rgb2 << std::dec << '\n';
 
@@ -64,7 +64,7 @@ auto main() -> int {
     std::cout << "rgb_to_hsl(0xFF8040): H=" << hsl.h << " S=" << hsl.s << " L=" << hsl.l << '\n';
 
     // Test: hsl_to_rgb
-    HSL hsl2{ .h=60.0f, .s=1.0f, .l=0.5f };
+    HSL hsl2{.h = 60.0f, .s = 1.0f, .l = 0.5f};
     auto rgb3 = hsl_to_rgb(hsl2);
     std::cout << "hsl_to_rgb(60, 1.0, 0.5) = 0x" << std::hex << rgb3 << std::dec << '\n';
 

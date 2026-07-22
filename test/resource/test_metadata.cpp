@@ -1,17 +1,18 @@
-#include <gkit/resource/metadata.hpp>
-#include <iostream>
 #include <cassert>
+#include <iostream>
 #include <map>
 #include <string>
 
-using gkit::resource::metadata::Value;
+#include <gkit/resource/metadata.hpp>
+
 using gkit::resource::metadata::Array;
 using gkit::resource::metadata::Object;
 using gkit::resource::metadata::parse;
-using gkit::resource::metadata::try_parse;
+using gkit::resource::metadata::ParseError;
 using gkit::resource::metadata::serialize;
 using gkit::resource::metadata::serialize_pretty;
-using gkit::resource::metadata::ParseError;
+using gkit::resource::metadata::try_parse;
+using gkit::resource::metadata::Value;
 
 auto test_value_construction() -> void {
     std::cout << "=== Test: Value Construction ===" << '\n';
@@ -76,7 +77,7 @@ auto test_parsing_literals() -> void {
     std::cout << "  null: OK" << '\n';
 
     // Booleans
-    auto true_val = parse("true");
+    auto true_val  = parse("true");
     auto false_val = parse("false");
     assert(true_val.is_bool() && true_val.as_bool() == true);
     assert(false_val.is_bool() && false_val.as_bool() == false);
@@ -128,7 +129,7 @@ auto test_parsing_strings() -> void {
 
     // Unicode escapes
     assert(parse("\"\\u0041\"").as_string() == "A");
-    assert(parse("\"\\u00e9\"").as_string() == "\xc3\xa9");  // é
+    assert(parse("\"\\u00e9\"").as_string() == "\xc3\xa9"); // é
     std::cout << "  Unicode: OK" << '\n';
 
     std::cout << "All string parsing tests passed!" << '\n' << '\n';
@@ -227,10 +228,10 @@ auto test_serialization() -> void {
     std::cout << "  Pretty serialization: OK" << '\n';
 
     // Round-trip test
-    auto original = R"({"name": "test", "values": [1, 2, 3], "nested": {"a": true}})";
-    auto parsed = parse(original);
+    auto original   = R"({"name": "test", "values": [1, 2, 3], "nested": {"a": true}})";
+    auto parsed     = parse(original);
     auto serialized = serialize(parsed);
-    auto reparsed = parse(serialized);
+    auto reparsed   = parse(serialized);
     assert(reparsed["name"].as_string() == "test");
     assert(reparsed["values"][2].as_int64() == 3);
     assert(reparsed["nested"]["a"].as_bool() == true);
@@ -295,7 +296,7 @@ auto test_parse_errors() -> void {
     // Missing closing brace
     try {
         (void)parse("{");
-        assert(false);  // Should not reach here
+        assert(false); // Should not reach here
     } catch (const ParseError& e) {
         std::cout << "  Missing brace: " << e.what() << '\n';
     }
@@ -386,7 +387,7 @@ auto test_complex_example() -> void {
 
     // Serialize and verify round-trip
     auto serialized = serialize_pretty(config);
-    auto reparsed = parse(serialized);
+    auto reparsed   = parse(serialized);
     assert(reparsed["application"]["name"].as_string() == "MyGame");
     std::cout << "  Round-trip: OK" << '\n';
 
@@ -398,10 +399,10 @@ auto test_modification() -> void {
 
     // Build object programmatically
     Value obj(Object{});
-    obj["name"] = "Player";
-    obj["level"] = 5;
+    obj["name"]   = "Player";
+    obj["level"]  = 5;
     obj["health"] = 100.0;
-    obj["alive"] = true;
+    obj["alive"]  = true;
 
     assert(obj["name"].as_string() == "Player");
     assert(obj["level"].as_int64() == 5);
@@ -426,7 +427,7 @@ auto test_modification() -> void {
     Value root(Object{});
     root["items"] = Array{};
     root["items"].push_back(Object{});
-    root["items"][0]["id"] = 1;
+    root["items"][0]["id"]   = 1;
     root["items"][0]["name"] = "Sword";
 
     assert(root["items"][0]["name"].as_string() == "Sword");

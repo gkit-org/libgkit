@@ -1,19 +1,27 @@
 #include "gkit/math/constants.hpp"
-#include <gkit/math/matrix3.hpp>
-#include <gkit/math/vector3.hpp>
-#include <string>
+
 #include <format>
 #include <iostream>
+#include <string>
+
+#include <gkit/math/matrix3.hpp>
+#include <gkit/math/vector3.hpp>
 
 using gkit::math::Matrix3;
 using gkit::math::Vector3;
 
 auto mat_str(const Matrix3& mat) -> std::string {
     auto [m00, m10, m20, m01, m11, m21, m02, m12, m22] = mat.properties();
-    return std::format(
-        "|  {:.3f} {:.3f} {:.3f} |\n|  {:.3f} {:.3f} {:.3f} |\n|  {:.3f} {:.3f} {:.3f} |",
-        m00, m10, m20, m01, m11, m21, m02, m12, m22
-    );
+    return std::format("|  {:.3f} {:.3f} {:.3f} |\n|  {:.3f} {:.3f} {:.3f} |\n|  {:.3f} {:.3f} {:.3f} |",
+                       m00,
+                       m10,
+                       m20,
+                       m01,
+                       m11,
+                       m21,
+                       m02,
+                       m12,
+                       m22);
 }
 
 auto main() -> int {
@@ -91,8 +99,8 @@ auto main() -> int {
 
     // Test 12: Orthogonality check (R * R^T = I)
     std::cout << "\n12. Orthogonality test (rotation matrix):" << '\n';
-    auto r = Matrix3::rotation_z(0.5f);
-    auto rt = Matrix3::transpose(r);
+    auto r     = Matrix3::rotation_z(0.5f);
+    auto rt    = Matrix3::transpose(r);
     auto ortho = r * rt;
     std::cout << "R * R^T:" << '\n';
     std::cout << mat_str(ortho) << '\n';
