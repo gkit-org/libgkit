@@ -8,7 +8,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace gkit::misc {
+namespace gkit::core {
     /**
      * @brief SDL event dispatcher based on event type to handler list mapping.
      */

@@ -7,6 +7,9 @@ set (CORE_SRC
     "./input/cache.cpp"
     "./input/input.cpp"
 
+    # Misc module
+    "./misc/sdl_event_dispatcher.cpp"
+
     # Scene module
     "./scene/object.cpp"
     "./scene/unit.cpp"

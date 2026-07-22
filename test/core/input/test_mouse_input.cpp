@@ -4,7 +4,7 @@
 #include <cstdio>
 
 #include <gkit/core/input/input.hpp>
-#include <misc/sdl_event_dispatcher.hpp>
+#include <core/misc/sdl_event_dispatcher.hpp>
 
 auto main() -> int {
     using gkit::input::Action;
@@ -13,7 +13,7 @@ auto main() -> int {
 
     auto win               = gkit::test::Window{};
     auto& input            = gkit::Input::instance();
-    auto& event_dispatcher = gkit::misc::SDLEventDispatcher::instance();
+    auto& event_dispatcher = gkit::core::SDLEventDispatcher::instance();
 
     auto shoot_action = Action("Shoot");
     shoot_action.set_action(

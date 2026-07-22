@@ -1,11 +1,11 @@
 #include "core/input/cache.hpp"
 
-#include "misc/sdl_event_dispatcher.hpp"
+#include "core/misc/sdl_event_dispatcher.hpp"
 
 #include <SDL3/SDL.h>
 
 gkit::input::Cache::Cache() {
-    auto& event_dispatcher = gkit::misc::SDLEventDispatcher::instance();
+    auto& event_dispatcher = gkit::core::SDLEventDispatcher::instance();
 
     // swap current and previous cache at the beginning of each frame
     // so that we can compare the two states to determine just pressed/released events.
@@ -62,7 +62,7 @@ gkit::input::Cache::Cache() {
 }
 
 gkit::input::Cache::~Cache() {
-    auto& event_dispatcher = gkit::misc::SDLEventDispatcher::instance();
+    auto& event_dispatcher = gkit::core::SDLEventDispatcher::instance();
 
     event_dispatcher.unregister_event_handler(SDL_EVENT_KEY_DOWN);
     event_dispatcher.unregister_event_handler(SDL_EVENT_KEY_UP);
