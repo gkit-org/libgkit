@@ -1,4 +1,6 @@
 #include "gkit/core/scene/unit.hpp"
+#include "gkit/core/reflect/registry.hpp"
+#include "gkit/core/scene/object.hpp"
 
 #include <cstdint>
 #include <functional>
@@ -7,6 +9,17 @@
 #include <optional>
 #include <utility>
 #include <vector>
+
+namespace gkit::core::scene {
+    auto Unit::regist_method() -> void {
+        auto& db = ClassDB::instance();
+        db.regist<Unit>("Unit")
+            .add_field("Unit", "name", &Unit::name);
+    }
+
+    bool Unit::register_holder = []() { Unit::regist_method(); return true; }();
+
+} // namespace gkit::core::scene
 
 gkit::core::scene::Unit::Unit(std::string&& name) noexcept : gkit::core::scene::Unit() {
     this->name = name;

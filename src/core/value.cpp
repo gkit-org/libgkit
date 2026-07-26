@@ -8,7 +8,7 @@ namespace gkit::core {
     Value::Value(Null) noexcept : storage(Null{}) {}
     Value::Value(bool value) noexcept : storage(value) {}
     Value::Value(std::int64_t value) noexcept : storage(Number{value}) {}
-    Value::Value(double value) noexcept : storage(Number{value}) {}
+    Value::Value(float value) noexcept : storage(Number{value}) {}
     Value::Value(const char* value) : storage(std::string(value)) {}
     Value::Value(std::string value) : storage(std::move(value)) {}
     Value::Value(Array value) : storage(std::move(value)) {}
@@ -67,7 +67,7 @@ namespace gkit::core {
         return *this;
     }
 
-    auto Value::operator=(double value) noexcept -> Value& {
+    auto Value::operator=(float value) noexcept -> Value& {
         storage = Number{value};
         return *this;
     }

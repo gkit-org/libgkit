@@ -1,6 +1,7 @@
 #pragma once
 
 #include "gkit/core/scene/object.hpp"
+#include "gkit/core/scene/singleton.hpp"
 #include "gkit/core/value.hpp"
 
 #include <functional>
@@ -11,6 +12,7 @@
 #include <vector>
 
 namespace gkit::core {
+    using RegistHolder = struct {};
 
     struct FieldDesc final {
         std::string name;
@@ -42,14 +44,14 @@ namespace gkit::core {
         std::vector<Setter> setters;
     };
 
-    class ClassDB final {
-    public:
-        static auto instance() -> ClassDB&;
+    class ClassDB final : public gkit::core::scene::Singleton<ClassDB> {
+        friend gkit::core::scene::Singleton<ClassDB>;
 
+    public:
         template<scene::IsObject T>
         auto regist(const std::string& class_name, const std::string& parent = "") -> ClassDB&;
 
-        template<scene::IsObject T, typename F>
+        template<scene::IsObject T, IsValueType F>
         auto add_field(const std::string& class_name, const std::string& field_name, F T::* member) -> ClassDB&;
 
         template<scene::IsObject T>
@@ -81,8 +83,9 @@ namespace gkit::core {
                 } else if constexpr (std::is_integral_v<F>) {
                     return Value(static_cast<std::int64_t>(val));
                 } else if constexpr (std::is_floating_point_v<F>) {
-                    return Value(static_cast<double>(val));
+                    return Value(static_cast<float>(val));
                 }
+                return Value(); // noreachable
             };
         }
 
@@ -97,7 +100,7 @@ namespace gkit::core {
                 } else if constexpr (std::is_integral_v<F>) {
                     val = static_cast<F>(v.as_int64());
                 } else if constexpr (std::is_floating_point_v<F>) {
-                    val = static_cast<F>(v.as_double());
+                    val = static_cast<F>(v.as_float());
                 }
             };
         }
@@ -128,7 +131,7 @@ namespace gkit::core {
         return *this;
     }
 
-    template<scene::IsObject T, typename F>
+    template<scene::IsObject T, IsValueType F>
     auto ClassDB::add_field(const std::string& class_name, const std::string& field_name, F T::* member) -> ClassDB& {
         auto& info = this->classes.at(class_name);
         info.fields.push_back(FieldDesc{field_name, detail::deduce_type<F>()});

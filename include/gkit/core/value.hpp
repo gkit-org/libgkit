@@ -2,6 +2,7 @@
 
 #include "gkit/core/scene/object.hpp"
 
+#include <concepts>
 #include <functional>
 #include <map>
 #include <memory>
@@ -38,16 +39,16 @@ namespace gkit::core {
     struct Null {};
 
     /**
+     * @brief JSON number type - holds either integer or floating-point
+     */
+    using Number = std::variant<std::int64_t, float>;
+
+    using String = std::string;
+
+    /**
      * @brief JSON array type - ordered collection of values
      */
     using Array = std::vector<Value>;
-
-    /**
-     * @brief JSON number type - holds either integer or floating-point
-     */
-    using Number = std::variant<std::int64_t, double>;
-
-    using String = std::string;
 
     /**
      * @brief JSON Map type - string-keyed map of values
@@ -55,9 +56,17 @@ namespace gkit::core {
      */
     using Map = std::map<std::string, Value>;
 
+    using Object = std::unique_ptr<scene::Object>;
+
+    template<typename T>
+    concept IsValueType =
+        std::same_as<std::remove_cv_t<T>, bool> || std::is_convertible_v<std::remove_cv_t<T>, Number> ||
+        std::same_as<std::remove_cv_t<T>, String> || std::is_convertible_v<std::remove_cv_t<T>, Array> ||
+        std::is_convertible_v<std::remove_cv_t<T>, Map> || std::is_convertible_v<std::remove_cv_t<T>, Object>;
+
     /**
      * @brief Dynamically typed value container capable of holding null, bool,
-     *        number (int64/double), string, array, map, or a scene::Object（abd Object extended）.
+     *        number (int64/float), string, array, map, or a scene::Object（abd Object extended）.
      */
     class Value final {
     public:
@@ -78,7 +87,7 @@ namespace gkit::core {
         explicit Value(Null) noexcept;
         explicit Value(bool value) noexcept;
         explicit Value(std::int64_t value) noexcept;
-        explicit Value(double value) noexcept;
+        explicit Value(float value) noexcept;
         explicit Value(int value) noexcept : Value(static_cast<std::int64_t>(value)) {}
         explicit Value(const char* value);
         explicit Value(std::string value);
@@ -100,7 +109,7 @@ namespace gkit::core {
         auto operator=(bool value) noexcept -> Value&;
         auto operator=(std::int64_t value) noexcept -> Value&;
         auto operator=(int value) noexcept -> Value& { return *this = static_cast<std::int64_t>(value); }
-        auto operator=(double value) noexcept -> Value&;
+        auto operator=(float value) noexcept -> Value&;
         auto operator=(const char* value) -> Value&;
         auto operator=(std::string value) -> Value&;
         auto operator=(Array value) -> Value&;
@@ -121,7 +130,7 @@ namespace gkit::core {
         }
         [[nodiscard]] constexpr auto is_number_float() const noexcept -> bool {
             if (!is_number()) return false;
-            return std::holds_alternative<double>(std::get<Number>(storage));
+            return std::holds_alternative<float>(std::get<Number>(storage));
         }
         [[nodiscard]] constexpr auto is_string() const noexcept -> bool {
             return std::holds_alternative<std::string>(storage);
@@ -140,12 +149,12 @@ namespace gkit::core {
             const auto& num = std::get<Number>(storage);
             return std::get<std::int64_t>(num);
         }
-        [[nodiscard]] constexpr auto as_double() const noexcept -> double {
+        [[nodiscard]] constexpr auto as_float() const noexcept -> float {
             const auto& num = std::get<Number>(storage);
-            if (std::holds_alternative<double>(num)) {
-                return std::get<double>(num);
+            if (std::holds_alternative<float>(num)) {
+                return std::get<float>(num);
             }
-            return static_cast<double>(std::get<std::int64_t>(num));
+            return static_cast<float>(std::get<std::int64_t>(num));
         }
         [[nodiscard]] auto as_string() const noexcept -> const std::string&;
         [[nodiscard]] auto as_array() const noexcept -> const Array&;
@@ -196,8 +205,8 @@ namespace gkit::core {
         [[nodiscard]] constexpr auto as_int64_or(std::int64_t fallback) const noexcept -> std::int64_t {
             return is_number_integer() ? as_int64() : fallback;
         }
-        [[nodiscard]] constexpr auto as_double_or(double fallback) const noexcept -> double {
-            return is_number() ? as_double() : fallback;
+        [[nodiscard]] constexpr auto as_float_or(float fallback) const noexcept -> float {
+            return is_number() ? as_float() : fallback;
         }
         [[nodiscard]] auto as_string_or(const std::string& fallback) const noexcept -> const std::string&;
 
@@ -274,7 +283,7 @@ namespace gkit::core {
 
     template<gkit::core::scene::IsObject T>
     Value::Value(const T& value) {
-        this->storage = std::make_unique<T>(value);
+        this->storage = std::make_unique<scene::Object>(value);
     }
 
     template<gkit::core::scene::IsObject T>

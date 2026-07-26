@@ -35,6 +35,8 @@ namespace gkit::core::scene {
      * If you want to move an Unit instance, you should move with the std::unique_ptr by std::move().
      */
     class Unit : public Object {
+        static bool register_holder;
+        static auto regist_method() -> void;
     protected:
         Unit() noexcept = default;
         explicit Unit(std::string&& name) noexcept;

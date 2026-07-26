@@ -32,7 +32,7 @@ public:
 
 class ChildObj : public ReflectTestObj {
 public:
-    double weight = 0.0;
+    float weight = 0.0;
 };
 
 // =========================================================================
@@ -110,7 +110,7 @@ auto test_get_field() -> bool {
 
     auto scale_v = info->get_field(&obj, "scale");
     assert(scale_v.has_value());
-    assert(scale_v->as_double() == 1.0);
+    assert(scale_v->as_float() == 1.0);
     std::cout << "  get float field: OK" << '\n';
 
     auto label_v = info->get_field(&obj, "label");
@@ -143,7 +143,7 @@ auto test_set_field() -> bool {
     assert(obj.count == 42);
     std::cout << "  set int field: OK" << '\n';
 
-    ok = info->set_field(&obj, "scale", Value(2.5));
+    ok = info->set_field(&obj, "scale", Value(2.5f));
     assert(ok);
     assert(obj.scale == 2.5f);
     std::cout << "  set float field: OK" << '\n';
@@ -240,7 +240,7 @@ auto test_get_field_inherited() -> bool {
 
     auto weight_v = info->get_field(&obj, "weight");
     assert(weight_v.has_value());
-    assert(weight_v->as_double() == 3.14);
+    assert(weight_v->as_float() == 3.14f);
     std::cout << "  get own field: OK" << '\n';
 
     return true;
@@ -257,9 +257,9 @@ auto test_set_field_inherited() -> bool {
     assert(obj.active == false);
     std::cout << "  set inherited field: OK" << '\n';
 
-    ok = info->set_field(&obj, "weight", Value(1.618));
+    ok = info->set_field(&obj, "weight", Value(1.618f));
     assert(ok);
-    assert(obj.weight == 1.618);
+    assert(obj.weight == 1.618f);
     std::cout << "  set own field: OK" << '\n';
 
     return true;

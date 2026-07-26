@@ -4,11 +4,6 @@
 
 namespace gkit::core {
 
-    auto ClassDB::instance() -> ClassDB& {
-        static ClassDB db;
-        return db;
-    }
-
     auto ClassDB::find(const std::string& class_name) const -> const ClassInfo* {
         auto it = this->classes.find(class_name);
         if (it != this->classes.end()) {
