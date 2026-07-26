@@ -8,7 +8,7 @@ namespace gkit::core::scene {
     class Object;
 
     template<class T>
-    concept IsObject = requires() { std::derived_from<T, Object>; };
+    concept IsObject = std::derived_from<T, Object>;
 
     /**
      * @brief The base object in libgkit,

@@ -1,5 +1,4 @@
 #include "gkit/core/scene/unit.hpp"
-#include "gkit/core/reflect/registry.hpp"
 
 #include <cstdint>
 #include <functional>
@@ -16,7 +15,7 @@ namespace gkit::core::scene {
             .add_field("Unit", "name", &Unit::name);
     }
 
-    auto Unit::register_holder = reflect::RegistHolder(
+    reflect::RegistHolder Unit::register_holder (
         []() { Unit::regist_method(); return; }
     );
 
