@@ -11,7 +11,7 @@
 #include <type_traits>
 #include <vector>
 
-namespace gkit::core {
+namespace gkit::core::reflect {
     struct RegistHolder {
         explicit RegistHolder(std::function<void()>&& regist_func) { regist_func(); };
     };
@@ -173,4 +173,4 @@ namespace gkit::core {
         }
     }
 
-} // namespace gkit::core
+} // namespace gkit::core::reflect

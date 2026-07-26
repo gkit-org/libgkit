@@ -2,8 +2,8 @@
 #include "gkit/core/reflect/registry.hpp"
 
 namespace gkit::core::scene {
-    static auto regist_holder = gkit::core::RegistHolder ([]() {
-        auto& classdb = gkit::core::ClassDB::instance();
+    static auto regist_holder = gkit::core::reflect::RegistHolder ([]() {
+        auto& classdb = gkit::core::reflect::ClassDB::instance();
         classdb.regist<Object>("Object");
         return;
     });

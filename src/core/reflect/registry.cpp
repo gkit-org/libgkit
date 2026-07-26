@@ -2,7 +2,7 @@
 
 #include <utility>
 
-namespace gkit::core {
+namespace gkit::core::reflect {
 
     auto ClassDB::find(const std::string& class_name) const -> const ClassInfo* {
         auto it = this->classes.find(class_name);
@@ -48,4 +48,4 @@ namespace gkit::core {
         return false;
     }
 
-} // namespace gkit::core
+} // namespace gkit::core::reflect

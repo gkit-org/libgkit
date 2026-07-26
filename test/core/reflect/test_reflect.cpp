@@ -5,9 +5,9 @@
 #include <iostream>
 #include <string>
 
-using gkit::core::ClassDB;
-using gkit::core::ClassInfo;
-using gkit::core::FieldDesc;
+using gkit::core::reflect::ClassDB;
+using gkit::core::reflect::ClassInfo;
+using gkit::core::reflect::FieldDesc;
 using gkit::core::Value;
 using gkit::core::scene::Object;
 
