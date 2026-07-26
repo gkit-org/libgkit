@@ -17,7 +17,9 @@ namespace gkit::core::scene {
             .add_field("Unit", "name", &Unit::name);
     }
 
-    bool Unit::register_holder = []() { Unit::regist_method(); return true; }();
+    auto Unit::register_holder = RegistHolder(
+        []() { Unit::regist_method(); return; }
+    );
 
 } // namespace gkit::core::scene
 

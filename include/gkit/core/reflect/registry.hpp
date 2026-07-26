@@ -12,8 +12,10 @@
 #include <vector>
 
 namespace gkit::core {
-    using RegistHolder = struct {};
-
+    struct RegistHolder {
+        explicit RegistHolder(std::function<void()>&& regist_func) { regist_func(); };
+    };
+    
     struct FieldDesc final {
         std::string name;
         Type value_type;
