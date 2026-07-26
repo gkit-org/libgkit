@@ -1,5 +1,6 @@
 #pragma once
 
+#include "gkit/core/scene/object.hpp"
 #include "gkit/math/vector2.hpp"
 
 #include <cmath>
@@ -8,7 +9,7 @@
 namespace gkit::math {
 
     /// @brief 3D vector (x, y, z)
-    class Vector3 {
+    class Vector3 : public gkit::core::scene::Object {
     public:
         float x = 0.0f;
         float y = 0.0f;
