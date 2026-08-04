@@ -1,4 +1,4 @@
-#include "core/object_pool.hpp"
+#include "gkit/core/object_pool.hpp"
 
 #include "gkit/core/object.hpp"
 #include "gkit/core/object_id.hpp"

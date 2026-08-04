@@ -80,7 +80,7 @@ namespace gkit::core {
     class Value final {
     public:
         /**
-         * @brief Variant storage backing the Value. Object is held via std::unique_ptr
+         * @brief Variant storage backing the Value. Object is held via gkit::core::UniqueObject
          *        for exclusive ownership and automatic lifetime management.
          */
         using Storage = std::variant<Null, Bool, Number, String, Array, Map, UniqueObject, ObjectId>;

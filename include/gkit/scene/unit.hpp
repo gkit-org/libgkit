@@ -1,12 +1,14 @@
 #pragma once
 
 #include "gkit/core/object.hpp"
+#include "gkit/core/object_id.hpp"
 #include "gkit/core/reflect/registry.hpp"
+#include "gkit/core/unique_object.hpp"
 
 #include <atomic>
 #include <cstdint>
 #include <functional>
-#include <memory>
+#include <iterator>
 #include <mutex>
 #include <optional>
 #include <stdexcept>
@@ -32,9 +34,9 @@ namespace gkit::scene {
      * class Unit
      * @brief This is the gkit application unit. It is the basic unit of program composition.
      * @note This class cannot be copied and constructed externally. If you want to create a unit,
-     * you should use the function @ref gkit::core::scene::Unit::create<T>().
+     * you should use the function @ref gkit::core::UniqueObject::create<T>().
      *
-     * If you want to move an Unit instance, you should move with the std::unique_ptr by std::move().
+     * If you want to move an Unit instance, you should move with the gkit::core::UniqueObject by std::move().
      */
     class Unit : public gkit::core::Object {
         static gkit::core::reflect::RegistHolder register_holder;
@@ -103,7 +105,7 @@ namespace gkit::scene {
          * be available after call @ref update_index_cache(), which will be happened when
          * @ref process_handler() is called.
          */
-        auto add_child(std::unique_ptr<Unit>&& child_ptr) -> void;
+        auto add_child(core::UniqueObject&& child_ptr) -> void;
 
         /**
          * @brief Remove a child unit by index
@@ -130,7 +132,7 @@ namespace gkit::scene {
         /**
          * It is not use in the current version.
          */
-        // auto remove_child(std::unique_ptr<gkit::core::scene::Unit>& child_ptr) noexcept -> void;
+        // auto remove_child(core::UniqueObject& child_ptr) noexcept -> void;
 
         /**
          * @brief Get the number of children
@@ -188,28 +190,28 @@ namespace gkit::scene {
 
     protected: // propertries
         std::string name;
-        Unit* parent = nullptr;
+        core::ObjectId parent;
 
     private: // children management
         mutable std::mutex children_mutex{};
-        std::unordered_map<std::string, Unit*> name_map_cache{};
-        std::vector<std::unique_ptr<Unit>> children{};
+        std::unordered_map<std::string, core::ObjectId> name_map_cache{};
+        std::vector<core::UniqueObject> children{};
 
         /**
-         * @brief Get child pointer by index.
+         * @brief Get child id by index.
          * @param index The index of the child.
-         * @return Unit*
-         * If the index is valid, return the pointer to the child; otherwise return nullptr.
+         * @return core::ObjectId
+         * If the index is valid, return the id of the child; otherwise return invalid ObjectId.
          */
-        auto get_child(uint32_t index) noexcept -> Unit*;
+        auto get_child(uint32_t index) noexcept -> core::ObjectId;
 
         /**
-         * @brief Get child pointer by name.
+         * @brief Get child id by name.
          * @param child_name The name of the child.
-         * @return Unit*
-         * If the child exists in name cache, return the pointer; otherwise return nullptr.
+         * @return core::ObjectId
+         * If the child exists in name cache, return the id; otherwise return invalid ObjectId.
          */
-        auto get_child(const std::string& child_name) noexcept -> Unit*;
+        auto get_child(const std::string& child_name) noexcept -> core::ObjectId;
 
         /**
          * @brief Drop all children which are marked ready to drop.
@@ -226,19 +228,20 @@ namespace gkit::scene {
         class UnitIterator {
         public:
             // NOLINTBEGIN(readability-identifier-naming)
-            using value_type      = Unit;
-            using difference_type = std::ptrdiff_t;
-            using pointer         = std::conditional_t<IsConst, const Unit*, Unit*>;
-            using reference       = std::conditional_t<IsConst, const Unit&, Unit&>;
+            using iterator_category = std::bidirectional_iterator_tag;
+            using value_type        = Unit;
+            using difference_type   = std::ptrdiff_t;
+            using pointer           = std::conditional_t<IsConst, const core::ObjectId, core::ObjectId>;
+            using reference         = std::conditional_t<IsConst, const core::ObjectId, core::ObjectId>;
             // NOLINTEND(readability-identifier-naming)
 
         private:
-            const Unit* m_owner;
+            const core::ObjectId m_owner;
             size_t m_pos;
 
         public:
             UnitIterator() = default;
-            UnitIterator(const Unit* owner, size_t pos);
+            UnitIterator(const core::ObjectId owner, size_t pos);
             auto operator*() const -> reference;
             auto operator->() const -> pointer;
             auto operator++() -> UnitIterator&;
@@ -278,7 +281,7 @@ namespace gkit::scene {
 
     template<IsUnit UnitT, typename F, typename... Args>
     auto Unit::with_child(uint32_t index, const F& func, Args&&... args) -> std::invoke_result_t<F, UnitT&, Args...> {
-        auto* child_ptr = get_child(index);
+        auto child_ptr = core::ObjectPool::instance().deref_from(get_child(index));
         if (child_ptr == nullptr) {
             throw std::out_of_range("Child index is out of range");
         }
@@ -293,7 +296,7 @@ namespace gkit::scene {
     template<IsUnit UnitT, typename F, typename... Args>
     auto Unit::with_child(const std::string& child_name, const F& func, Args&&... args)
         -> std::invoke_result_t<F, UnitT&, Args...> {
-        auto child_ptr = get_child(child_name);
+        auto child_ptr = core::ObjectPool::instance().deref_from(get_child(child_name));
         if (child_ptr == nullptr) {
             throw std::out_of_range("Child name is not found");
         }
@@ -308,8 +311,8 @@ namespace gkit::scene {
     template<IsUnit T>
     auto Unit::get_parent() noexcept -> std::optional<std::reference_wrapper<T>> {
         static_assert(std::is_base_of_v<Unit, T>, "T is not derived from Unit");
-        if (parent == nullptr) return std::nullopt;
-        auto cast_parent = dynamic_cast<T*>(parent);
+        if (parent == core::ObjectId{}) return std::nullopt;
+        auto cast_parent = dynamic_cast<T*>(core::ObjectPool::instance().deref_from(parent));
         return cast_parent == nullptr ? std::nullopt : *cast_parent;
     } // Unit::get_parent<T>
 } // namespace gkit::scene

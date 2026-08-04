@@ -1,9 +1,9 @@
 #pragma once
 
+#include "gkit/core/object_id.hpp"
+
 #include <concepts>
-#include <memory>
 #include <string>
-#include <utility>
 
 namespace gkit::core {
     class Object;
@@ -39,5 +39,10 @@ namespace gkit::core {
         static auto create(Args&&...) noexcept -> UniqueObject; */
 
         virtual auto class_name() const -> std::string final;
+
+        [[nodiscard]] auto get_object_id() const noexcept -> const ObjectId& { return this->obj_id; }
+
+    protected:
+        ObjectId obj_id;
     };
 } // namespace gkit::core

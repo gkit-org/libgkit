@@ -6,7 +6,7 @@
 #include <SDL3/SDL_init.h>
 #include <SDL3/SDL_log.h>
 
-gkit::Processer::Processer() noexcept : root() {
+gkit::Processer::Processer() noexcept : root(gkit::core::UniqueObject::create<gkit::scene::Unit>()) {
     SDL_InitFlags flags = SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_GAMEPAD | SDL_INIT_JOYSTICK | SDL_INIT_VIDEO;
 
     if (!SDL_Init(flags)) {
@@ -19,16 +19,18 @@ gkit::Processer::~Processer() noexcept {
     SDL_Quit();
 }
 
-auto gkit::Processer::set_root(std::unique_ptr<scene::Unit>&& root_ptr) noexcept -> void {
-    if (root_ptr == nullptr) return;
-    this->root = std::move(root_ptr);
+auto gkit::Processer::set_root(core::UniqueObject&& root_p) noexcept -> void {
+    auto root_ptr = root_p.get();
+    if (!root_ptr) return;
+    this->root = std::move(root_p);
 }
 
 auto gkit::Processer::run() -> void {
-    this->root->ready_handler();
+    auto root_ptr = dynamic_cast<scene::Unit*>(this->root.get());
+    root_ptr->ready_handler();
     this->running.store(true);
     while (this->running.load()) {
-        this->root->process_handler();
+        root_ptr->process_handler();
     }
 }
 

@@ -1,0 +1,20 @@
+[INFO] Parsing shader: E:/code/github/libgkit/test/graphic\graphic\color_triangle.shader
+[ERROR] No vertex shader found in: E:/code/github/libgkit/test/graphic\graphic\color_triangle.shader
+[ERROR] No fragment shader found in: E:/code/github/libgkit/test/graphic\graphic\color_triangle.shader
+[INFO] 
+[INFO] 
+[ERROR] Failed to link shader program: Vertex info
+-----------
+(0) : error C5145: must write to gl_Position
+
+[INFO] Parsing shader: E:/code/github/libgkit/test/graphic\graphic\post_process.shader
+[ERROR] No vertex shader found in: E:/code/github/libgkit/test/graphic\graphic\post_process.shader
+[ERROR] No fragment shader found in: E:/code/github/libgkit/test/graphic\graphic\post_process.shader
+[INFO] 
+[INFO] 
+[ERROR] Failed to link shader program: Vertex info
+-----------
+(0) : error C5145: must write to gl_Position
+
+[INFO] FRAMEBUFFER:: Framebuffer is complete!
+[WARNING] Warning: uniform 'screenTexture' doesn't exist!
