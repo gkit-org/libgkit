@@ -1,5 +1,6 @@
-/* // NOLINTBEGIN(google-readability-avoid-underscore-in-googletest-name)
-#include "core/object_pool.hpp"
+ // NOLINTBEGIN(google-readability-avoid-underscore-in-googletest-name)
+#include "gkit/core/object_pool.hpp"
+#include "gkit/core/reflect/registry.hpp"
 #include "gkit/core/value.hpp"
 
 #include <iostream>
@@ -190,7 +191,7 @@ auto test_safe_object_handling() -> bool {
     std::cout << "\n=== test_safe_object_handling ===\n";
 
     // UniqueObject via string constructor → is_object_owner
-    Value v_owner{UniqueObject(std::string("TestObject"))};
+    Value v_owner{*UniqueObject::create_with_classname(std::string("TestObject"))};
     TEST(v_owner.is_object(), "UniqueObject: is_object");
     TEST(v_owner.is_object_owner(), "UniqueObject: is_object_owner");
     TEST(!v_owner.is_object_ref(), "UniqueObject: !is_object_ref");
@@ -199,12 +200,12 @@ auto test_safe_object_handling() -> bool {
     ObjectId owned_id = v_owner.as_object();
     TEST(owned_id.available(), "as_object → valid ObjectId");
 
-    // as_object_ptr → nullptr (no actual object in pool for string-constructed UniqueObject)
-    TEST(v_owner.as_object_ptr() == nullptr, "as_object_ptr with empty pool → nullptr");
+    // as_object_ptr → non-null (backed by a real pool object)
+    TEST(v_owner.as_object_ptr() != nullptr, "as_object_ptr with registered class → non-null");
 
-    // try_as on UniqueObject with no backing object → nullptr
-    auto* empty_try = v_owner.try_as<TestObject>();
-    TEST(empty_try == nullptr, "try_as on UniqueObject with no backing ptr → nullptr");
+    // try_as on UniqueObject backed by real object → valid pointer
+    auto* owned_ptr = v_owner.try_as<TestObject>();
+    TEST(owned_ptr != nullptr, "try_as on UniqueObject with backing ptr → non-null");
 
     // Create a real object via ObjectPool for valid pointer tests
     {
@@ -396,7 +397,7 @@ auto test_lifetime_safety() -> bool {
 
     // Copy Value with UniqueObject → logic_error
     {
-        UniqueObject uo(std::string("CopyTest"));
+        UniqueObject uo{*UniqueObject::create_with_classname(std::string("CopyTest"))};
         Value vo(std::move(uo));
         bool caught_logic_copy = false;
         try {
@@ -410,7 +411,7 @@ auto test_lifetime_safety() -> bool {
 
     // Copy assign Value with UniqueObject → logic_error
     {
-        UniqueObject uo(std::string("CopyAssignTest"));
+        UniqueObject uo{*UniqueObject::create_with_classname(std::string("CopyAssignTest"))};
         Value vo(std::move(uo));
         Value dest;
         bool caught_logic_assign = false;
@@ -424,7 +425,7 @@ auto test_lifetime_safety() -> bool {
 
     // Move Value with UniqueObject → succeeds
     {
-        UniqueObject uo(std::string("MoveTest"));
+        UniqueObject uo{*UniqueObject::create_with_classname(std::string("MoveTest"))};
         Value vo(std::move(uo));
         TEST(vo.is_object_owner(), "Move: source is_object_owner");
 
@@ -457,10 +458,16 @@ auto test_lifetime_safety() -> bool {
     TEST(v_map_insert["new_key"].as_int64() == 99, "Map operator[]: inserted value == 99");
 
     return true;
-} */
+} 
 
 auto main() -> int {
-    /* bool all_passed = true;
+    auto& db = gkit::core::reflect::ClassDB::instance();
+    db.regist<TestObject>("TestObject");
+    db.regist<TestObject>("CopyTest");
+    db.regist<TestObject>("CopyAssignTest");
+    db.regist<TestObject>("MoveTest");
+
+    bool all_passed = true;
 
     all_passed &= test_store_values();
     all_passed &= test_set_values();
@@ -474,7 +481,7 @@ auto main() -> int {
         return 0;
     }
 
-    std::cerr << "\nSome tests failed.\n"; */
+    std::cerr << "\nSome tests failed.\n"; 
     return 1;
 }
 // NOLINTEND(google-readability-avoid-underscore-in-googletest-name)

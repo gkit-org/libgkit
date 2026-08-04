@@ -1,8 +1,8 @@
 #include "gkit/core/unique_object.hpp"
 
 #include "gkit/core/object_id.hpp"
+#include "gkit/core/object_pool.hpp"
 #include "gkit/core/reflect/registry.hpp"
-#include "object_pool.hpp"
 
 #include <string>
 #include <utility>
@@ -12,21 +12,28 @@ namespace gkit::core {
         return reflect::ClassDB::instance().create(class_name);
     }
 
-    UniqueObject::UniqueObject(UniqueObject&& other) noexcept : id(std::move(other.id)) {
+    auto UniqueObject::get_id() const noexcept -> const ObjectId& {
+        static const ObjectId invalid_id{};
+        return this->obj == nullptr ? invalid_id : this->obj->get_object_id();
+    }
+
+    UniqueObject::UniqueObject(UniqueObject&& other) noexcept {
         this->obj = other.obj;
         other.obj = nullptr;
     }
 
     UniqueObject::~UniqueObject() noexcept {
+        if (this->obj == nullptr) return;
         auto& obj_pool = ObjectPool::instance();
-        obj_pool.release(this->id);
+        obj_pool.release(this->obj->get_object_id());
     }
 
     auto UniqueObject::operator=(UniqueObject&& other) noexcept -> UniqueObject& {
         if (this != &other) {
-            auto& obj_pool = ObjectPool::instance();
-            obj_pool.release(this->id);
-            this->id  = std::move(other.id);
+            if (this->obj != nullptr) {
+                auto& obj_pool = ObjectPool::instance();
+                obj_pool.release(this->obj->get_object_id());
+            }
             this->obj = other.obj;
             other.obj = nullptr;
         }

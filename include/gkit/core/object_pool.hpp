@@ -28,6 +28,7 @@ namespace gkit::core {
         try {
             auto* obj_ptr = new T(std::forward(args)...);
             auto obj_id   = ObjectIdAllocator::instance().new_one();
+            obj_ptr->obj_id = obj_id;
             this->id_instance_map.emplace(obj_id, obj_ptr);
             return std::make_pair(std::move(obj_id), std::move(obj_ptr));
         } catch (...) {

@@ -3,7 +3,6 @@
 #include "gkit/scene/unit.hpp"
 
 #include <atomic>
-#include <memory>
 #include <string>
 #include <unordered_map>
 
@@ -17,12 +16,12 @@ namespace gkit {
         auto run() -> void;
         auto stop() -> void;
 
-        auto add_service_unit(std::string name, std::unique_ptr<scene::Unit>&& unit_ptr) noexcept -> void;
-        auto set_root(std::unique_ptr<scene::Unit>&& root_ptr) noexcept -> void;
+        auto add_service_unit(std::string name,core::UniqueObject&& unit_ptr) noexcept -> void;
+        auto set_root(core::UniqueObject&& root_ptr) noexcept -> void;
 
     private:
-        std::unique_ptr<scene::Unit> root;
-        std::unordered_map<std::string, std::unique_ptr<scene::Unit>> service_units{};
+        core::UniqueObject root;
+        std::unordered_map<std::string, core::UniqueObject> service_units{};
         std::atomic<bool> running = false;
     }; // class Processer
 } // namespace gkit

@@ -3,7 +3,6 @@
 #include "gkit/core/unique_object.hpp"
 
 #include <optional>
-#include <utility>
 
 namespace gkit::core::reflect {
 
