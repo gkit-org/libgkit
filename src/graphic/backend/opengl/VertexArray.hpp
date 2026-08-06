@@ -1,8 +1,8 @@
 #pragma once
 
-#include "gkit/graphic/VertexArray.hpp"
-#include "gkit/graphic/VertexBuffer.hpp"
 #include "gkit/graphic/VertexBufferLayout.hpp"
+#include "gkit/graphic/resource/VertexArray.hpp"
+#include "gkit/graphic/resource/VertexBuffer.hpp"
 
 #include <cstdint>
 

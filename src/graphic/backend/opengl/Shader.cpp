@@ -171,6 +171,11 @@ namespace gkit::graphic::opengl {
         glUseProgram(0);
     }
 
+    auto Shader::is_valid() const -> bool {
+        // renderer_id is 0 when compilation/linking failed or the program was moved.
+        return this->renderer_id != 0;
+    }
+
     auto Shader::set_uniform_1i(const std::string& name, int value) -> void {
         glUniform1i(get_uniform_location(name), value);
     }

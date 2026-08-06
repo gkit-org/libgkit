@@ -44,6 +44,14 @@ namespace gkit::graphic {
 		 */
         virtual auto unbind() const -> void = 0;
 
+        /**
+		 * @brief Whether the shader program compiled and linked successfully
+		 *
+		 * A shader created from a file whose source failed to compile/link is
+		 * invalid; rendering with it is undefined, so the queue rejects it.
+		 */
+        [[nodiscard]] virtual auto is_valid() const -> bool = 0;
+
         // Uniform setters (implemented by backends, mapped to the concrete API)
 
         virtual auto set_uniform_1i(const std::string& name, int value) -> void                              = 0;

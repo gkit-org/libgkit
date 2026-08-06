@@ -1,6 +1,6 @@
 #pragma once
 
-#include "gkit/graphic/RenderBuffer.hpp"
+#include "gkit/graphic/resource/RenderBuffer.hpp"
 
 #include <cstdint>
 

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "gkit/graphic/RenderBuffer.hpp"
-#include "gkit/graphic/Texture.hpp"
+#include "gkit/graphic/resource/RenderBuffer.hpp"
+#include "gkit/graphic/resource/Texture.hpp"
 
 namespace gkit::graphic {
 
@@ -25,8 +25,12 @@ namespace gkit::graphic {
 
         /**
 		 * @brief Attach a color texture to the given slot
+		 *
+		 * @param texture color attachment (non-const: a framebuffer texture may be
+		 *                resized to match this FBO's dimensions on attach)
+		 * @param slot color attachment slot
 		 */
-        virtual auto attach_color_texture(const Texture& texture, int slot) -> void = 0;
+        virtual auto attach_color_texture(Texture& texture, int slot) -> void = 0;
 
         /**
 		 * @brief Detach the color texture from the given slot
@@ -67,6 +71,16 @@ namespace gkit::graphic {
 		 * @brief Bind as the current render target
 		 */
         virtual auto bind() const -> void = 0;
+
+        /**
+		 * @brief Framebuffer width in pixels
+		 */
+        [[nodiscard]] virtual auto width() const -> int = 0;
+
+        /**
+		 * @brief Framebuffer height in pixels
+		 */
+        [[nodiscard]] virtual auto height() const -> int = 0;
 
         /**
 		 * @brief Unbind, reverting to the default framebuffer (screen)

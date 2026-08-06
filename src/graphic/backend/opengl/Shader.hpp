@@ -1,6 +1,6 @@
 #pragma once
 
-#include "gkit/graphic/Shader.hpp"
+#include "gkit/graphic/resource/Shader.hpp"
 
 #include <cstdint>
 #include <string>
@@ -28,6 +28,8 @@ namespace gkit::graphic::opengl {
 
         auto bind() const -> void override;
         auto unbind() const -> void override;
+
+        [[nodiscard]] auto is_valid() const -> bool override;
 
         auto set_uniform_1i(const std::string& name, int value) -> void override;
         auto set_uniform_1f(const std::string& name, float value) -> void override;

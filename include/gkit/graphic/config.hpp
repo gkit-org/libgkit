@@ -9,6 +9,14 @@ namespace gkit::graphic {
 	 */
     const unsigned int SCR_WIDTH  = 500;
     const unsigned int SCR_HEIGHT = 500;
+    /**
+	 * @brief Engine-declared texture slot limit (fixed conservative value)
+	 *
+	 * Most shaders fit within 8 slots; not chasing hardware limits
+	 * (GL_MAX_TEXTURE_IMAGE_UNITS varies by GPU, usually >= 32).
+	 * Start up may assert the hardware supports at least this many.
+	 */
+    static constexpr uint32_t MAX_TEXTURE_SLOTS = 8;
 
     /**
 	 * @brief Texture pattern

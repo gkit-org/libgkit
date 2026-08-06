@@ -1,6 +1,6 @@
 #pragma once
 
-#include "gkit/graphic/VertexBuffer.hpp"
+#include "gkit/graphic/resource/VertexBuffer.hpp"
 
 #include <cstdint>
 

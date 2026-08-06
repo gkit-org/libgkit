@@ -1,8 +1,8 @@
 #pragma once
 
-#include "gkit/graphic/FrameBuffer.hpp"
-#include "gkit/graphic/RenderBuffer.hpp"
-#include "gkit/graphic/Texture.hpp"
+#include "gkit/graphic/resource/FrameBuffer.hpp"
+#include "gkit/graphic/resource/RenderBuffer.hpp"
+#include "gkit/graphic/resource/Texture.hpp"
 
 #include <cstdint>
 
@@ -23,7 +23,7 @@ namespace gkit::graphic::opengl {
 
         ~FrameBuffer() override;
 
-        auto attach_color_texture(const graphic::Texture& texture, int slot) -> void override;
+        auto attach_color_texture(graphic::Texture& texture, int slot) -> void override;
         auto detach_color_texture(int slot) -> void override;
         auto attach_depth_stencil(const graphic::RenderBuffer& rbo) -> void override;
         auto detach_depth_stencil() -> void override;
@@ -33,6 +33,9 @@ namespace gkit::graphic::opengl {
         auto set_viewport(int x, int y, int width, int height) -> void override;
         auto bind() const -> void override;
         auto unbind() const -> void override;
+
+        [[nodiscard]] auto width() const -> int override;
+        [[nodiscard]] auto height() const -> int override;
 
     private:
         explicit FrameBuffer(int width, int height);

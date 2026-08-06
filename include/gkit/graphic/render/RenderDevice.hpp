@@ -1,13 +1,15 @@
 #pragma once
 
-#include "gkit/graphic/FrameBuffer.hpp"
-#include "gkit/graphic/IndexBuffer.hpp"
-#include "gkit/graphic/RenderBuffer.hpp"
-#include "gkit/graphic/Shader.hpp"
-#include "gkit/graphic/Texture.hpp"
-#include "gkit/graphic/VertexArray.hpp"
-#include "gkit/graphic/VertexBuffer.hpp"
 #include "gkit/graphic/config.hpp"
+#include "gkit/graphic/render/RenderCommand.hpp"
+#include "gkit/graphic/render/RenderState.hpp"
+#include "gkit/graphic/resource/FrameBuffer.hpp"
+#include "gkit/graphic/resource/IndexBuffer.hpp"
+#include "gkit/graphic/resource/RenderBuffer.hpp"
+#include "gkit/graphic/resource/Shader.hpp"
+#include "gkit/graphic/resource/Texture.hpp"
+#include "gkit/graphic/resource/VertexArray.hpp"
+#include "gkit/graphic/resource/VertexBuffer.hpp"
 
 #include <cstdint>
 #include <memory>
@@ -61,6 +63,19 @@ namespace gkit::graphic {
 		 * @brief Clear the current render target
 		 */
         virtual auto clear(ClearFlags flags) -> void = 0;
+
+        /**
+		 * @brief Apply a render state snapshot incrementally
+		 *
+		 * Backends compare against the previously applied state and only change
+		 * what differs (see RHI design doc §6 / render queue design §3.4).
+		 */
+        virtual auto apply_state(const RenderState& state) -> void = 0;
+
+        /**
+		 * @brief Set the viewport (GL viewport is global state, set per command)
+		 */
+        virtual auto set_viewport(const Viewport& viewport) -> void = 0;
 
         /**
 		 * @brief Draw indexed geometry

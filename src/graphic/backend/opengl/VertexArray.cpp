@@ -1,8 +1,8 @@
 #include "graphic/backend/opengl/VertexArray.hpp"
 
-#include "graphic/backend/opengl/VertexBuffer.hpp"
 #include "gkit/math/matrix4.hpp"
 #include "gkit/math/vector4.hpp"
+#include "graphic/backend/opengl/VertexBuffer.hpp"
 
 #include <utility>
 

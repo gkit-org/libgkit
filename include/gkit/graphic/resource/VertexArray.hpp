@@ -1,7 +1,7 @@
 #pragma once
 
-#include "gkit/graphic/VertexBuffer.hpp"
 #include "gkit/graphic/VertexBufferLayout.hpp"
+#include "gkit/graphic/resource/VertexBuffer.hpp"
 
 /**
  * @brief Vertex array (frontend abstract interface)

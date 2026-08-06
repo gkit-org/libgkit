@@ -1,6 +1,6 @@
 #pragma once
 
-#include "gkit/graphic/Buffer.hpp"
+#include "gkit/graphic/resource/Buffer.hpp"
 
 namespace gkit::graphic {
 

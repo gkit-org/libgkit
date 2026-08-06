@@ -1,6 +1,6 @@
 #pragma once
 
-#include "gkit/graphic/IndexBuffer.hpp"
+#include "gkit/graphic/resource/IndexBuffer.hpp"
 
 #include <cstdint>
 

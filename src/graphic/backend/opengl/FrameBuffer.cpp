@@ -43,9 +43,10 @@ namespace gkit::graphic::opengl {
         }
     }
 
-    auto FrameBuffer::attach_color_texture(const graphic::Texture& texture, int slot) -> void {
+    auto FrameBuffer::attach_color_texture(graphic::Texture& texture, int slot) -> void {
         bind();
-        const auto& gl_texture = static_cast<const gkit::graphic::opengl::Texture&>(texture);
+        auto& gl_texture = static_cast<gkit::graphic::opengl::Texture&>(texture);
+        gl_texture.set_size(static_cast<int>(this->fb_width), static_cast<int>(this->fb_height));
         glFramebufferTexture2D(
             GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + slot, GL_TEXTURE_2D, gl_texture.get_renderer_id(), 0);
     }
@@ -100,5 +101,9 @@ namespace gkit::graphic::opengl {
     auto FrameBuffer::unbind() const -> void {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
+
+    auto FrameBuffer::width() const -> int { return static_cast<int>(this->fb_width); }
+
+    auto FrameBuffer::height() const -> int { return static_cast<int>(this->fb_height); }
 
 } // namespace gkit::graphic::opengl

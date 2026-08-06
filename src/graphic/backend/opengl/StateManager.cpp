@@ -4,127 +4,49 @@
 
 namespace gkit::graphic::opengl {
 
-    auto StateManager::set_depth_test(bool enable) -> void {
-        if (this->depth_state.enabled != enable) {
-            this->depth_state.enabled = enable;
-            this->dirty_flags |= DIRTY_DEPTH;
-        }
-    }
-
-    auto StateManager::set_depth_func(CompareFunc func) -> void {
-        if (this->depth_state.compare_func != func) {
-            this->depth_state.compare_func = func;
-            this->dirty_flags |= DIRTY_DEPTH;
-        }
-    }
-
-    auto StateManager::set_depth_mask(bool write) -> void {
-        if (this->depth_state.write_mask != write) {
-            this->depth_state.write_mask = write;
-            this->dirty_flags |= DIRTY_DEPTH;
-        }
-    }
-
-    auto StateManager::set_blend(bool enable) -> void {
-        if (this->blend_state.enabled != enable) {
-            this->blend_state.enabled = enable;
-            this->dirty_flags |= DIRTY_BLEND;
-        }
-    }
-
-    auto StateManager::set_blend_func(BlendFunc src_rgb, BlendFunc dst_rgb, BlendFunc src_alpha, BlendFunc dst_alpha)
-        -> void {
-        if (this->blend_state.src_rgb != src_rgb || this->blend_state.dst_rgb != dst_rgb ||
-            this->blend_state.src_alpha != src_alpha || this->blend_state.dst_alpha != dst_alpha) {
-            this->blend_state.src_rgb   = src_rgb;
-            this->blend_state.dst_rgb   = dst_rgb;
-            this->blend_state.src_alpha = src_alpha;
-            this->blend_state.dst_alpha = dst_alpha;
-            this->dirty_flags |= DIRTY_BLEND;
-        }
-    }
-
-    auto StateManager::set_blend_equation(BlendEquation equation) -> void {
-        if (this->blend_state.equation != equation) {
-            this->blend_state.equation = equation;
-            this->dirty_flags |= DIRTY_BLEND;
-        }
-    }
-
-    auto StateManager::set_cull_face(bool enable) -> void {
-        if (this->cull_face_state.enabled != enable) {
-            this->cull_face_state.enabled = enable;
-            this->dirty_flags |= DIRTY_CULL;
-        }
-    }
-
-    auto StateManager::set_cull_face_mode(CullFaceMode mode) -> void {
-        if (this->cull_face_state.mode != mode) {
-            this->cull_face_state.mode = mode;
-            this->dirty_flags |= DIRTY_CULL;
-        }
-    }
-
-    auto StateManager::set_front_face(FrontFace front_face) -> void {
-        if (this->cull_face_state.front_face != front_face) {
-            this->cull_face_state.front_face = front_face;
-            this->dirty_flags |= DIRTY_CULL;
-        }
-    }
-
-    auto StateManager::set_stencil_test(bool enable) -> void {
-        if (this->stencil_state.enabled != enable) {
-            this->stencil_state.enabled = enable;
-            this->dirty_flags |= DIRTY_STENCIL;
-        }
-    }
-
-    auto StateManager::set_stencil(CompareFunc func, uint32_t ref, uint32_t mask) -> void {
-        if (this->stencil_state.compare_func != func || this->stencil_state.ref != ref ||
-            this->stencil_state.read_mask != mask) {
-            this->stencil_state.compare_func = func;
-            this->stencil_state.ref          = ref;
-            this->stencil_state.read_mask    = mask;
-            this->dirty_flags |= DIRTY_STENCIL;
-        }
-    }
-
-    auto StateManager::set_stencil_op(StencilOp fail, StencilOp z_fail, StencilOp z_pass) -> void {
-        if (this->stencil_state.fail != fail || this->stencil_state.z_fail != z_fail ||
-            this->stencil_state.z_pass != z_pass) {
-            this->stencil_state.fail   = fail;
-            this->stencil_state.z_fail = z_fail;
-            this->stencil_state.z_pass = z_pass;
-            this->dirty_flags |= DIRTY_STENCIL;
-        }
-    }
-
-    auto StateManager::set_stencil_mask(uint32_t mask) -> void {
-        if (this->stencil_state.write_mask != mask) {
-            this->stencil_state.write_mask = mask;
-            this->dirty_flags |= DIRTY_STENCIL;
-        }
-    }
-
-    auto StateManager::apply() -> void {
-        if (this->dirty_flags & DIRTY_DEPTH) {
+    auto StateManager::apply(const graphic::RenderState& state) -> void {
+        // Depth
+        if (this->depth_state.enabled != state.depth.enabled ||
+            this->depth_state.compare_func != state.depth.compare_func ||
+            this->depth_state.write_mask != state.depth.write_mask) {
+            this->depth_state = state.depth;
             apply_depth_state();
         }
-        if (this->dirty_flags & DIRTY_BLEND) {
+
+        // Blend
+        if (this->blend_state.enabled != state.blend.enabled || this->blend_state.src_rgb != state.blend.src_rgb ||
+            this->blend_state.dst_rgb != state.blend.dst_rgb || this->blend_state.src_alpha != state.blend.src_alpha ||
+            this->blend_state.dst_alpha != state.blend.dst_alpha ||
+            this->blend_state.equation != state.blend.equation) {
+            this->blend_state = state.blend;
             apply_blend_state();
         }
-        if (this->dirty_flags & DIRTY_CULL) {
+
+        // Cull face
+        if (this->cull_face_state.enabled != state.cull_face.enabled ||
+            this->cull_face_state.mode != state.cull_face.mode ||
+            this->cull_face_state.front_face != state.cull_face.front_face) {
+            this->cull_face_state = state.cull_face;
             apply_cull_face_state();
         }
-        if (this->dirty_flags & DIRTY_STENCIL) {
+
+        // Stencil
+        if (this->stencil_state.enabled != state.stencil.enabled ||
+            this->stencil_state.compare_func != state.stencil.compare_func ||
+            this->stencil_state.ref != state.stencil.ref || this->stencil_state.read_mask != state.stencil.read_mask ||
+            this->stencil_state.write_mask != state.stencil.write_mask ||
+            this->stencil_state.fail != state.stencil.fail || this->stencil_state.z_fail != state.stencil.z_fail ||
+            this->stencil_state.z_pass != state.stencil.z_pass) {
+            this->stencil_state = state.stencil;
             apply_stencil_state();
         }
-        this->dirty_flags = 0;
     }
 
     auto StateManager::force_apply_all() -> void {
-        this->dirty_flags = DIRTY_DEPTH | DIRTY_BLEND | DIRTY_CULL | DIRTY_STENCIL;
-        apply();
+        apply_depth_state();
+        apply_blend_state();
+        apply_cull_face_state();
+        apply_stencil_state();
     }
 
     auto StateManager::apply_depth_state() -> void {
@@ -173,22 +95,6 @@ namespace gkit::graphic::opengl {
                     to_gl_stencil_op(this->stencil_state.z_fail),
                     to_gl_stencil_op(this->stencil_state.z_pass));
         glStencilMask(this->stencil_state.write_mask);
-    }
-
-    auto StateManager::get_depth_state() const -> const DepthState& {
-        return this->depth_state;
-    }
-
-    auto StateManager::get_blend_state() const -> const BlendState& {
-        return this->blend_state;
-    }
-
-    auto StateManager::get_cull_face_state() const -> const CullFaceState& {
-        return this->cull_face_state;
-    }
-
-    auto StateManager::get_stencil_state() const -> const StencilState& {
-        return this->stencil_state;
     }
 
 } // namespace gkit::graphic::opengl

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "gkit/graphic/Texture.hpp"
 #include "gkit/graphic/config.hpp"
+#include "gkit/graphic/resource/Texture.hpp"
 
 #include <cstdint>
 #include <string>
@@ -47,6 +47,17 @@ namespace gkit::graphic::opengl {
 		 * @brief Get the GL texture handle (backend escape hatch)
 		 */
         [[nodiscard]] inline auto get_renderer_id() const -> uint32_t { return this->renderer_id; }
+
+        /**
+		 * @brief Resize the texture storage (framebuffer textures only)
+		 *
+		 * A framebuffer texture is allocated empty at construction; attaching it
+		 * to a FrameBuffer reallocates storage to the FBO size so the texture is
+		 * never bound to the global SCR_WIDTH/SCR_HEIGHT constants.
+		 * @param width new width in pixels
+		 * @param height new height in pixels
+		 */
+        auto set_size(int width, int height) -> void;
 
     private:
         inline static const std::vector<std::string> FACES = {

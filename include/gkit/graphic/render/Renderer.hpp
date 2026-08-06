@@ -1,10 +1,11 @@
 #pragma once
 
 #include "gkit/core/templates/singleton.hpp"
-#include "gkit/graphic/RenderDevice.hpp"
 #include "gkit/graphic/config.hpp"
+#include "gkit/graphic/render/RenderDevice.hpp"
+#include "gkit/graphic/render/RenderObject.hpp"
+#include "gkit/graphic/render/RenderQueue.hpp"
 
-#include <cstdint>
 #include <memory>
 
 /**
@@ -38,22 +39,22 @@ namespace gkit::graphic {
         auto clear(ClearFlags flags = ClearFlags::All) -> void;
 
         /**
-		 * @brief Draw indexed geometry
-		 * @param va Vertex array containing vertex data
-		 * @param ib Index buffer containing indices
-		 * @param shader Shader program to use for rendering
+		 * @brief Enqueue a draw from a reusable render object
+		 * @param obj Render object (geometry + material + state)
+		 * @param target render target (default nullptr = screen)
+		 * @param viewport viewport to use for this draw (default full window)
+		 * @note Enqueued into the render queue; executed on flush(). The object is
+		 *       non-const because its GPU resources are lazily uploaded on execute.
 		 */
-        auto draw(const VertexArray& va, const IndexBuffer& ib, const Shader& shader) -> void;
+        auto draw(RenderObject& obj,
+                  const FrameBuffer* target = nullptr,
+                  const Viewport& viewport  = Viewport{0, 0, static_cast<int>(SCR_WIDTH), static_cast<int>(SCR_HEIGHT)})
+            -> void;
 
         /**
-		 * @brief Draw multiple instances of indexed geometry
-		 * @param va Vertex array containing vertex data
-		 * @param ib Index buffer containing indices
-		 * @param shader Shader program to use for rendering
-		 * @param instance_count Number of instances to draw
+		 * @brief Execute the queued render commands (sort + apply state + draw)
 		 */
-        auto draw_instance(const VertexArray& va, const IndexBuffer& ib, const Shader& shader, uint32_t instance_count)
-            -> void;
+        auto flush() -> void;
 
         /**
 		 * @brief Access the current render device
@@ -62,6 +63,7 @@ namespace gkit::graphic {
 
     private:
         std::unique_ptr<RenderDevice> device;
+        RenderQueue queue;
     };
 
 } // namespace gkit::graphic

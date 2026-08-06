@@ -12,6 +12,10 @@
 
 namespace gkit::graphic::opengl {
 
+    Device::Device() {
+        this->state_manager.force_apply_all();
+    }
+
     auto Device::create_vertex_buffer(const void* data, uint32_t size, bool dynamic)
         -> std::unique_ptr<graphic::VertexBuffer> {
         // Direct new (not make_unique) so Device's friendship grants access to the
@@ -47,6 +51,14 @@ namespace gkit::graphic::opengl {
     auto Device::clear(ClearFlags flags) -> void {
         auto mask = to_gl_clear_mask(flags);
         glClear(mask);
+    }
+
+    auto Device::apply_state(const graphic::RenderState& state) -> void {
+        this->state_manager.apply(state);
+    }
+
+    auto Device::set_viewport(const graphic::Viewport& viewport) -> void {
+        glViewport(viewport.x, viewport.y, viewport.width, viewport.height);
     }
 
     auto Device::draw(const graphic::VertexArray& va, const graphic::IndexBuffer& ib, const graphic::Shader& shader)

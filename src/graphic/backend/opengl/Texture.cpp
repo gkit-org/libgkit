@@ -24,6 +24,22 @@ gkit::graphic::opengl::Texture::Texture(const std::string& path, gkit::graphic::
     }
 }
 
+auto gkit::graphic::opengl::Texture::set_size(int width, int height) -> void {
+    // Only framebuffer textures are (re)allocated on attach; loaded images must
+    // keep their pixel data.
+    if (this->type != gkit::graphic::TextureType::TextureFramebuffer) {
+        return;
+    }
+    if (this->width == width && this->height == height) {
+        return;
+    }
+    this->width  = width;
+    this->height = height;
+    glBindTexture(GL_TEXTURE_2D, this->renderer_id);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, this->width, this->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
 gkit::graphic::opengl::Texture::~Texture() {
     delete[] this->local_buffer;
     if (this->renderer_id != 0) {
