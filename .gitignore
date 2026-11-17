@@ -6,6 +6,7 @@
 .cache/
 test_log.txt
 AGENTS.md
+compile_commands.json
 
 # local documentation (untracked)
 .claude/

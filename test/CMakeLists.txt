@@ -19,7 +19,7 @@ foreach(test_file ${TEST_SRCS})
     get_filename_component(FILE_BASE_NAME ${test_file} NAME_WE)
     add_executable(${FILE_BASE_NAME} ${test_file})
     target_link_libraries(${FILE_BASE_NAME} PRIVATE gkit_static SDL3::SDL3-static)
-    if(NOT test_file MATCHES "/graphic/|/core/scene/" AND
+    if(NOT test_file MATCHES "/graphic/" AND
        NOT FILE_BASE_NAME MATCHES "^test_(key_input|mouse_input)$")
         add_test(NAME ${FILE_BASE_NAME} COMMAND ${FILE_BASE_NAME})
         set_tests_properties(${FILE_BASE_NAME} PROPERTIES TIMEOUT 30 LABELS unit)
@@ -47,6 +47,7 @@ foreach(library gkit_static gkit)
             "-DINCLUDE_DIR=${GKIT_SOURCE_DIR}/include"
             "-DWORK_DIR=${CMAKE_CURRENT_BINARY_DIR}/consumer_${library}"
             "-DCXX=${CMAKE_CXX_COMPILER}"
+            "-DBUILD_CONFIG=$<CONFIG>"
             -P "${CMAKE_CURRENT_SOURCE_DIR}/consumer.cmake")
         set_tests_properties(consumer_${library} PROPERTIES TIMEOUT 60 LABELS integration)
     endif()

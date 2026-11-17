@@ -30,3 +30,10 @@ ctest --test-dir build/x86_64-gcc-debug --output-on-failure
 ```
 
 For Clang or MSVC, use `x86_64-llvm-debug` or `windows-x86_64-msvc-debug`.
+
+## Scene trees
+
+Use `core::NodeOwner<T>::create()` to build a subtree, then attach it through
+`Processer::root().with()` and `Node::edit_children()`. `scene::Scene` is a Node with activation and pause controls.
+Configure frame timing and opt-in parallel subtrees before `run()`; use `NodeHandle::post()` for cross-domain operations.
+See the [scene tests](test/core/scene/test_processer.cpp) for lifecycle, batching, and concurrency examples.

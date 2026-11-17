@@ -52,8 +52,10 @@ jobs:
       run: |
         echo "📦 Installing Windows dependencies..."
         $py = python -c "import sys; print(sys.executable)"
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
         echo "Python used for install: $py"
         python -m pip install jinja2
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
         echo "✅ Windows dependencies installed successfully"
 
     - name: Configure MSVC
@@ -68,8 +70,10 @@ jobs:
         echo "⚙️ Configuring CMake ..."
         echo "Using preset: ${{matrix.preset}}"
         $PythonPath = python -c "import sys; print(sys.executable)"
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
         echo "Using Python: $PythonPath"
         cmake --preset ${{matrix.preset}} "-DPython_EXECUTABLE=$PythonPath"
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
         echo "✅ CMake configuration completed"
 
     - name: Configure and build project
@@ -79,10 +83,14 @@ jobs:
         $BUILD_DIR = "${{ github.workspace }}/build/${{matrix.preset}}"
         echo "Build directory: $BUILD_DIR"
         cmake --build $BUILD_DIR
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
         echo "Windows build completed successfully"
 
     - name: Run non-interactive tests
-      run: ctest --test-dir build/${{ matrix.preset }} --output-on-failure
+      shell: pwsh
+      run: |
+        ctest --test-dir build/${{ matrix.preset }} --output-on-failure
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
     - name: Show build results
       run: |
