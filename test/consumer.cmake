@@ -1,7 +1,9 @@
 file(MAKE_DIRECTORY "${WORK_DIR}")
 file(WRITE "${WORK_DIR}/main.cpp" "#include <gkit/gkit.hpp>\n#include <gkit/core/unique_object.hpp>\n#include <gkit/math/vector2.hpp>\nint main() { auto owner = gkit::core::UniqueObject::create<gkit::core::Object>(); auto pin = owner.get_id().lock(); const gkit::math::Vector2 a(1,2); return pin && (a * 2).x == 2 ? 0 : 1; }\n")
 file(WRITE "${WORK_DIR}/CMakeLists.txt" "cmake_minimum_required(VERSION 3.20)\nproject(consumer LANGUAGES CXX)\nadd_executable(consumer main.cpp)\ntarget_compile_features(consumer PRIVATE cxx_std_20)\ntarget_include_directories(consumer PRIVATE \"${INCLUDE_DIR}\")\ntarget_link_libraries(consumer PRIVATE \"${LIBRARY}\")\n")
-execute_process(COMMAND "${CMAKE_COMMAND}" -S "${WORK_DIR}" -B "${WORK_DIR}/build" -G Ninja "-DCMAKE_CXX_COMPILER=${CXX}" RESULT_VARIABLE result)
+# Match the library configuration, including the Windows debug CRT and STL ABI.
+execute_process(COMMAND "${CMAKE_COMMAND}" -S "${WORK_DIR}" -B "${WORK_DIR}/build" -G Ninja
+    "-DCMAKE_CXX_COMPILER=${CXX}" "-DCMAKE_BUILD_TYPE=${BUILD_CONFIG}" RESULT_VARIABLE result)
 if(NOT result EQUAL 0)
     message(FATAL_ERROR "consumer configure failed")
 endif()

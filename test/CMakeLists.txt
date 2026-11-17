@@ -47,6 +47,7 @@ foreach(library gkit_static gkit)
             "-DINCLUDE_DIR=${GKIT_SOURCE_DIR}/include"
             "-DWORK_DIR=${CMAKE_CURRENT_BINARY_DIR}/consumer_${library}"
             "-DCXX=${CMAKE_CXX_COMPILER}"
+            "-DBUILD_CONFIG=$<CONFIG>"
             -P "${CMAKE_CURRENT_SOURCE_DIR}/consumer.cmake")
         set_tests_properties(consumer_${library} PROPERTIES TIMEOUT 60 LABELS integration)
     endif()

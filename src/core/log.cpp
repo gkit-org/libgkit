@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cstdio>
 #include <cstdlib>
+#include <memory>
 #include <thread>
 
 static constexpr const char* INFO_LOG_TIP    = "[INFO]";
@@ -21,12 +22,24 @@ namespace {
         return ERROR_LOG_TIP;
     }
 
-    /** @brief Expand leading "~/" to HOME so default path works cross-environment. */
+    /**
+     * @brief Expand leading "~/" using HOME, retaining the configured path when HOME is unavailable.
+     * @note MSVC-compatible CRTs return an owned environment copy; release it even if path construction throws.
+     */
     auto resolve_log_path(const std::filesystem::path& configured_path) -> std::filesystem::path {
         const auto configured = configured_path.string();
         if (configured.rfind("~/", 0u) == 0u) {
-            if (const char* home = std::getenv("HOME")) {
-                return std::filesystem::path(home) / configured.substr(2);
+#if defined(_MSC_VER)
+            char* home_buffer     = nullptr;
+            std::size_t home_size = 0;
+            const auto result     = _dupenv_s(&home_buffer, &home_size, "HOME");
+            const std::unique_ptr<char, decltype(&std::free)> home_owner(home_buffer, &std::free);
+            const char* home_path = result == 0 ? home_owner.get() : nullptr;
+#else
+            const char* home_path = std::getenv("HOME");
+#endif
+            if (home_path) {
+                return std::filesystem::path(home_path) / configured.substr(2);
             }
         }
 
