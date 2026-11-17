@@ -74,13 +74,11 @@ namespace gkit::math {
             b = x;
         }
 
-        {
-            uint8_t r = static_cast<uint8_t>((r + m) * 255.0f);
-            uint8_t g = static_cast<uint8_t>((g + m) * 255.0f);
-            uint8_t b = static_cast<uint8_t>((b + m) * 255.0f);
+        auto red   = static_cast<uint8_t>((r + m) * 255.0f);
+        auto green = static_cast<uint8_t>((g + m) * 255.0f);
+        auto blue  = static_cast<uint8_t>((b + m) * 255.0f);
 
-            return (static_cast<uint32_t>(r) << 16) | (static_cast<uint32_t>(g) << 8) | static_cast<uint32_t>(b);
-        }
+        return (static_cast<uint32_t>(red) << 16) | (static_cast<uint32_t>(green) << 8) | static_cast<uint32_t>(blue);
     }
 
     // ------------------------------
@@ -153,13 +151,11 @@ namespace gkit::math {
             b = x;
         }
 
-        {
-            uint8_t r = static_cast<uint8_t>((r + m) * 255.0f);
-            uint8_t g = static_cast<uint8_t>((g + m) * 255.0f);
-            uint8_t b = static_cast<uint8_t>((b + m) * 255.0f);
+        auto red   = static_cast<uint8_t>((r + m) * 255.0f);
+        auto green = static_cast<uint8_t>((g + m) * 255.0f);
+        auto blue  = static_cast<uint8_t>((b + m) * 255.0f);
 
-            return (static_cast<uint32_t>(r) << 16) | (static_cast<uint32_t>(g) << 8) | static_cast<uint32_t>(b);
-        }
+        return (static_cast<uint32_t>(red) << 16) | (static_cast<uint32_t>(green) << 8) | static_cast<uint32_t>(blue);
     }
 
     // ------------------------------
