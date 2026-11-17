@@ -44,7 +44,7 @@ namespace gkit::core {
     /**
     * @brief JSON bool type
     */
-    using Bool  = bool;
+    using Bool = bool;
 
     /**
      * @brief JSON number type - holds either integer or floating-point
@@ -75,19 +75,18 @@ namespace gkit::core {
 
     /**
      * @brief Dynamically typed value container capable of holding null, bool,
-     *        number (int64/float), string, array, map, or a Object（abd Object extended）.
+     *        number (int64/float), string, array, map, or a non-owning ObjectId.
      */
     class Value final {
     public:
         /**
-         * @brief Variant storage backing the Value. Object is held via std::unique_ptr
-         *        for exclusive ownership and automatic lifetime management.
+         * @brief Copyable data storage. Object IDs never own or extend object lifetime.
          */
-        using Storage = std::variant<Null, Bool, Number, String, Array, Map, UniqueObject, ObjectId>;
+        using Storage = std::variant<Null, Bool, Number, String, Array, Map, ObjectId>;
 
     public: // Constructors
-        Value() noexcept = default;
-        Value(const Value&);
+        Value() noexcept        = default;
+        Value(const Value&)     = default;
         Value(Value&&) noexcept = default;
         ~Value()                = default;
 
@@ -101,11 +100,10 @@ namespace gkit::core {
         Value(Array value); // NOLINT(google-explicit-constructor)
         Value(Map value); // NOLINT(google-explicit-constructor)
 
-        explicit Value(UniqueObject value) noexcept;
         explicit Value(ObjectId value) noexcept;
 
     public: // Assignment operators
-        auto operator=(const Value&) -> Value&;
+        auto operator=(const Value&) -> Value&     = default;
         auto operator=(Value&&) noexcept -> Value& = default;
 
         auto operator=(Null) noexcept -> Value&;
@@ -118,7 +116,6 @@ namespace gkit::core {
         auto operator=(Array value) -> Value&;
         auto operator=(Map value) -> Value&;
 
-        auto operator=(UniqueObject value) noexcept -> Value&;
         auto operator=(ObjectId value) noexcept -> Value&;
 
     public: // Type checking
@@ -143,39 +140,43 @@ namespace gkit::core {
         }
         [[nodiscard]] constexpr auto is_map() const noexcept -> bool { return std::holds_alternative<Map>(storage); }
         [[nodiscard]] constexpr auto is_object() const noexcept -> bool {
-            return std::holds_alternative<UniqueObject>(storage) || std::holds_alternative<ObjectId>(storage);
+            return std::holds_alternative<ObjectId>(storage);
         }
-        [[nodiscard]] constexpr auto is_object_owner() const noexcept -> bool {
-            return std::holds_alternative<UniqueObject>(storage);
-        }
+        [[nodiscard]] constexpr auto is_object_owner() const noexcept -> bool { return false; }
         [[nodiscard]] constexpr auto is_object_ref() const noexcept -> bool {
             return std::holds_alternative<ObjectId>(storage);
         }
 
-    public: // Value accessors (unchecked - behavior undefined if wrong type)
-        [[nodiscard]] constexpr auto as_bool() const noexcept -> bool { return std::get<bool>(storage); }
-        [[nodiscard]] constexpr auto as_int64() const noexcept -> std::int64_t {
+    public: // Value accessors (throw std::bad_variant_access on wrong type)
+        [[nodiscard]] constexpr auto as_bool() const -> bool { return std::get<bool>(storage); }
+        [[nodiscard]] constexpr auto as_int64() const -> std::int64_t {
             const auto& num = std::get<Number>(storage);
             return std::get<std::int64_t>(num);
         }
-        [[nodiscard]] constexpr auto as_float() const noexcept -> float {
+        [[nodiscard]] constexpr auto as_float() const -> float {
             const auto& num = std::get<Number>(storage);
             if (std::holds_alternative<float>(num)) {
                 return std::get<float>(num);
             }
             return static_cast<float>(std::get<std::int64_t>(num));
         }
-        [[nodiscard]] auto as_string() const noexcept -> const std::string&;
-        [[nodiscard]] auto as_array() const noexcept -> const Array&;
-        [[nodiscard]] auto as_map() const noexcept -> const Map&;
+        [[nodiscard]] auto as_string() const -> const std::string&;
+        [[nodiscard]] auto as_array() const -> const Array&;
+        [[nodiscard]] auto as_map() const -> const Map&;
 
         /** Mutable accessors **/
-        [[nodiscard]] auto as_array() noexcept -> Array&;
-        [[nodiscard]] auto as_map() noexcept -> Map&;
+        [[nodiscard]] auto as_array() -> Array&;
+        [[nodiscard]] auto as_map() -> Map&;
 
     public: // Object accessors
+        template<IsObject T = Object>
+        auto lock_object() const -> std::shared_ptr<T> {
+            return this->as_object().lock<T>();
+        }
+
         [[nodiscard]] auto as_object() const noexcept -> ObjectId;
 
+        /** @brief Legacy access: caller must synchronize object lifetime. Prefer lock_object(). */
         [[nodiscard]] auto as_object_ptr() noexcept -> gkit::core::Object*;
         [[nodiscard]] auto as_object_ptr() const noexcept -> const gkit::core::Object*;
 
@@ -242,7 +243,7 @@ namespace gkit::core {
         }
 
     public:
-        [[nodiscard]] constexpr auto type() const noexcept -> Type {
+        [[nodiscard]] constexpr auto type() const -> Type {
             return std::visit(
                 [](const auto& v) -> Type {
                     using T = std::decay_t<decltype(v)>;
@@ -252,7 +253,6 @@ namespace gkit::core {
                     if constexpr (std::is_same_v<T, std::string>) return Type::String;
                     if constexpr (std::is_same_v<T, Array>) return Type::Array;
                     if constexpr (std::is_same_v<T, Map>) return Type::Map;
-                    if constexpr (std::is_same_v<T, UniqueObject>) return Type::Object;
                     if constexpr (std::is_same_v<T, ObjectId>) return Type::ObjectId;
                     return Type::Null; // unreachable
                 },

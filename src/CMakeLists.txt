@@ -33,9 +33,26 @@ endif()
 
 # link third party static libraries
 foreach(GKIT_LIB ${GKIT_LIBS})
+    target_compile_features(${GKIT_LIB} PUBLIC cxx_std_20)
+    target_include_directories(${GKIT_LIB} PUBLIC ${GKIT_SOURCE_DIR}/include)
+    set_target_properties(${GKIT_LIB} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
     target_link_libraries(${GKIT_LIB} PRIVATE
         SDL3::SDL3-static
         SDL3_image::SDL3_image-static
         glad_gl
     )
 endforeach()
+
+if(GKIT_SANITIZER)
+    set(GKIT_SANITIZER_FLAGS "-fsanitize=${GKIT_SANITIZER}" -fno-omit-frame-pointer)
+    if(GKIT_SANITIZER STREQUAL "address")
+        list(APPEND GKIT_SANITIZER_FLAGS -fsanitize=undefined)
+    endif()
+    foreach(module gkit_core gkit_math gkit_resource)
+        target_compile_options(${module} PRIVATE ${GKIT_SANITIZER_FLAGS})
+    endforeach()
+    foreach(library ${GKIT_LIBS})
+        target_link_options(${library} PUBLIC ${GKIT_SANITIZER_FLAGS})
+        target_compile_options(${library} INTERFACE ${GKIT_SANITIZER_FLAGS})
+    endforeach()
+endif()

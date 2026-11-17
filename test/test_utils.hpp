@@ -27,7 +27,15 @@ namespace gkit::test {
             auto test_count = this->test_funcs.size();
 
             for (auto&& func : test_funcs) {
-                if (!func()) {
+                bool passed = false;
+                try {
+                    passed = func();
+                } catch (const std::exception& error) {
+                    std::cerr << error.what() << '\n';
+                } catch (...) {
+                    std::cerr << "Unknown test exception\n";
+                }
+                if (!passed) {
                     fail_count += 1;
                     res = false;
                 }
@@ -39,6 +47,7 @@ namespace gkit::test {
                 std::cout << std::format("Some tests(total {}) failed!", fail_count) << '\n';
             }
 
+            if (!res) std::exit(EXIT_FAILURE);
             return;
         }
     };

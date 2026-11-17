@@ -18,6 +18,7 @@ auto test_key_input_loop() -> bool {
     gkit::test::Window win;
     auto& event_dispatcher = gkit::core::SDLEventDispatcher::instance();
     auto& input            = gkit::Input::instance();
+    input.initialize();
 
     auto save_action = Action("Save");
     save_action.set_action(KeyChord{.keys = {Key::S}, .modifiers = static_cast<uint32_t>(Mod::LCtrl)});

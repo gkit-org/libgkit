@@ -17,3 +17,16 @@ libgkit is a simple game library for game development. It is written in C++. We 
 ## Contribution
 
 We hope that you can contribute your code into `libgkit`. If you want to contribute your code but don't know where to start, you can visit the [gkit-proposal](https://github.com/gkit-org/gkit-proposal) to know what plan we have and what feature user need. If you have some new idea, you can also visit it to express your idea.
+
+## Building and testing
+
+Requires C++20 with `std::format`, CMake 3.23+, Ninja, and Python with Jinja2.
+
+```sh
+git submodule update --init --recursive
+cmake --preset x86_64-gcc-debug
+cmake --build build/x86_64-gcc-debug --parallel
+ctest --test-dir build/x86_64-gcc-debug --output-on-failure
+```
+
+For Clang or MSVC, use `x86_64-llvm-debug` or `windows-x86_64-msvc-debug`.

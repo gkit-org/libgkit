@@ -240,6 +240,6 @@ namespace gkit::input {
 
     struct KeyChord {
         std::vector<Key> keys;
-        uint32_t modifiers;
+        uint32_t modifiers = 0;
     };
 } // namespace gkit::input

@@ -15,11 +15,11 @@ namespace gkit::core::reflect {
         std::vector<std::unique_ptr<SerdeNode>> children;
 
     public:
-        explicit SerdeNode(const std::string& k, const Value& v) noexcept;
-        explicit SerdeNode(const std::string& k, Type t) noexcept;
+        explicit SerdeNode(const std::string& k, const Value& v);
+        explicit SerdeNode(const std::string& k, Type t);
         SerdeNode(const SerdeNode&) = delete;
         SerdeNode(SerdeNode&&)      = default;
-        ~SerdeNode() noexcept       = default;
+        ~SerdeNode()                = default;
 
         auto add_child(SerdeNode&& child) -> void;
 
@@ -33,19 +33,19 @@ namespace gkit::core::reflect {
     };
 
     class SerdeStruct final {
-        bool available_flag = false;
+        bool available_flag                   = false;
         std::unique_ptr<SerdeNode> serde_root = nullptr;
 
     public:
         SerdeStruct() = default;
-        explicit SerdeStruct(Value v) noexcept;
-        explicit SerdeStruct(const ObjectId v) noexcept;
+        explicit SerdeStruct(Value v);
+        explicit SerdeStruct(const ObjectId v);
         ~SerdeStruct() = default;
 
-        auto operator[](const std::string& key) -> Value&; 
+        auto operator[](const std::string& key) -> Value&;
 
-        auto from(Value v) noexcept -> void;
-        auto from(const ObjectId v) noexcept -> void;
+        auto from(Value v) -> void;
+        auto from(const ObjectId v) -> void;
         [[nodiscard]] inline auto available() -> bool { return this->available_flag; }
         [[nodiscard]] inline auto root() const -> const SerdeNode& { return *this->serde_root; }
     };

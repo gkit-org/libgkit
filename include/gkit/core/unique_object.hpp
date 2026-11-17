@@ -47,11 +47,10 @@ namespace gkit::core {
          * @brief Create an object of type @p T and take ownership of it.
          * @tparam T The object type; must derive from Object.
          * @param args Arguments forwarded to T's constructor.
-         * @return A handle owning the new object, or an empty handle if
-         *         construction or pool registration fails.
+         * @return A handle owning the new object. Construction and allocation failures propagate.
          */
         template<IsObject T, class... Args>
-        static auto create(Args&&... args) noexcept -> UniqueObject;
+        static auto create(Args&&... args) -> UniqueObject;
 
         /**
          * @brief Create an object by its registered class name.
@@ -59,19 +58,15 @@ namespace gkit::core {
          * @return A handle owning the new object, or std::nullopt if the
          *         class is unknown or has no factory.
          */
-        static auto create_with_classname(const std::string& class_name) noexcept -> std::optional<UniqueObject>;
+        static auto create_with_classname(const std::string& class_name) -> std::optional<UniqueObject>;
 
     private:
         /// @brief Register an already-constructed object into the pool and wrap it in a handle.
-        static auto from_raw_ptr(Object* obj) noexcept -> UniqueObject;
+        static auto from_raw_ptr(Object* obj) -> UniqueObject;
     };
 
     template<IsObject T, class... Args>
-    auto UniqueObject::create(Args&&... args) noexcept -> UniqueObject {
-        try {
-            return from_raw_ptr(new T(std::forward<Args>(args)...));
-        } catch (...) {
-            return UniqueObject();
-        }
+    auto UniqueObject::create(Args&&... args) -> UniqueObject {
+        return from_raw_ptr(new T(std::forward<Args>(args)...));
     }
 } // namespace gkit::core

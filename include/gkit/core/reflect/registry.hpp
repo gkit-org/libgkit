@@ -6,10 +6,14 @@
 #include "gkit/core/value.hpp"
 
 #include <functional>
+#include <limits>
 #include <map>
+#include <mutex>
 #include <optional>
+#include <shared_mutex>
 #include <string>
 #include <type_traits>
+#include <typeindex>
 #include <unordered_map>
 #include <vector>
 
@@ -25,8 +29,8 @@ namespace gkit::core::reflect {
 
     class ClassInfo final {
     public:
-        using Getter  = std::function<Value(const void*)>;
-        using Setter  = std::function<void(void*, const Value&)>;
+        using Getter  = std::function<Value(const Object*)>;
+        using Setter  = std::function<void(Object*, const Value&)>;
         using Factory = std::function<UniqueObject()>;
 
         Factory factory;
@@ -36,18 +40,22 @@ namespace gkit::core::reflect {
 
         [[nodiscard]] auto parent() const -> const ClassInfo*;
 
-        [[nodiscard]] auto get_field(const void* obj, const std::string& name) const -> std::optional<Value>;
-        auto set_field(void* obj, const std::string& name, const Value& v) const -> bool;
+        [[nodiscard]] auto get_field(const Object* obj, const std::string& name) const -> std::optional<Value>;
+        auto set_field(Object* obj, const std::string& name, const Value& v) const -> bool;
 
         template<typename Fn>
         auto for_each_field(Fn&& fn) const -> void;
 
     private:
         friend class ClassDB;
-        mutable ClassInfo* parent_cache = nullptr;
+        std::shared_ptr<const ClassInfo> parent_info;
+        std::type_index cpp_type{typeid(void)};
 
-        std::vector<Getter> getters;
-        std::vector<Setter> setters;
+        struct FieldAccess {
+            Getter getter;
+            Setter setter;
+        };
+        std::vector<FieldAccess> accessors;
     };
 
     class ClassDB final : public gkit::core::templates::Singleton<ClassDB> {
@@ -68,12 +76,40 @@ namespace gkit::core::reflect {
 
         [[nodiscard]] auto find(const std::string& class_name) const -> const ClassInfo*;
         [[nodiscard]] auto find_with_raw(const char* raw_name) const -> const ClassInfo*;
-        [[nodiscard]] auto create(const std::string& class_name) const noexcept -> std::optional<UniqueObject>;
+        [[nodiscard]] auto create(const std::string& class_name) const -> std::optional<UniqueObject>;
+
+        /** @brief Build a complete description privately, then publish it atomically. */
+        template<IsObject T, class Fn>
+        auto register_class(const std::string& name, Fn&& configure, const std::string& parent = "") -> void {
+            ClassDB staging;
+            {
+                std::shared_lock guard(this->registry_mutex);
+                staging.classes    = this->classes;
+                staging.type_names = this->type_names;
+            }
+            staging.regist<T>(name, parent);
+            configure(staging);
+            auto completed = std::make_shared<ClassInfo>(*staging.find(name));
+            std::unique_lock guard(this->registry_mutex);
+            if (this->classes.contains(name) || this->type_names.contains(typeid(T))) {
+                throw std::invalid_argument("class already registered");
+            }
+            this->publish(std::move(completed));
+        }
+
+        auto snapshot(const std::string& name) const -> std::shared_ptr<const ClassInfo>;
 
     private:
         ClassDB() = default;
-        std::map<std::string, ClassInfo> classes;
-        std::unordered_map<const char*, std::string> raw2_class_name;
+        mutable std::shared_mutex registry_mutex;
+        std::map<std::string, std::shared_ptr<const ClassInfo>> classes;
+        std::unordered_map<std::string, std::string> raw2_class_name;
+        std::unordered_map<std::type_index, std::string> type_names;
+        // Legacy raw lookups remain valid until shutdown, including older snapshots.
+        std::vector<std::shared_ptr<const ClassInfo>> history;
+        auto publish(std::shared_ptr<ClassInfo> info) -> void;
+        auto editable(const std::string& name, std::type_index type) -> std::shared_ptr<ClassInfo>;
+        static auto check_field(const ClassInfo& info, const std::string& name) -> void;
     };
 
     // =========================================================================
@@ -83,8 +119,10 @@ namespace gkit::core::reflect {
     namespace detail {
         template<typename T, typename F>
         auto make_getter(F T::* member) -> ClassInfo::Getter {
-            return [member](const void* obj) -> Value {
-                const auto& val = (*static_cast<const T*>(obj)).*member;
+            return [member](const Object* obj) -> Value {
+                const auto* typed = dynamic_cast<const T*>(obj);
+                if (!typed) throw std::invalid_argument("wrong reflected object type");
+                const auto& val = (*typed).*member;
                 if constexpr (std::is_same_v<F, bool>) {
                     return Value(val);
                 } else if constexpr (std::is_same_v<F, std::string>) {
@@ -104,8 +142,10 @@ namespace gkit::core::reflect {
 
         template<typename T, typename F>
         auto make_setter(F T::* member) -> ClassInfo::Setter {
-            return [member](void* obj, const Value& v) {
-                auto& val = (*static_cast<T*>(obj)).*member;
+            return [member](Object* obj, const Value& v) {
+                auto* typed = dynamic_cast<T*>(obj);
+                if (!typed) throw std::invalid_argument("wrong reflected object type");
+                auto& val = (*typed).*member;
                 if constexpr (std::is_same_v<F, bool>) {
                     val = v.as_bool();
                 } else if constexpr (std::is_same_v<F, std::string>) {
@@ -115,6 +155,7 @@ namespace gkit::core::reflect {
                 } else if constexpr (std::is_same_v<F, gkit::core::Map>) {
                     val = v.as_map();
                 } else if constexpr (std::is_integral_v<F>) {
+                    if (!std::in_range<F>(v.as_int64())) throw std::out_of_range("integer field overflow");
                     val = static_cast<F>(v.as_int64());
                 } else if constexpr (std::is_floating_point_v<F>) {
                     val = static_cast<F>(v.as_float());
@@ -146,24 +187,36 @@ namespace gkit::core::reflect {
 
     template<IsObject T>
     auto ClassDB::regist(const std::string& class_name, const std::string& parent) -> ClassDB& {
-        auto& info                              = this->classes[class_name];
-        info.class_name                         = class_name;
-        info.parent_class_name                  = parent;
-        this->raw2_class_name[typeid(T).name()] = class_name;
-        if constexpr (std::is_constructible_v<T>) {
-            info.factory = []() -> UniqueObject {
+        std::unique_lock guard(this->registry_mutex);
+        if (class_name.empty() || this->classes.contains(class_name) || this->type_names.contains(typeid(T))) {
+            throw std::invalid_argument("empty or duplicate class registration");
+        }
+        auto info               = std::make_shared<ClassInfo>();
+        info->class_name        = class_name;
+        info->parent_class_name = parent;
+        info->cpp_type          = typeid(T);
+        if (!parent.empty()) {
+            auto it = this->classes.find(parent);
+            if (it == this->classes.end()) throw std::invalid_argument("register parent before child");
+            info->parent_info = it->second;
+        }
+        if constexpr (std::is_default_constructible_v<T>) {
+            info->factory = [] {
                 return UniqueObject::create<T>();
             };
         }
+        this->publish(std::move(info));
         return *this;
     }
 
     template<IsObject T, IsValueType F>
     auto ClassDB::add_field(const std::string& class_name, const std::string& field_name, F T::* member) -> ClassDB& {
-        auto& info = this->classes.at(class_name);
-        info.fields.push_back(FieldDesc{field_name, detail::deduce_type<F>()});
-        info.getters.push_back(detail::make_getter(member));
-        info.setters.push_back(detail::make_setter(member));
+        std::unique_lock guard(this->registry_mutex);
+        auto info = this->editable(class_name, typeid(T));
+        check_field(*info, field_name);
+        info->fields.push_back(FieldDesc{field_name, detail::deduce_type<F>()});
+        info->accessors.push_back({detail::make_getter(member), detail::make_setter(member)});
+        this->publish(std::move(info));
         return *this;
     }
 
@@ -172,29 +225,37 @@ namespace gkit::core::reflect {
                                const std::string& field_name,
                                std::function<Value(const T&)> getter,
                                std::function<void(T&, const Value&)> setter) -> ClassDB& {
-        auto& info = this->classes.at(class_name);
-        info.fields.push_back(FieldDesc{field_name, Type::Null});
-        info.getters.push_back([getter = std::move(getter)](const void* obj) -> Value {
-            return getter(*static_cast<const T*>(obj));
-        });
+        std::unique_lock guard(this->registry_mutex);
+        auto info = this->editable(class_name, typeid(T));
+        check_field(*info, field_name);
+        info->fields.push_back(FieldDesc{field_name, Type::Null});
+        if (!getter) throw std::invalid_argument("empty property getter");
+        ClassInfo::FieldAccess access;
+        access.getter = [getter = std::move(getter)](const Object* obj) -> Value {
+            auto* typed = dynamic_cast<const T*>(obj);
+            if (!typed) throw std::invalid_argument("wrong reflected object type");
+            return getter(*typed);
+        };
         if (setter != nullptr) {
-            info.setters.push_back([setter = std::move(setter)](void* obj, const Value& v) {
-                setter(*static_cast<T*>(obj), v);
-            });
-        } else {
-            info.setters.emplace_back();
+            access.setter = [setter = std::move(setter)](Object* obj, const Value& v) {
+                auto* typed = dynamic_cast<T*>(obj);
+                if (!typed) throw std::invalid_argument("wrong reflected object type");
+                setter(*typed, v);
+            };
         }
+        info->accessors.push_back(std::move(access));
+        this->publish(std::move(info));
         return *this;
     }
 
     template<typename Fn>
     auto ClassInfo::for_each_field(Fn&& fn) const -> void {
-        if (this->parent_cache != nullptr) {
-            this->parent_cache->for_each_field(std::forward<Fn>(fn));
+        if (this->parent_info != nullptr) {
+            this->parent_info->for_each_field(std::forward<Fn>(fn));
         }
         for (size_t i = 0; i < this->fields.size(); ++i) {
-            const Setter* setter_ptr = this->setters[i] ? &this->setters[i] : nullptr;
-            fn(this->fields[i], this->getters[i], setter_ptr);
+            const Setter* setter_ptr = this->accessors[i].setter ? &this->accessors[i].setter : nullptr;
+            fn(this->fields[i], this->accessors[i].getter, setter_ptr);
         }
     }
 

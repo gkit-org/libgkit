@@ -19,7 +19,7 @@ namespace gkit::input {
 
     struct MouseChord {
         std::vector<MouseButton> buttons;
-        uint32_t modifiers;
+        uint32_t modifiers = 0;
     }; // struct MouseChord
 
     using MouseMove  = gkit::math::Vector2;

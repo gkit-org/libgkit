@@ -1,69 +1,73 @@
 #include "core/misc/sdl_event_dispatcher.hpp"
 
+#include <stdexcept>
+
 namespace gkit::core {
-    auto SDLEventDispatcher::register_handler_before_frame(std::function<void(void)> handler) -> void {
-        // Ignore empty callbacks to avoid extra checks at call sites.
-        if (!handler) {
-            return;
+    auto SDLEventDispatcher::add(Uint32 type, std::function<void(const SDL_Event&)> handler) -> Token {
+        if (!handler) return 0;
+        auto entry      = std::make_shared<Entry>();
+        entry->type     = type;
+        entry->callback = std::move(handler);
+        std::lock_guard guard(this->registry_mutex);
+        auto token = this->next_token++;
+        this->entries.emplace(token, std::move(entry));
+        return token;
+    }
+    auto SDLEventDispatcher::register_handler_before_frame(std::function<void()> handler) -> Token {
+        if (!handler) return 0;
+        return this->add(BEFORE_FRAME, [handler = std::move(handler)](const auto&) {
+            handler();
+        });
+    }
+    auto SDLEventDispatcher::register_handler_after_frame(std::function<void()> handler) -> Token {
+        if (!handler) return 0;
+        return this->add(AFTER_FRAME, [handler = std::move(handler)](const auto&) {
+            handler();
+        });
+    }
+    auto SDLEventDispatcher::register_event_handler(SDL_EventType type, std::function<void(const SDL_Event&)> handler)
+        -> Token {
+        return this->add(type, std::move(handler));
+    }
+
+    auto SDLEventDispatcher::disconnect(Token token) -> void {
+        std::shared_ptr<Entry> entry;
+        {
+            std::lock_guard guard(this->registry_mutex);
+            auto it = this->entries.find(token);
+            if (it == this->entries.end()) return;
+            entry = std::move(it->second);
+            this->entries.erase(it);
         }
-
-        this->before_frame_callbacks.push_back(std::move(handler));
+        std::lock_guard guard(entry->execution_mutex);
+        entry->enabled = false;
     }
-
-    auto SDLEventDispatcher::register_handler_after_frame(std::function<void(void)> handler) -> void {
-        // Ignore empty callbacks to avoid extra checks at call sites.
-        if (!handler) {
-            return;
+    auto SDLEventDispatcher::unregister_event_handler(SDL_EventType type) -> void {
+        std::vector<Token> tokens;
+        {
+            std::lock_guard guard(this->registry_mutex);
+            for (const auto& [token, entry] : this->entries)
+                if (entry->type == type) tokens.push_back(token);
         }
-
-        this->after_frame_callbacks.push_back(std::move(handler));
+        for (auto token : tokens) this->disconnect(token);
     }
-
-    auto SDLEventDispatcher::register_event_handler(SDL_EventType event_type,
-                                                    std::function<void(const SDL_Event&)> handler) -> void {
-        // Ignore empty callbacks to keep dispatch loop simple.
-        if (!handler) {
-            return;
+    auto SDLEventDispatcher::dispatch(Uint32 type, const SDL_Event& event) -> void {
+        std::vector<std::shared_ptr<Entry>> callbacks;
+        {
+            std::lock_guard guard(this->registry_mutex);
+            for (const auto& [token, entry] : this->entries)
+                if (entry->type == type) callbacks.push_back(entry);
         }
-
-        this->event_handlers[event_type].push_back(std::move(handler));
+        for (const auto& entry : callbacks) {
+            std::lock_guard guard(entry->execution_mutex);
+            if (entry->enabled) entry->callback(event);
+        }
     }
-
-    auto SDLEventDispatcher::unregister_event_handler(SDL_EventType event_type) -> void {
-        // Remove the whole callback chain for this event type.
-        this->event_handlers.erase(event_type);
-    }
-
     auto SDLEventDispatcher::dispatch_events() -> void {
-        // 1) Run frame-begin callbacks before consuming SDL events.
-        for (auto& callback : this->before_frame_callbacks) {
-            if (callback) {
-                callback();
-            }
-        }
-
-        SDL_Event event = {};
-
-        while (SDL_PollEvent(&event)) {
-            auto handler_it = this->event_handlers.find(event.type);
-            if (handler_it == this->event_handlers.end()) {
-                continue;
-            }
-
-            auto& handlers = handler_it->second;
-            // Dispatch to all handlers in registration order.
-            for (auto& handler : handlers) {
-                if (handler) {
-                    handler(event);
-                }
-            }
-        }
-
-        // 3) Run frame-end callbacks after all queued SDL events are processed.
-        for (auto& callback : this->after_frame_callbacks) {
-            if (callback) {
-                callback();
-            }
-        }
+        if (!SDL_IsMainThread()) throw std::logic_error("SDL events must be dispatched on the main thread");
+        SDL_Event event{};
+        this->dispatch(BEFORE_FRAME, event);
+        while (SDL_PollEvent(&event)) this->dispatch(event.type, event);
+        this->dispatch(AFTER_FRAME, event);
     }
 } // namespace gkit::core

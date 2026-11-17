@@ -33,7 +33,7 @@ jobs:
         echo "📦 Installing Ubuntu dependencies..."
         sudo apt-get update
         sudo apt-get install -y \
-        build-essential clang cmake ninja-build \
+        build-essential clang cmake ninja-build python3-jinja2 \
         libasound2-dev libpulse-dev libx11-dev libxext-dev \
         libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev \
         libxss-dev libxtst-dev libxkbcommon-dev libdrm-dev \
@@ -56,6 +56,9 @@ jobs:
         cmake --build $BUILD_DIR
         echo "✅ Linux build completed successfully"
 
+    - name: Run non-interactive tests
+      run: ctest --test-dir build/${{ matrix.preset }} --output-on-failure
+
     - name: Show build results
       run: |
         echo "🎉 Build process completed!"
@@ -69,3 +72,17 @@ jobs:
         # Show disk usage
         echo "💾 Disk usage:"
         du -sh ${{ github.workspace }}/build 2>/dev/null || echo "Build directory size info not available"
+
+    - name: Check memory and undefined behavior
+      if: matrix.preset == 'x86_64-gcc-debug'
+      run: |
+        cmake --preset ${{ matrix.preset }} -DGKIT_SANITIZER=address
+        cmake --build build/${{ matrix.preset }} --parallel 2
+        ctest --test-dir build/${{ matrix.preset }} --output-on-failure
+
+    - name: Check thread safety
+      if: matrix.preset == 'x86_64-gcc-debug'
+      run: |
+        cmake --preset ${{ matrix.preset }} -DGKIT_SANITIZER=thread
+        cmake --build build/${{ matrix.preset }} --parallel 2
+        ctest --test-dir build/${{ matrix.preset }} --output-on-failure -R 'test_(value|registry_concurrency|input_snapshot|resource_loader|log_flush)$'

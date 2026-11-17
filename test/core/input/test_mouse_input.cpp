@@ -15,8 +15,9 @@ auto test_mouse_input_loop() -> bool {
 
     gkit::test::logln("=== mouse input interactive loop (press Q to quit) ===");
 
-    auto win               = gkit::test::Window{};
-    auto& input            = gkit::Input::instance();
+    auto win    = gkit::test::Window{};
+    auto& input = gkit::Input::instance();
+    input.initialize();
     auto& event_dispatcher = gkit::core::SDLEventDispatcher::instance();
 
     auto shoot_action = Action("Shoot");

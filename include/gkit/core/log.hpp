@@ -82,9 +82,10 @@ namespace gkit::core {
          */
         auto log(Message msg) -> void;
         /** @brief Exposed for low-level call sites that want enqueue success feedback. */
-        auto try_log(Message&& msg) noexcept -> bool;
-        /** @brief Best-effort wait for queue drain. */
-        auto flush(std::chrono::milliseconds timeout = std::chrono::milliseconds(100)) -> void;
+        auto try_log(Message&& msg) -> bool;
+        /** @brief Wait until messages accepted before this call have reached the sinks. */
+        auto flush(std::chrono::milliseconds timeout = std::chrono::milliseconds(100)) -> bool;
+        auto shutdown() -> void;
         auto stats() const noexcept -> Stats;
         /**
          * @brief Set the new log file path and reopen the file stream.
@@ -99,6 +100,9 @@ namespace gkit::core {
                       "LOG_QUEUE_CAPACITY must be a power of two");
         static constexpr std::chrono::milliseconds LOG_WAIT_TIMEOUT = std::chrono::milliseconds(2);
 
+        std::mutex admission_mutex;
+        std::mutex shutdown_mutex;
+        std::atomic<bool> sink_failed{false};
         std::atomic<bool> log_enable{true};
 
         std::filesystem::path log_file_path = "~/gkit/log.txt";
