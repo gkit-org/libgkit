@@ -83,6 +83,11 @@ jobs:
     - name: Check thread safety
       if: matrix.preset == 'x86_64-gcc-debug'
       run: |
-        cmake --preset ${{ matrix.preset }} -DGKIT_SANITIZER=thread
-        cmake --build build/${{ matrix.preset }} --parallel 2
-        ctest --test-dir build/${{ matrix.preset }} --output-on-failure -R 'test_(value|registry_concurrency|input_snapshot|resource_loader|log_flush)$'
+        # These unit tests do not need desktop integration. Avoid libdbus lock-order
+        # warnings during SDL initialization while keeping TSan deadlock detection enabled.
+        # SDL's IBus input method support also requires D-Bus.
+        cmake --preset ${{ matrix.preset }} -B build/x86_64-gcc-tsan \
+          -DBIN_FOLDER="${{ github.workspace }}/bin/x86_64-gcc-tsan" \
+          -DGKIT_SANITIZER=thread -DSDL_DBUS=OFF -DSDL_IBUS=OFF
+        cmake --build build/x86_64-gcc-tsan --parallel 2
+        ctest --test-dir build/x86_64-gcc-tsan --output-on-failure -R 'test_(value|registry_concurrency|input_snapshot|resource_loader|log_flush)$'
