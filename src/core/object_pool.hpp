@@ -4,6 +4,7 @@
 #include "gkit/core/object_id.hpp"
 #include "gkit/core/templates/singleton.hpp"
 
+#include <mutex>
 #include <optional>
 #include <unordered_map>
 
@@ -18,20 +19,15 @@ namespace gkit::core {
      */
     class ObjectPool : public gkit::core::templates::Singleton<ObjectPool> {
         friend gkit::core::templates::Singleton<ObjectPool>;
-        std::unordered_map<ObjectId, Object*> id_instance_map;
+        std::mutex pool_mutex;
+        std::unordered_map<ObjectId, std::shared_ptr<Object>> id_instance_map;
 
-        ObjectPool()  = default;
+        ObjectPool() { (void)ObjectId::IdAllocator::instance(); }
         ~ObjectPool() = default;
 
     public:
-        /**
-         * @brief Mint a fresh ObjectId for @p obj and register it.
-         * @param obj The heap-allocated object to take ownership of.
-         * @return The assigned id, or std::nullopt if registration fails
-         *         (e.g. allocation error). On failure the caller keeps
-         *         ownership of @p obj and is responsible for freeing it.
-         */
-        auto acquire(Object* obj) noexcept -> std::optional<ObjectId>;
+        /** @brief Register a constructed object; allocation failure leaves the caller's shared owner intact. */
+        auto acquire(std::shared_ptr<Object> obj) -> std::optional<ObjectId>;
 
         /**
          * @brief Unregister and delete the object behind @p drop_id.
@@ -45,5 +41,6 @@ namespace gkit::core {
          * @return The object pointer, or nullptr if @p id is invalid or unknown.
          */
         auto deref_from(const ObjectId& id) noexcept -> Object*;
+        auto lock(const ObjectId& id) -> std::shared_ptr<Object>;
     };
 } // namespace gkit::core

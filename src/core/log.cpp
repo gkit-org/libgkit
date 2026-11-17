@@ -96,29 +96,37 @@ auto gkit::core::Log::MpscBoundedQueue::empty() const noexcept -> bool {
     return static_cast<std::intptr_t>(seq) - static_cast<std::intptr_t>(pos + 1u) < 0;
 }
 
-gkit::core::Log::Log() : log_msg_queue(LOG_QUEUE_CAPACITY), log_thread(&Log::log_handler, this) {}
+gkit::core::Log::Log() : log_msg_queue(LOG_QUEUE_CAPACITY) {
+    this->log_thread = std::thread(&Log::log_handler, this);
+}
 
 gkit::core::Log::~Log() {
-    this->log_enable.store(false, std::memory_order_release);
-    log_thread_cv.notify_all();
+    this->shutdown();
+}
 
-    if (log_thread.joinable()) {
-        log_thread.join();
+auto gkit::core::Log::shutdown() -> void {
+    std::lock_guard shutdown_guard(this->shutdown_mutex);
+    {
+        std::lock_guard guard(this->admission_mutex);
+        this->log_enable.store(false, std::memory_order_release);
     }
+    this->log_thread_cv.notify_all();
+    if (this->log_thread.joinable()) this->log_thread.join();
 }
 
 auto gkit::core::Log::log(Message msg) -> void {
     (void)try_log(std::move(msg));
 }
 
-auto gkit::core::Log::try_log(Message&& msg) noexcept -> bool {
+auto gkit::core::Log::try_log(Message&& msg) -> bool {
+    std::lock_guard guard(this->admission_mutex);
     if (!this->log_enable.load(std::memory_order_acquire)) {
         return false;
     }
 
     if (log_msg_queue.try_enqueue(std::move(msg))) {
         enqueued_count.fetch_add(1u, std::memory_order_relaxed);
-        // Wake consumer, producer never blocks on this path.
+        // Admission is serialized; a full queue still returns without waiting for space.
         log_thread_cv.notify_one();
         return true;
     }
@@ -127,15 +135,18 @@ auto gkit::core::Log::try_log(Message&& msg) noexcept -> bool {
     return false;
 }
 
-auto gkit::core::Log::flush(std::chrono::milliseconds timeout) -> void {
-    // Best-effort drain wait for shutdown/testing; no producer synchronization.
+auto gkit::core::Log::flush(std::chrono::milliseconds timeout) -> bool {
+    std::uint64_t target;
+    {
+        std::lock_guard guard(this->admission_mutex);
+        target = this->enqueued_count.load();
+    }
     const auto deadline = std::chrono::steady_clock::now() + timeout;
-    while (std::chrono::steady_clock::now() < deadline) {
-        if (log_msg_queue.empty()) {
-            return;
-        }
+    while (this->processed_count.load(std::memory_order_acquire) < target) {
+        if (std::chrono::steady_clock::now() >= deadline) return false;
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
+    return !this->sink_failed.load();
 }
 
 auto gkit::core::Log::stats() const noexcept -> Stats {
@@ -162,7 +173,9 @@ auto gkit::core::Log::set_log_file_path(const std::filesystem::path& path) -> bo
 auto gkit::core::Log::log_to_console(const std::string& msg, LogLevel level) -> void {
     const char* log_tip = level_tip(level);
     std::lock_guard<std::mutex> lck(console_log_mutex);
-    std::printf("%s %s\n", log_tip, msg.c_str());
+    if (std::printf("%s %s\n", log_tip, msg.c_str()) < 0 || std::fflush(stdout) != 0) {
+        this->sink_failed.store(true);
+    }
 }
 
 auto gkit::core::Log::log_to_file(const std::string& msg, LogLevel level) -> void {
@@ -181,6 +194,7 @@ auto gkit::core::Log::log_to_file(const std::string& msg, LogLevel level) -> voi
         // Open in append mode so logs survive restarts and preserve historical context.
         log_file_stream.open(resolved_path, std::ios::out | std::ios::app);
         if (!log_file_stream.is_open()) {
+            this->sink_failed.store(true);
             return;
         }
     }
@@ -188,6 +202,7 @@ auto gkit::core::Log::log_to_file(const std::string& msg, LogLevel level) -> voi
     // Flush each record in MVP for correctness-first behavior.
     log_file_stream << level_tip(level) << ' ' << msg << '\n';
     log_file_stream.flush();
+    if (!log_file_stream) this->sink_failed.store(true);
 }
 
 auto gkit::core::Log::log_handler() -> void {
@@ -197,14 +212,17 @@ auto gkit::core::Log::log_handler() -> void {
 
         while (log_msg_queue.try_dequeue(msg)) {
             consumed = true;
-            processed_count.fetch_add(1u, std::memory_order_relaxed);
-
-            if (msg.functions & static_cast<std::uint8_t>(LogFunction::Console)) {
-                log_to_console(msg.message, msg.level);
+            try {
+                if (msg.functions & static_cast<std::uint8_t>(LogFunction::Console)) {
+                    log_to_console(msg.message, msg.level);
+                }
+                if (msg.functions & static_cast<std::uint8_t>(LogFunction::File)) {
+                    log_to_file(msg.message, msg.level);
+                }
+            } catch (...) {
+                this->sink_failed.store(true);
             }
-            if (msg.functions & static_cast<std::uint8_t>(LogFunction::File)) {
-                log_to_file(msg.message, msg.level);
-            }
+            processed_count.fetch_add(1u, std::memory_order_release);
         }
 
         if (!this->log_enable.load(std::memory_order_acquire) && log_msg_queue.empty()) {

@@ -16,11 +16,11 @@ namespace gkit::core::reflect {
      * ObjectId-typed field values do not participate in (de)serialization for now.
      */
     static void expand_object_children(SerdeNode& node, const gkit::core::Object* obj_ptr) {
-        if (obj_ptr == nullptr) return;
+        if (obj_ptr == nullptr) throw std::invalid_argument("expired object id");
 
-        auto& db               = ClassDB::instance();
-        const auto* class_info = db.find(obj_ptr->class_name());
-        if (class_info == nullptr) return;
+        auto& db        = ClassDB::instance();
+        auto class_info = db.snapshot(obj_ptr->class_name());
+        if (!class_info) throw std::invalid_argument("unregistered object type");
 
         class_info->for_each_field(
             [&node, obj_ptr, class_info](const FieldDesc& field, const auto&, const auto*) -> void {
@@ -35,15 +35,16 @@ namespace gkit::core::reflect {
     /**
      * SerdeStruct
      */
-    SerdeStruct::SerdeStruct(Value v) noexcept { // NOLINT(performance-unnecessary-value-param)
+    SerdeStruct::SerdeStruct(Value v) { // NOLINT(performance-unnecessary-value-param)
         this->from(std::move(v));
     }
 
-    SerdeStruct::SerdeStruct(const ObjectId v) noexcept {
+    SerdeStruct::SerdeStruct(const ObjectId v) {
         this->from(v);
     }
 
     auto SerdeStruct::operator[](const std::string& key) -> Value& {
+        if (!this->available_flag) throw std::logic_error("no serialized value");
         for (const auto& node : this->serde_root->get_children()) {
             if (node->get_key() == key) {
                 return node->get_value();
@@ -53,16 +54,21 @@ namespace gkit::core::reflect {
         throw std::invalid_argument("element not found");
     }
 
-    auto SerdeStruct::from(Value v) noexcept -> void { // NOLINT(performance-unnecessary-value-param)
+    auto SerdeStruct::from(Value v) -> void { // NOLINT(performance-unnecessary-value-param)
+        this->serde_root.reset();
+        this->available_flag = false;
         this->serde_root     = std::make_unique<SerdeNode>("", std::move(v));
         this->available_flag = true;
     }
 
-    auto SerdeStruct::from(ObjectId v) noexcept -> void {
-        if (!v.available()) return;
+    auto SerdeStruct::from(ObjectId v) -> void {
+        this->serde_root.reset();
+        this->available_flag = false;
+        if (!v.available()) throw std::invalid_argument("invalid object id");
 
-        auto* obj_ptr = ObjectPool::instance().deref_from(v);
-        if (obj_ptr == nullptr) return;
+        auto pinned   = v.lock();
+        auto* obj_ptr = pinned.get();
+        if (obj_ptr == nullptr) throw std::invalid_argument("expired object id");
 
         this->serde_root = std::make_unique<SerdeNode>("", Type::Object);
         expand_object_children(*this->serde_root, obj_ptr);
@@ -72,18 +78,10 @@ namespace gkit::core::reflect {
     /**
      * SerdeNode
      */
-    SerdeNode::SerdeNode(const std::string& k, const Value& v) noexcept {
+    SerdeNode::SerdeNode(const std::string& k, const Value& v) {
         this->key  = k;
         this->type = v.type();
         switch (this->type) {
-        case Type::Object: {
-            const auto* obj = v.as_object_ptr();
-            if (obj == nullptr) return;
-
-            expand_object_children(*this, obj);
-            break;
-        }
-
         case Type::ObjectId: {
             // ObjectId values do not participate in (de)serialization for now.
             return;
@@ -115,7 +113,7 @@ namespace gkit::core::reflect {
         }
     }
 
-    SerdeNode::SerdeNode(const std::string& k, Type t) noexcept {
+    SerdeNode::SerdeNode(const std::string& k, Type t) {
         this->key  = k;
         this->type = t;
     }

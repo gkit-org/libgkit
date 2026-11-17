@@ -19,7 +19,7 @@ namespace gkit::core::templates {
         Singleton operator=(const Singleton&&) = delete;
 
     public:
-        inline static T& instance() noexcept {
+        inline static T& instance() {
             static T instance;
             return instance;
         }

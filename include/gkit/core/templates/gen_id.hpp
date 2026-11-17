@@ -5,8 +5,8 @@
 #include <cstdint>
 #include <functional>
 #include <mutex>
-#include <stack>
-#include <unordered_map>
+#include <stdexcept>
+#include <vector>
 
 namespace gkit::core::templates {
     /**
@@ -62,54 +62,48 @@ namespace gkit::core::templates {
     template<class T>
     class GenId<T>::IdAllocator : public Singleton<GenId<T>::IdAllocator> {
         friend Singleton<GenId<T>::IdAllocator>;
-        std::mutex alloc_mutex{};
-        std::stack<std::uint32_t> id_pool{{1}};
-        std::unordered_map<std::uint32_t, std::uint32_t> id_gen_map{};
-
-        IdAllocator() noexcept  = default;
-        ~IdAllocator() noexcept = default;
+        struct Slot {
+            std::uint32_t generation = 1;
+            std::uint32_t next       = 0;
+            bool live                = true;
+        };
+        std::mutex alloc_mutex;
+        std::vector<Slot> slots;
+        std::uint32_t free_head = 0;
+        IdAllocator()           = default;
 
     public:
-        auto new_one() -> GenId<T>;
-        auto drop(const GenId<T>& dropped_id) -> void;
-    }; // class GenId<T>::IdAllocator
-
-    template<class T>
-    auto GenId<T>::IdAllocator::new_one() -> GenId<T> {
-        auto new_id = GenId<T>();
-        {
-            std::unique_lock alloc_locker(this->alloc_mutex);
-            if (this->id_pool.size() <= 1) {
-                // Final element in id_pool is not alloc before be called top().
-                // So the version of final element always is one.
-                new_id.id  = id_pool.top()++;
-                new_id.gen = 1;
+        auto new_one() -> GenId<T> {
+            std::lock_guard lock(this->alloc_mutex);
+            GenId<T> result;
+            if (this->free_head != 0) {
+                result.id       = this->free_head;
+                auto& slot      = this->slots[result.id - 1];
+                this->free_head = slot.next;
+                slot.live       = true;
+                result.gen      = slot.generation;
             } else {
-                // version of recycle id is not always one
-                // and is recorded to gen map when the id is dropped.
-                new_id.id = id_pool.top();
-                id_pool.pop();
-                new_id.gen = ++this->id_gen_map[new_id.id];
+                if (this->slots.size() == UINT32_MAX) throw std::overflow_error("ID space exhausted");
+                this->slots.emplace_back();
+                result.id  = static_cast<std::uint32_t>(this->slots.size());
+                result.gen = 1;
             }
+            return result;
         }
 
-        return new_id;
-    }
-
-    template<class T>
-    auto GenId<T>::IdAllocator::drop(const GenId<T>& dropped_id) -> void {
-        auto old_id  = dropped_id.id;
-        auto old_gen = dropped_id.gen;
-
-        {
-            std::unique_lock alloc_locker(this->alloc_mutex);
-            this->id_pool.push(old_id);
-
-            // Record the last-used generation so the next allocation of this id
-            // gets old_gen + 1, keeping the generation strictly increasing.
-            this->id_gen_map[old_id] = old_gen;
+        /** @brief Recycle a live generation without allocating; stale drops are ignored. */
+        auto drop(const GenId<T>& id) -> void {
+            std::lock_guard lock(this->alloc_mutex);
+            if (!id.available() || id.id > this->slots.size()) return;
+            auto& slot = this->slots[id.id - 1];
+            if (!slot.live || slot.generation != id.gen) return;
+            slot.live = false;
+            if (slot.generation == UINT32_MAX) return; // Retire instead of wrapping.
+            ++slot.generation;
+            slot.next       = this->free_head;
+            this->free_head = id.id;
         }
-    }
+    };
 } // namespace gkit::core::templates
 
 template<class T>

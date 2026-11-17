@@ -1,5 +1,6 @@
 #include "test_utils.hpp"
 
+#include <array>
 #include <iomanip>
 #include <iostream>
 
@@ -76,6 +77,7 @@ auto test_hsv_conversion() -> bool {
 
     HSV hsv2{.h = 180.0f, .s = 1.0f, .v = 0.5f};
     auto rgb2 = hsv_to_rgb(hsv2);
+    gkit::test::assert_if(rgb2 == 0x007F7F, "hsv_to_rgb(180, 1.0, 0.5) must yield half-bright cyan");
     gkit::test::logln("  hsv_to_rgb(180, 1.0, 0.5) = 0x{:X}", rgb2);
     return true;
 }
@@ -91,7 +93,28 @@ auto test_hsl_conversion() -> bool {
 
     HSL hsl2{.h = 60.0f, .s = 1.0f, .l = 0.5f};
     auto rgb3 = hsl_to_rgb(hsl2);
+    gkit::test::assert_if(rgb3 == 0xFFFF00, "hsl_to_rgb(60, 1.0, 0.5) must yield yellow");
     gkit::test::logln("  hsl_to_rgb(60, 1.0, 0.5) = 0x{:X}", rgb3);
+    return true;
+}
+
+auto test_color_conversion_values() -> bool {
+    constexpr std::array hues{0.0f, 60.0f, 120.0f, 180.0f, 240.0f, 300.0f};
+    constexpr std::array<uint32_t, 6> expected{0xFF0000, 0xFFFF00, 0x00FF00, 0x00FFFF, 0x0000FF, 0xFF00FF};
+    for (std::size_t i = 0; i < hues.size(); ++i) {
+        gkit::test::assert_if(hsv_to_rgb(HSV{.h = hues[i], .s = 1.0f, .v = 1.0f}) == expected[i],
+                              "HSV hue sector must produce the expected RGB channels");
+        gkit::test::assert_if(hsl_to_rgb(HSL{.h = hues[i], .s = 1.0f, .l = 0.5f}) == expected[i],
+                              "HSL hue sector must produce the expected RGB channels");
+    }
+    constexpr std::array levels{0.0f, 0.5f, 1.0f};
+    constexpr std::array<uint32_t, 3> gray{0x000000, 0x7F7F7F, 0xFFFFFF};
+    for (std::size_t i = 0; i < levels.size(); ++i) {
+        gkit::test::assert_if(hsv_to_rgb(HSV{.h = 180.0f, .s = 0.0f, .v = levels[i]}) == gray[i],
+                              "HSV zero saturation must produce grayscale");
+        gkit::test::assert_if(hsl_to_rgb(HSL{.h = 180.0f, .s = 0.0f, .l = levels[i]}) == gray[i],
+                              "HSL zero saturation must produce grayscale");
+    }
     return true;
 }
 
@@ -122,6 +145,7 @@ auto main() -> int {
                            .add_test_func(test_adjustment)
                            .add_test_func(test_hsv_conversion)
                            .add_test_func(test_hsl_conversion)
+                           .add_test_func(test_color_conversion_values)
                            .add_test_func(test_utility);
 
     test_runner.run();

@@ -83,10 +83,6 @@ namespace gkit::resource {
 
         auto load_from_file() -> void override;
 
-    protected:
-        auto parse() -> std::vector<std::byte> override;
-        auto dump(std::vector<std::byte>) -> void override;
-
     private:
         struct Data;
         std::unique_ptr<Data> data;

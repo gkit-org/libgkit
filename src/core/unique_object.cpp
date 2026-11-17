@@ -7,25 +7,21 @@
 #include <string>
 
 namespace gkit::core {
-    auto UniqueObject::create_with_classname(const std::string& class_name) noexcept -> std::optional<UniqueObject> {
+    auto UniqueObject::create_with_classname(const std::string& class_name) -> std::optional<UniqueObject> {
         return reflect::ClassDB::instance().create(class_name);
     }
 
-    auto UniqueObject::from_raw_ptr(Object* obj) noexcept -> UniqueObject {
+    auto UniqueObject::from_raw_ptr(Object* obj) -> UniqueObject {
         UniqueObject uobj;
         if (obj == nullptr) return uobj;
 
+        auto owned  = std::shared_ptr<Object>(obj);
         auto& pool  = ObjectPool::instance();
-        auto id_opt = pool.acquire(obj);
-        if (id_opt.has_value()) {
+        auto id_opt = pool.acquire(owned);
+        if (id_opt) {
             uobj.id  = *id_opt;
-            uobj.obj = obj;
-        } else {
-            // Registration failed and the pool never took ownership;
-            // free the raw pointer to avoid a leak.
-            delete obj;
+            uobj.obj = owned.get();
         }
-
         return uobj;
     }
 

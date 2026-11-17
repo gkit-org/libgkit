@@ -13,3 +13,4 @@ add_library(${GKIT_MATH} OBJECT ${MATH_SRC})
 
 target_include_directories(${GKIT_MATH} PRIVATE ${GKIT_SOURCE_DIR}/include)  # include for header file
 target_include_directories(${GKIT_MATH} PRIVATE ${GKIT_SOURCE_DIR}/src)      # top include for source file
+target_compile_features(gkit_math PUBLIC cxx_std_20)

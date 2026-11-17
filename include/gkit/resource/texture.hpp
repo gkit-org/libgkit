@@ -2,21 +2,25 @@
 
 #include "gkit/resource/resource.hpp"
 
-#include <filesystem>
+#include <cstddef>
 #include <memory>
+#include <span>
 
 namespace gkit::resource {
-    class Texture : protected gkit::resource::Resource {
+    /** @brief Decoded CPU image in RGBA byte order. No graphics context is required. */
+    class Texture : public Resource {
     public:
         Texture();
         explicit Texture(std::filesystem::path path);
-        explicit Texture(std::filesystem::path&& path);
-
-    protected:
+        ~Texture() override;
         auto load_from_file() -> void override;
+        auto width() const noexcept -> int;
+        auto height() const noexcept -> int;
+        auto pitch() const noexcept -> int;
+        auto pixels() const noexcept -> std::span<const std::byte>;
 
     private:
         struct Data;
         std::unique_ptr<Data> data;
-    }; // class Texture
+    };
 } // namespace gkit::resource

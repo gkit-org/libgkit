@@ -13,7 +13,7 @@ namespace gkit::resource {
          * @brief Map marker string to ShaderStage enum
          */
         auto stage_from_marker(std::string_view marker) noexcept -> std::optional<ShaderStage> {
-            static const std::unordered_map<std::string_view, ShaderStage> MARKER_MAP = {
+            static constexpr std::pair<std::string_view, ShaderStage> MARKERS[] = {
                 {"vertex", ShaderStage::Vertex},
                 {"fragment", ShaderStage::Fragment},
                 {"geometry", ShaderStage::Geometry},
@@ -21,10 +21,8 @@ namespace gkit::resource {
                 {"tess_control", ShaderStage::TessControl},
                 {"tess_evaluation", ShaderStage::TessEvaluation},
             };
-
-            auto it = MARKER_MAP.find(marker);
-            if (it != MARKER_MAP.end()) {
-                return it->second;
+            for (const auto& [name, stage] : MARKERS) {
+                if (name == marker) return stage;
             }
             return std::nullopt;
         }
@@ -53,6 +51,9 @@ namespace gkit::resource {
     ShaderSource::~ShaderSource() = default;
 
     auto ShaderSource::load_from_file() -> void {
+        this->is_available = false;
+        this->data->full_source.clear();
+        this->data->stage_sources.clear();
         if (this->res_path.empty()) {
             this->is_available = false;
             this->data->full_source.clear();
@@ -78,24 +79,16 @@ namespace gkit::resource {
         while (std::getline(stream, line)) {
             full_ss << line << '\n';
 
-            // Check for stage marker: #shader <stage_name>
-            if (line.find("#shader") != std::string::npos) {
-                // Extract the stage name after "#shader "
-                auto pos = line.find("#shader");
-                pos += 8; // skip "#shader "
-
-                // Skip whitespace
-                while (pos < line.size() && (line[pos] == ' ' || line[pos] == '\t')) {
-                    ++pos;
-                }
-
-                auto marker   = std::string_view(line).substr(pos);
-                current_stage = stage_from_marker(marker);
-
-                if (!current_stage.has_value()) {
-                    // Unknown stage marker — reset to no stage, skip these lines
-                    // until the next marker
-                }
+            auto first = line.find_first_not_of(" \t\r");
+            if (first != std::string::npos && line.compare(first, 7, "#shader") == 0 &&
+                (first + 7 == line.size() || line[first + 7] == ' ' || line[first + 7] == '\t')) {
+                auto marker_start = line.find_first_not_of(" \t", first + 7);
+                if (marker_start == std::string::npos) return;
+                auto last  = line.find_last_not_of(" \t\r");
+                auto stage = stage_from_marker(std::string_view(line).substr(marker_start, last - marker_start + 1));
+                if (!stage || stage_streams.contains(*stage)) return;
+                current_stage = stage;
+                stage_streams.try_emplace(*stage);
                 continue;
             }
 
@@ -104,6 +97,10 @@ namespace gkit::resource {
             }
         }
 
+        if (stream.bad() || stage_streams.empty()) return;
+        for (const auto& [stage, source] : stage_streams) {
+            if (source.str().find_first_not_of(" \t\r\n") == std::string::npos) return;
+        }
         this->data->full_source = full_ss.str();
 
         // Transfer stage streams into the map
@@ -144,17 +141,6 @@ namespace gkit::resource {
 
     auto ShaderSource::is_loaded() const noexcept -> bool {
         return this->is_available;
-    }
-
-    auto ShaderSource::parse() -> std::vector<std::byte> {
-        // Serialization of shader source is not currently supported.
-        // ShaderSource is a read-only resource type.
-        return {};
-    }
-
-    auto ShaderSource::dump(std::vector<std::byte> /*data*/) -> void {
-        // Deserialization of shader source is not currently supported.
-        // ShaderSource is a read-only resource type.
     }
 
 } // namespace gkit::resource

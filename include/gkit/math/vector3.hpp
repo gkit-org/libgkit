@@ -1,6 +1,5 @@
 #pragma once
 
-#include "gkit/core/object.hpp"
 #include "gkit/math/vector2.hpp"
 
 #include <cmath>
@@ -11,7 +10,7 @@ namespace gkit::math {
     /**
      * @brief 3D vector (x, y, z)
      */
-    class Vector3 : public gkit::core::Object {
+    class Vector3 {
     public:
         float x = 0.0f;
         float y = 0.0f;
@@ -52,7 +51,7 @@ namespace gkit::math {
         /**
          * @brief Move constructor
          */
-        Vector3(const Vector3&& other) noexcept;
+        Vector3(Vector3&& other) noexcept = default;
 
         /**
          * @brief Destructor
@@ -64,18 +63,19 @@ namespace gkit::math {
          * @brief Assignment operator
          */
         inline auto operator=(const Vector3& other) noexcept -> Vector3& = default;
+        auto operator=(Vector3&&) noexcept -> Vector3&                   = default;
 
         /**
          * @brief Equality operator
          */
-        inline auto operator==(const Vector3& other) noexcept -> bool {
+        inline auto operator==(const Vector3& other) const noexcept -> bool {
             return (this->x == other.x) && (this->y == other.y) && (this->z == other.z);
         }
 
         /**
          * @brief Inequality operator
          */
-        inline auto operator!=(const Vector3& other) noexcept -> bool {
+        inline auto operator!=(const Vector3& other) const noexcept -> bool {
             return (this->x != other.x) || (this->y != other.y) || (this->z != other.z);
         }
 
@@ -96,7 +96,7 @@ namespace gkit::math {
         /**
          * @brief Compound addition
          */
-        inline auto operator+=(const Vector3& other) noexcept -> const Vector3& {
+        inline auto operator+=(const Vector3& other) noexcept -> Vector3& {
             this->x += other.x;
             this->y += other.y;
             this->z += other.z;
@@ -106,7 +106,7 @@ namespace gkit::math {
         /**
          * @brief Compound subtraction
          */
-        inline auto operator-=(const Vector3& other) noexcept -> const Vector3& {
+        inline auto operator-=(const Vector3& other) noexcept -> Vector3& {
             this->x -= other.x;
             this->y -= other.y;
             this->z -= other.z;
@@ -116,17 +116,17 @@ namespace gkit::math {
         /**
          * @brief Scalar multiplication
          */
-        inline auto operator*(float s) noexcept -> Vector3 { return {this->x * s, this->y * s, this->z * s}; }
+        inline auto operator*(float s) const noexcept -> Vector3 { return {this->x * s, this->y * s, this->z * s}; }
 
         /**
          * @brief Scalar division
          */
-        inline auto operator/(float s) noexcept -> Vector3 { return {this->x / s, this->y / s, this->z / s}; }
+        inline auto operator/(float s) const noexcept -> Vector3 { return {this->x / s, this->y / s, this->z / s}; }
 
         /**
          * @brief Compound scalar multiplication
          */
-        inline auto operator*=(float s) noexcept -> const Vector3& {
+        inline auto operator*=(float s) noexcept -> Vector3& {
             this->x *= s;
             this->y *= s;
             this->z *= s;
@@ -136,7 +136,7 @@ namespace gkit::math {
         /**
          * @brief Compound scalar division
          */
-        inline auto operator/=(float s) noexcept -> const Vector3& {
+        inline auto operator/=(float s) noexcept -> Vector3& {
             this->x /= s;
             this->y /= s;
             this->z /= s;
@@ -146,7 +146,7 @@ namespace gkit::math {
         /**
          * @brief Negation operator
          */
-        inline auto operator-() noexcept -> Vector3 { return {-this->x, -this->y, -this->z}; }
+        inline auto operator-() const noexcept -> Vector3 { return {-this->x, -this->y, -this->z}; }
 
     public: // Properties
         /**

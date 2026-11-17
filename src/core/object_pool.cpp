@@ -1,44 +1,39 @@
 #include "core/object_pool.hpp"
 
-#include "gkit/core/object.hpp"
-#include "gkit/core/object_id.hpp"
-
 namespace gkit::core {
-    auto ObjectPool::acquire(Object* obj) noexcept -> std::optional<ObjectId> {
-        if (obj == nullptr) return std::nullopt;
-
-        auto new_id = ObjectId(ObjectId::IdAllocator::instance().new_one());
+    auto ObjectPool::acquire(std::shared_ptr<Object> obj) -> std::optional<ObjectId> {
+        if (!obj) return std::nullopt;
+        auto id = ObjectId(ObjectId::IdAllocator::instance().new_one());
         try {
-            this->id_instance_map.emplace(new_id, obj);
+            std::lock_guard guard(this->pool_mutex);
+            this->id_instance_map.emplace(id, std::move(obj));
         } catch (...) {
-            // Registration failed; the caller keeps ownership of obj.
-            return std::nullopt;
+            ObjectId::IdAllocator::instance().drop(id);
+            throw;
         }
-
-        return new_id;
+        return id;
     }
 
-    auto ObjectPool::release(const ObjectId& drop_id) noexcept -> void {
-        if (!drop_id.available()) return;
+    auto ObjectPool::release(const ObjectId& id) noexcept -> void {
+        std::shared_ptr<Object> retired;
+        {
+            std::lock_guard guard(this->pool_mutex);
+            auto it = this->id_instance_map.find(id);
+            if (it == this->id_instance_map.end()) return;
+            retired = std::move(it->second);
+            this->id_instance_map.erase(it);
+        }
+        ObjectId::IdAllocator::instance().drop(id);
+        // User destruction runs after unlocking the registry.
+    }
 
-        auto target_it = this->id_instance_map.find(drop_id);
-        if (target_it == this->id_instance_map.end()) return;
-
-        auto* drop_obj = target_it->second;
-        this->id_instance_map.erase(target_it);
-        delete drop_obj;
-
-        // Recycle the id; the generation is bumped so stale references stay stale.
-        auto& id_alloc = ObjectId::IdAllocator::instance();
-        id_alloc.drop(drop_id);
+    auto ObjectPool::lock(const ObjectId& id) -> std::shared_ptr<Object> {
+        std::lock_guard guard(this->pool_mutex);
+        auto it = this->id_instance_map.find(id);
+        return it == this->id_instance_map.end() ? nullptr : it->second;
     }
 
     auto ObjectPool::deref_from(const ObjectId& id) noexcept -> Object* {
-        if (!id.available()) return nullptr;
-
-        auto target_it = this->id_instance_map.find(id);
-        if (target_it == this->id_instance_map.end()) return nullptr;
-
-        return target_it->second;
+        return this->lock(id).get(); // Compatibility: caller must keep the owner alive.
     }
 } // namespace gkit::core

@@ -81,6 +81,9 @@ jobs:
         cmake --build $BUILD_DIR
         echo "Windows build completed successfully"
 
+    - name: Run non-interactive tests
+      run: ctest --test-dir build/${{ matrix.preset }} --output-on-failure
+
     - name: Show build results
       run: |
         echo "🎉 Build process completed!"

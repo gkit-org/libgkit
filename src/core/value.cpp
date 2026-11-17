@@ -16,40 +16,7 @@ namespace gkit::core {
     Value::Value(Array value) : storage(std::move(value)) {}
     Value::Value(Map value) : storage(std::move(value)) {}
 
-    Value::Value(UniqueObject value) noexcept : storage(std::move(value)) {}
     Value::Value(ObjectId value) noexcept : storage(value) {}
-
-    Value::Value(const Value& other) {
-        std::visit(
-            [this](const auto& v) {
-                using T = std::decay_t<decltype(v)>;
-                if constexpr (std::is_same_v<T, UniqueObject>) {
-                    throw std::logic_error("Cannot copy Value holding a non-copyable UniqueObject");
-                } else {
-                    this->storage = v;
-                }
-            },
-            other.storage);
-    }
-
-    // =========================================================================
-    // Value - Assignment Operators
-    // =========================================================================
-
-    auto Value::operator=(const Value& other) -> Value& {
-        if (this == &other) return *this;
-        std::visit(
-            [this](const auto& v) {
-                using T = std::decay_t<decltype(v)>;
-                if constexpr (std::is_same_v<T, UniqueObject>) {
-                    throw std::logic_error("Cannot copy Value holding a non-copyable UniqueObject");
-                } else {
-                    this->storage = v;
-                }
-            },
-            other.storage);
-        return *this;
-    }
 
     auto Value::operator=(Null) noexcept -> Value& {
         storage = Null{};
@@ -91,11 +58,6 @@ namespace gkit::core {
         return *this;
     }
 
-    auto Value::operator=(UniqueObject value) noexcept -> Value& {
-        storage = std::move(value);
-        return *this;
-    }
-
     auto Value::operator=(ObjectId value) noexcept -> Value& {
         storage = value;
         return *this;
@@ -105,23 +67,23 @@ namespace gkit::core {
     // Value - Unchecked Accessors (non-constexpr - container types)
     // =========================================================================
 
-    auto Value::as_string() const noexcept -> const std::string& {
+    auto Value::as_string() const -> const std::string& {
         return std::get<std::string>(storage);
     }
 
-    auto Value::as_array() const noexcept -> const Array& {
+    auto Value::as_array() const -> const Array& {
         return std::get<Array>(storage);
     }
 
-    auto Value::as_map() const noexcept -> const Map& {
+    auto Value::as_map() const -> const Map& {
         return std::get<Map>(storage);
     }
 
-    auto Value::as_array() noexcept -> Array& {
+    auto Value::as_array() -> Array& {
         return std::get<Array>(storage);
     }
 
-    auto Value::as_map() noexcept -> Map& {
+    auto Value::as_map() -> Map& {
         return std::get<Map>(storage);
     }
 
@@ -130,9 +92,6 @@ namespace gkit::core {
     // =========================================================================
 
     auto Value::as_object() const noexcept -> ObjectId {
-        if (std::holds_alternative<UniqueObject>(storage)) {
-            return std::get<UniqueObject>(storage).get_id();
-        }
         if (std::holds_alternative<ObjectId>(storage)) {
             return std::get<ObjectId>(storage);
         }
@@ -140,9 +99,6 @@ namespace gkit::core {
     }
 
     auto Value::as_object_ptr() noexcept -> gkit::core::Object* {
-        if (std::holds_alternative<UniqueObject>(storage)) {
-            return std::get<UniqueObject>(storage).get();
-        }
         if (std::holds_alternative<ObjectId>(storage)) {
             return ObjectPool::instance().deref_from(std::get<ObjectId>(storage));
         }
@@ -150,9 +106,6 @@ namespace gkit::core {
     }
 
     auto Value::as_object_ptr() const noexcept -> const gkit::core::Object* {
-        if (std::holds_alternative<UniqueObject>(storage)) {
-            return std::get<UniqueObject>(storage).get();
-        }
         if (std::holds_alternative<ObjectId>(storage)) {
             return ObjectPool::instance().deref_from(std::get<ObjectId>(storage));
         }
@@ -191,11 +144,11 @@ namespace gkit::core {
     }
 
     auto Value::operator[](std::size_t index) -> Value& {
-        return as_array()[index];
+        return as_array().at(index);
     }
 
     auto Value::operator[](std::size_t index) const -> const Value& {
-        return as_array()[index];
+        return as_array().at(index);
     }
 
     auto Value::at(const std::string& key) const noexcept -> std::optional<std::reference_wrapper<const Value>> {

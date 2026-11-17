@@ -42,7 +42,7 @@ namespace gkit::core::reflect {
          * @brief Serialize serdedata to string.
          * @return Empty string when the SerdeBase cannot be built.
          */
-        [[nodiscard]] auto to_string() const noexcept -> std::string;
+        [[nodiscard]] auto to_string() const -> std::string;
 
         // =====================================================================
         // Format hooks (pure virtual)

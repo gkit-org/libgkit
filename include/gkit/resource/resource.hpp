@@ -1,58 +1,26 @@
 #pragma once
 
+#include <concepts>
 #include <filesystem>
-#include <vector>
 
 namespace gkit::resource {
+    /** @brief CPU resource. Published instances are immutable and may be shared across threads. */
     class Resource {
     public:
         Resource() = default;
         explicit Resource(std::filesystem::path path);
-        explicit Resource(std::filesystem::path&& path);
-        virtual ~Resource()            = default;
-        Resource operator=(Resource&)  = delete;
-        Resource operator=(Resource&&) = delete;
+        virtual ~Resource()                          = default;
+        Resource(const Resource&)                    = delete;
+        auto operator=(const Resource&) -> Resource& = delete;
+        virtual auto load_from_file() -> void        = 0;
+        auto get_path() const noexcept -> const std::filesystem::path& { return this->res_path; }
+        auto available() const noexcept -> bool { return this->is_available; }
 
     protected:
-        friend class ResourceLoader;
-        /**
-         * @brief Serialize the resource to a byte string
-         * @note  It can use to save the resource to a file
-         * @param void
-         * @return std::vector<std::byte> the byte string
-         */
-        virtual auto parse() -> std::vector<std::byte> = 0;
-
-        /**
-         * @brief Dump the resource from a byte string
-         * @note  It can use to load the resource from a file.
-         *
-         * And the information in byte string will be load into the object
-         * @param data the byte string
-         * @return void
-         */
-        virtual auto dump(std::vector<std::byte>) -> void = 0;
-
-        /**
-         * @brief Load the resource from a file from the res_path which store in the resource object
-         * @param void
-         * @return void
-         */
-        virtual auto load_from_file() -> void = 0;
-
-    public:
-        inline auto get_path() -> std::filesystem::path { return res_path; }
-
-    protected:
-        bool is_available              = false;
-        std::filesystem::path res_path = std::filesystem::path();
-
-        inline auto available() -> bool { return is_available; }
+        bool is_available = false;
+        std::filesystem::path res_path;
     };
 
-    template<typename T>
-    concept IsResource = requires(T v) {
-        { std::is_base_of_v<gkit::resource::Resource, T> } -> std::convertible_to<bool>;
-        { v.load_from_file() } -> std::convertible_to<void>;
-    };
+    template<class T>
+    concept IsResource = std::derived_from<T, Resource>;
 } // namespace gkit::resource

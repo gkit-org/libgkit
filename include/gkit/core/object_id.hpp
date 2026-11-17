@@ -19,6 +19,15 @@ namespace gkit::core {
 
         explicit ObjectId(const templates::GenId<ObjectIdTag>& base) noexcept : templates::GenId<ObjectIdTag>(base) {}
 
+        /** @brief Pin lifetime; does not synchronize the object's fields. */
+        auto lock() const -> std::shared_ptr<Object>;
+
+        template<IsObject T>
+        auto lock() const -> std::shared_ptr<T> {
+            return std::dynamic_pointer_cast<T>(this->lock());
+        }
+
+        /** @brief Borrow without pinning; requires external lifetime synchronization. */
         auto deref() const noexcept -> Object*;
 
         template<IsObject T>
@@ -34,8 +43,6 @@ namespace gkit::core {
         }
     }
 } // namespace gkit::core
-
-
 
 template<>
 struct std::hash<gkit::core::ObjectId> {

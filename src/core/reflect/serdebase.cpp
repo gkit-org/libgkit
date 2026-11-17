@@ -51,29 +51,21 @@ namespace gkit::core::reflect {
     } // namespace
 
     struct SerdeBase::SerdeData {
-        SerdeStruct ss {};
+        SerdeStruct ss{};
     };
 
     SerdeBase::SerdeBase() : data(std::make_unique<SerdeData>()) {}
     SerdeBase::~SerdeBase() {}
 
     auto SerdeBase::from(const ObjectId& id) -> void {
-        if (!id.available()) {
-            throw std::invalid_argument("id is not available");
-        }
-
         this->data->ss.from(id);
     }
 
     auto SerdeBase::from(const Value& v) -> void {
-        if (v.type() == Type::Null) {
-            throw std::invalid_argument("id is not available");
-        }
-
         this->data->ss.from(v);
     }
 
-    auto SerdeBase::to_string() const noexcept -> std::string {
+    auto SerdeBase::to_string() const -> std::string {
         auto& ss = this->data->ss;
         if (!ss.available()) {
             return {};

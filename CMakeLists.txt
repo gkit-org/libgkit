@@ -18,7 +18,8 @@ if (GKIT_TEST_BUILD)
     if(NOT GKIT_STATIC_BUILD)
         message(FATAL_ERROR "Test build must enable with GKIT_STATIC_BUILD")
     endif()
-    
+
+    enable_testing()
     add_subdirectory(${GKIT_SOURCE_DIR}/test)
 endif()
 
