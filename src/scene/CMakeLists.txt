@@ -1,7 +1,7 @@
 set (GKIT_SCENE "gkit_scene")
 
 set (SCENE_SRC
-    "./unit.cpp"
+    "./scene.cpp"
 
     # 2D scene
     "2d/object2d.cpp"

@@ -19,6 +19,7 @@ set (CORE_SRC
     "./object_pool.cpp"
     "./object.cpp"
     "./processer.cpp"
+    "./node.cpp"
     "./unique_object.cpp"
     "./value.cpp"
 )
