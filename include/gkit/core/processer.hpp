@@ -5,14 +5,28 @@
 #pragma once
 
 #include "gkit/core/node.hpp"
+#include "gkit/platform/runtime.hpp"
 
 #include <chrono>
 #include <condition_variable>
+#include <cstdint>
 #include <mutex>
 
 namespace gkit::core::detail {
     struct TreeRuntime;
 }
+
+namespace gkit::core {
+    /** @brief Frame timing for the Processer coordinator hooks. */
+    struct FrameContext {
+        /** @brief Elapsed time in seconds, capped by the Processer configuration. */
+        double delta = 0;
+        /** @brief Zero-based logic-frame number, reset on each run. */
+        std::uint64_t frame = 0;
+        /** @brief Number of completed physics steps in this run. */
+        std::uint64_t physics_tick = 0;
+    };
+} // namespace gkit::core
 
 namespace gkit {
     /**
@@ -51,14 +65,17 @@ namespace gkit {
         auto set_max_frame_delta(double value) noexcept -> Processer&;
         /** @brief Set the target logic-frame rate. Zero disables pacing. */
         auto set_target_frame_rate(double value) noexcept -> Processer&;
-        /** @brief Enable SDL initialization. Disable it for headless runs with an empty input snapshot. */
+        /** @brief Set typed options for subsequent runs. These take precedence over legacy SDL setters. */
+        auto set_platform_options(platform::RuntimeOptions value) -> Processer&;
+        /** @brief Enable SDL initialization and event polling for the configured subsystems. */
         auto set_initialize_sdl(bool value) noexcept -> Processer&;
         /** @brief Select SDL subsystems. std::nullopt enables audio, events, gamepad, joystick and video. */
         auto set_sdl_flags(std::optional<std::uint32_t> value) noexcept -> Processer&;
         /**
          * @brief Enter the tree, process frames until stopped, and leave the tree before returning.
-         * @note Each frame commits queued edits, dispatches SDL events, invokes before_frame(), drains posted callbacks,
-         * runs bounded fixed physics steps, runs one variable logic step, then invokes after_frame() and paces.
+         * @note Each frame polls events and updates Input when SDL events are enabled, then enters the tree on the
+         * first frame, commits queued edits, invokes before_frame(), drains posted callbacks, runs bounded fixed
+         * physics steps and one variable logic step, then invokes after_frame() and paces.
          * All update tasks finish before each phase boundary. Excess whole physics steps are discarded; fractional
          * remainder is retained. Settings remain fixed throughout this call.
          * @throws std::logic_error For re-entry or execution on the wrong thread.
@@ -82,8 +99,8 @@ namespace gkit {
         /** @brief Coordinator hook after startup succeeds and before parent-first tree entry. */
         virtual auto on_start() -> void {}
         /**
-         * @brief Coordinator hook after edits and event dispatch, before posted callbacks and updates.
-         * @param context This frame's measured delta, counters and immutable input.
+         * @brief Coordinator hook after input and edits, before posted callbacks and updates.
+         * @param context This frame's measured delta and counters.
          * @note All workers are idle; direct access to this tree is permitted.
          */
         virtual auto before_frame(const core::FrameContext& context) -> void {}
@@ -116,7 +133,8 @@ namespace gkit {
             std::size_t max_fixed_steps  = 4;
             double max_frame_delta       = 0.25;
             double target_frame_rate     = 60;
-            bool initialize_sdl          = true;
+            std::optional<platform::RuntimeOptions> platform_options;
+            bool initialize_sdl = true;
             std::optional<std::uint32_t> sdl_flags;
         };
 

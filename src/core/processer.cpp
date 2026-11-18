@@ -3,10 +3,8 @@
  */
 #include "gkit/core/processer.hpp"
 
-#include "core/misc/sdl_event_dispatcher.hpp"
 #include "core/node_internal.hpp"
-
-#include <SDL3/SDL.h>
+#include "gkit/core/input/input.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -104,7 +102,7 @@ namespace gkit {
          * @brief Walk one worker-owned subtree parent-first, applying inherited update gates.
          * @note User code may post work or stage edits, but cannot mutate topology during a phase.
          */
-        auto serial_update(State* root, const core::FrameContext& context, bool physics) -> void {
+        auto serial_update(State* root, double delta, bool physics) -> void {
             std::vector<State*> pending{root};
             while (!pending.empty()) {
                 auto* current = pending.back();
@@ -112,9 +110,9 @@ namespace gkit {
                 auto& node = current->node;
                 if (!node.updates_enabled()) continue;
                 if (physics)
-                    node.physics_process(context);
+                    node.physics_process(delta);
                 else
-                    node.process(context);
+                    node.process(delta);
                 if (!node.updates_enabled()) continue;
                 for (auto* child : current->descendants() | std::views::reverse) pending.push_back(child);
             }
@@ -124,7 +122,7 @@ namespace gkit {
          * @note Always join the phase before returning or throwing. No ordering is promised between independent
          * domains; local traversal remains insertion-ordered. This barrier separates every physics and logic phase.
          */
-        auto update(State* root, const core::FrameContext& context, bool physics, WorkerPool& pool) -> void {
+        auto update(State* root, double delta, bool physics, WorkerPool& pool) -> void {
             std::exception_ptr failure;
             try {
                 std::vector<State*> pending{root};
@@ -133,17 +131,17 @@ namespace gkit {
                     auto* current = pending.back();
                     pending.pop_back();
                     if (pool.enabled() && current != root && current->node.is_parallel()) {
-                        pool.submit([current, context, physics] {
-                            serial_update(current, context, physics);
+                        pool.submit([current, delta, physics] {
+                            serial_update(current, delta, physics);
                         });
                         continue;
                     }
                     auto& node = current->node;
                     if (!node.updates_enabled()) continue;
                     if (physics)
-                        node.physics_process(context);
+                        node.physics_process(delta);
                     else
-                        node.process(context);
+                        node.process(delta);
                     if (!node.updates_enabled()) continue;
                     for (auto* child : current->descendants() | std::views::reverse) pending.push_back(child);
                 }
@@ -217,6 +215,11 @@ namespace gkit {
         config.target_frame_rate = value;
         return *this;
     }
+    auto Processer::set_platform_options(platform::RuntimeOptions value) -> Processer& {
+        std::lock_guard lock(settings_mutex);
+        config.platform_options = value;
+        return *this;
+    }
     auto Processer::set_initialize_sdl(bool value) noexcept -> Processer& {
         std::lock_guard lock(settings_mutex);
         config.initialize_sdl = value;
@@ -271,25 +274,19 @@ namespace gkit {
         }
         dropped_steps.store(0);
         std::exception_ptr failure;
-        SDL_InitFlags flags                        = 0;
-        core::SDLEventDispatcher::Token quit_token = 0;
-        bool started                               = false;
+        std::optional<platform::Runtime> session;
+        bool started = false;
         try {
             WorkerPool pool(settings.parallel_update_enabled ? settings.worker_count : 0);
-            if (settings.initialize_sdl) {
-                auto requested = settings.sdl_flags.value_or(SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_GAMEPAD |
-                                                             SDL_INIT_JOYSTICK | SDL_INIT_VIDEO);
-                if (!SDL_IsMainThread()) throw std::logic_error("SDL requires the main thread");
-                if (!SDL_InitSubSystem(requested)) throw std::runtime_error(SDL_GetError());
-                flags = requested;
-                if (flags & SDL_INIT_EVENTS) {
-                    Input::instance().initialize();
-                    quit_token = core::SDLEventDispatcher::instance().register_event_handler(SDL_EVENT_QUIT,
-                                                                                             [this](const auto&) {
-                                                                                                 stop();
-                                                                                             });
-                }
+            if (settings.platform_options)
+                session.emplace(*settings.platform_options);
+            else if (settings.initialize_sdl) {
+                if (settings.sdl_flags)
+                    session.emplace(*settings.sdl_flags);
+                else
+                    session.emplace(platform::RuntimeOptions{true, true, true, true, true});
             }
+            if (session && session->has_events()) Input::instance().initialize();
             {
                 std::lock_guard lock(runtime->queue_mutex);
                 runtime->accepting = true;
@@ -300,28 +297,31 @@ namespace gkit {
             }
             started = true;
             on_start();
-            core::detail::enter_nodes(root().state.get());
             auto previous      = now();
             double accumulated = 0;
             core::FrameContext context;
-            auto empty_input = std::make_shared<const input::Snapshot>();
             while (running.load()) {
                 auto start = now();
                 context.delta =
                     std::clamp(std::chrono::duration<double>(start - previous).count(), 0.0, settings.max_frame_delta);
                 previous = start;
                 accumulated += context.delta;
+                if (session && session->has_events()) {
+                    auto events = session->poll_events();
+                    for (const auto& event : events)
+                        if (std::holds_alternative<platform::QuitEvent>(event)) stop();
+                    Input::instance().update(events);
+                }
+                if (!running.load()) break;
+                if (context.frame == 0) core::detail::enter_nodes(root().state.get());
+                if (!running.load()) break;
                 core::detail::drain_edits(*runtime);
-                if (flags & SDL_INIT_EVENTS) core::SDLEventDispatcher::instance().dispatch_events();
-                context.input = (flags & SDL_INIT_EVENTS) ? Input::instance().snapshot() : empty_input;
                 if (!running.load()) break;
                 before_frame(context);
                 core::detail::drain_posts(*runtime);
                 std::size_t steps = 0;
                 while (running.load() && accumulated >= settings.fixed_delta && steps < settings.max_fixed_steps) {
-                    auto fixed  = context;
-                    fixed.delta = settings.fixed_delta;
-                    update(root().state.get(), fixed, true, pool);
+                    update(root().state.get(), settings.fixed_delta, true, pool);
                     ++context.physics_tick;
                     ++steps;
                     accumulated -= settings.fixed_delta;
@@ -330,7 +330,7 @@ namespace gkit {
                     dropped_steps.fetch_add(static_cast<std::uint64_t>(accumulated / settings.fixed_delta));
                     accumulated = std::fmod(accumulated, settings.fixed_delta);
                 }
-                if (running.load()) update(root().state.get(), context, false, pool);
+                if (running.load()) update(root().state.get(), context.delta, false, pool);
                 after_frame(context);
                 ++context.frame;
                 if (settings.target_frame_rate > 0) {
@@ -365,8 +365,12 @@ namespace gkit {
         } catch (...) {
             if (!failure) failure = std::current_exception();
         }
-        if (quit_token) core::SDLEventDispatcher::instance().disconnect(quit_token);
-        if (flags) SDL_QuitSubSystem(flags);
+        try {
+            if (session && session->has_events()) Input::instance().initialize();
+        } catch (...) {
+            if (!failure) failure = std::current_exception();
+        }
+        session.reset();
         {
             std::lock_guard lock(core::detail::tree_mutex);
             runtime->active = false;

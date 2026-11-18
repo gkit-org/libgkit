@@ -1,8 +1,8 @@
-#include "core/misc/sdl_event_dispatcher.hpp"
+#include "platform/sdl_event_dispatcher.hpp"
 
 #include <stdexcept>
 
-namespace gkit::core {
+namespace gkit::platform::detail {
     auto SDLEventDispatcher::add(Uint32 type, std::function<void(const SDL_Event&)> handler) -> Token {
         if (!handler) return 0;
         auto entry      = std::make_shared<Entry>();
@@ -63,11 +63,14 @@ namespace gkit::core {
             if (entry->enabled) entry->callback(event);
         }
     }
-    auto SDLEventDispatcher::dispatch_events() -> void {
+    auto SDLEventDispatcher::dispatch_events(const std::function<void(const SDL_Event&)>& collect) -> void {
         if (!SDL_IsMainThread()) throw std::logic_error("SDL events must be dispatched on the main thread");
         SDL_Event event{};
         this->dispatch(BEFORE_FRAME, event);
-        while (SDL_PollEvent(&event)) this->dispatch(event.type, event);
+        while (SDL_PollEvent(&event)) {
+            collect(event);
+            this->dispatch(event.type, event);
+        }
         this->dispatch(AFTER_FRAME, event);
     }
-} // namespace gkit::core
+} // namespace gkit::platform::detail

@@ -52,3 +52,6 @@ subtree owner to its completion callback. Child lists and transforms are returne
 Node properties support concurrent reads and writes. Synchronize custom node fields or use `Node::post()`
 to run a callback on the coordinator. Each `run()` validates the latest settings before initializing SDL
 or starting workers. Changes made during a run apply to the next run.
+
+Override `process(double delta)` or `physics_process(double delta)` for node updates. The delta is in seconds.
+`Processer` updates input before the tree, and nodes query the current state through `gkit::Input::instance()`.

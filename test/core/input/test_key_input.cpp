@@ -1,7 +1,7 @@
 #include "./min_window_for_input_test.hpp"
+#include "gkit/platform/runtime.hpp"
 #include "test_utils.hpp"
 
-#include <core/misc/sdl_event_dispatcher.hpp>
 #include <cstdint>
 #include <iostream>
 
@@ -16,8 +16,8 @@ auto test_key_input_loop() -> bool {
     gkit::test::logln("=== key input interactive loop (press Ctrl+S to save, Q to quit) ===");
 
     gkit::test::Window win;
-    auto& event_dispatcher = gkit::core::SDLEventDispatcher::instance();
-    auto& input            = gkit::Input::instance();
+    gkit::platform::Runtime runtime;
+    auto& input = gkit::Input::instance();
     input.initialize();
 
     auto save_action = Action("Save");
@@ -30,7 +30,7 @@ auto test_key_input_loop() -> bool {
     input.register_action(quit_action);
 
     while (1) {
-        event_dispatcher.dispatch_events();
+        input.update(runtime.poll_events());
 
         if (input.is_key_pressed(Key::A)) {
             std::cout << "Key A is pressed" << '\n';

@@ -1,7 +1,5 @@
 #pragma once
 
-#include "gkit/core/templates/singleton.hpp"
-
 #include <SDL3/SDL.h>
 
 #include <functional>
@@ -10,19 +8,23 @@
 #include <mutex>
 #include <vector>
 
-namespace gkit::core {
+namespace gkit::platform::detail {
     /** @brief Thread-safe subscriptions; dispatch must run on the SDL main thread. */
-    class SDLEventDispatcher : public templates::Singleton<SDLEventDispatcher> {
-        friend class templates::Singleton<SDLEventDispatcher>;
+    class SDLEventDispatcher {
+        SDLEventDispatcher() = default;
 
     public:
+        static auto instance() -> SDLEventDispatcher& {
+            static SDLEventDispatcher instance;
+            return instance;
+        }
         using Token = std::uint64_t;
         auto register_handler_before_frame(std::function<void()> handler) -> Token;
         auto register_handler_after_frame(std::function<void()> handler) -> Token;
         auto register_event_handler(SDL_EventType type, std::function<void(const SDL_Event&)> handler) -> Token;
         auto disconnect(Token token) -> void;
         auto unregister_event_handler(SDL_EventType type) -> void;
-        auto dispatch_events() -> void;
+        auto dispatch_events(const std::function<void(const SDL_Event&)>& collect) -> void;
 
     private:
         struct Entry {
@@ -40,4 +42,4 @@ namespace gkit::core {
         auto add(Uint32 type, std::function<void(const SDL_Event&)> handler) -> Token;
         auto dispatch(Uint32 type, const SDL_Event& event) -> void;
     };
-} // namespace gkit::core
+} // namespace gkit::platform::detail

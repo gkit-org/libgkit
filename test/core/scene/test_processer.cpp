@@ -1,3 +1,4 @@
+#include "gkit/core/input/input.hpp"
 #include "gkit/core/processer.hpp"
 #include "gkit/scene/scene.hpp"
 #include "test_utils.hpp"
@@ -76,13 +77,13 @@ namespace {
             ++exited;
             events.push_back(label + "-");
         }
-        auto process(const FrameContext& context) -> void override {
-            check(context.delta == 1);
+        auto process(double delta) -> void override {
+            check(delta == 1);
             ++processes;
             events.push_back(label);
         }
-        auto physics_process(const FrameContext& context) -> void override {
-            check(context.delta == 0.125);
+        auto physics_process(double delta) -> void override {
+            check(delta == 0.125);
             ++physics;
         }
     };
@@ -157,7 +158,7 @@ namespace {
         int posts = 0;
         int calls = 0;
         explicit ParallelNode(std::barrier<>& barrier) : barrier(barrier) { set_parallel(true); }
-        auto process(const FrameContext&) -> void override {
+        auto process(double) -> void override {
             ++calls;
             check(peer.with<ParallelNode>([](ParallelNode& node) {
                 check(node.post([](Node& target) {
@@ -197,7 +198,7 @@ namespace {
     }
     struct ThrowingNode : Node {
         int exits = 0;
-        auto process(const FrameContext&) -> void override { throw std::runtime_error("update failure"); }
+        auto process(double) -> void override { throw std::runtime_error("update failure"); }
         auto exit_tree() -> void override { ++exits; }
     };
     auto test_exception_cleanup() -> bool {
@@ -226,7 +227,7 @@ namespace {
             add_child("during_ready", std::move(owner));
         }
         auto enter_tree() -> void override { ++entered; }
-        auto process(const FrameContext&) -> void override {
+        auto process(double) -> void override {
             check(find_child("during_ready").has_value());
             created.with<Node>([](Node& child) {
                 child.rename("during_ready");
@@ -355,11 +356,69 @@ namespace {
         return true;
     }
 
+    struct InputProbe : Node {
+        const int& frame;
+        int entries = 0, ticks = 0, updates = 0;
+        explicit InputProbe(const int& frame) : frame(frame) {}
+        auto check_input() const -> void {
+            const auto& controls = Input::instance();
+            check(controls.is_key_pressed(input::Key::A) == (frame == 0));
+            check(controls.is_key_just_pressed(input::Key::A) == (frame == 0));
+            check(controls.is_key_just_released(input::Key::A) == (frame == 1));
+        }
+        auto enter_tree() -> void override {
+            check_input();
+            ++entries;
+        }
+        auto physics_process(double) -> void override {
+            check_input();
+            ++ticks;
+        }
+        auto process(double) -> void override {
+            check_input();
+            ++updates;
+        }
+    };
+    auto test_input_before_tree() -> bool {
+        platform::Runtime host;
+        App app;
+        app.set_platform_options({}).set_parallel_update_enabled(true).set_worker_count(1);
+        auto worker    = UniqueObject::create<InputProbe>(app.frames);
+        auto worker_id = worker.get_id();
+        worker_id.with<InputProbe>([](auto& probe) {
+            probe.set_parallel(true);
+        });
+        app.root().add_child("worker", std::move(worker));
+        auto added    = UniqueObject::create<InputProbe>(app.frames);
+        auto added_id = added.get_id();
+        SDL_Event key{};
+        key.type         = SDL_EVENT_KEY_DOWN;
+        key.key.scancode = SDL_SCANCODE_A;
+        check(SDL_PushEvent(&key));
+        app.after = [&](const FrameContext& context) {
+            if (context.frame != 0) return;
+            key.type = SDL_EVENT_KEY_UP;
+            check(SDL_PushEvent(&key));
+            app.root().add_child("coordinator", std::move(added));
+        };
+        app.run();
+        check(worker_id.with<InputProbe>([](auto& probe) {
+            check(probe.entries == 1 && probe.ticks == 4 && probe.updates == 2);
+        }));
+        check(added_id.with<InputProbe>([](auto& probe) {
+            check(probe.entries == 1 && probe.ticks == 2 && probe.updates == 1);
+        }));
+        check(!Input::instance().is_key_just_released(input::Key::A));
+        return true;
+    }
+
     struct RejectingNode : Node {
         int& returned;
         explicit RejectingNode(int& returned) : returned(returned) { set_parallel(true); }
-        auto process(const FrameContext& context) -> void override {
-            if (context.frame != 0) return;
+        bool submitted = false;
+        auto process(double) -> void override {
+            if (submitted) return;
+            submitted = true;
             add_child("duplicate", UniqueObject::create<Node>());
             add_child("duplicate", UniqueObject::create<Node>(), [&](EditResult result) {
                 check(result.error == NodeError::InvalidEdit && result.owner && result.owner->get());
@@ -422,6 +481,7 @@ int main() {
         .add_test_func(test_concurrent_edit_cancellation)
         .add_test_func(test_cross_thread_stop)
         .add_test_func(test_sdl_lifetime)
+        .add_test_func(test_input_before_tree)
         .add_test_func(test_returned_ownership_and_runtime_expiry)
         .run();
 }

@@ -1,83 +1,70 @@
 #include "core/input/cache.hpp"
 
-#include <stdexcept>
-
 namespace gkit::input {
+    namespace {
+        template<class Set, class Key>
+        auto transition(Set& held, Set& pressed, Set& released, Key key, bool down) -> void {
+            if (down) {
+                if (held.insert(key).second) pressed.insert(key);
+            } else if (held.erase(key))
+                released.insert(key);
+        }
+    } // namespace
     auto Cache::initialize() -> void {
-        if (!SDL_IsMainThread() || !(SDL_WasInit(SDL_INIT_EVENTS) & SDL_INIT_EVENTS)) {
-            throw std::logic_error("initialize input on the SDL main thread after SDL_INIT_EVENTS");
-        }
-        if (!this->subscriptions.empty()) return;
-        auto& dispatcher = core::SDLEventDispatcher::instance();
-        this->subscriptions.reserve(16);
-        try {
-            this->subscriptions.push_back(dispatcher.register_handler_before_frame([this] {
-                this->current.previous_keys      = this->current.keys;
-                this->current.previous_buttons   = this->current.buttons;
-                this->current.previous_modifiers = this->current.modifiers;
-                this->current.pressed_keys.clear();
-                this->current.released_keys.clear();
-                this->current.pressed_buttons.clear();
-                this->current.released_buttons.clear();
-                this->current.pressed_gamepad.clear();
-                this->current.released_gamepad.clear();
-                this->current.motion = {};
-                this->current.wheel  = {};
-            }));
-            auto on = [&](SDL_EventType type, auto callback) {
-                this->subscriptions.push_back(dispatcher.register_event_handler(type, callback));
-            };
-            on(SDL_EVENT_KEY_DOWN, [this](const SDL_Event& e) {
-                auto key = static_cast<Key>(e.key.scancode);
-                if (this->current.keys.insert(key).second) this->current.pressed_keys.insert(key);
-                this->current.modifiers = e.key.mod;
-            });
-            on(SDL_EVENT_KEY_UP, [this](const SDL_Event& e) {
-                auto key = static_cast<Key>(e.key.scancode);
-                if (this->current.keys.erase(key)) this->current.released_keys.insert(key);
-                this->current.modifiers = e.key.mod;
-            });
-            on(SDL_EVENT_MOUSE_BUTTON_DOWN, [this](const SDL_Event& e) {
-                auto button = static_cast<MouseButton>(e.button.button);
-                if (this->current.buttons.insert(button).second) this->current.pressed_buttons.insert(button);
-            });
-            on(SDL_EVENT_MOUSE_BUTTON_UP, [this](const SDL_Event& e) {
-                auto button = static_cast<MouseButton>(e.button.button);
-                if (this->current.buttons.erase(button)) this->current.released_buttons.insert(button);
-            });
-            on(SDL_EVENT_MOUSE_MOTION, [this](const SDL_Event& e) {
-                this->current.motion.x += e.motion.xrel;
-                this->current.motion.y += e.motion.yrel;
-            });
-            on(SDL_EVENT_MOUSE_WHEEL, [this](const SDL_Event& e) {
-                this->current.wheel.x += e.wheel.x;
-                this->current.wheel.y += e.wheel.y;
-            });
-            on(SDL_EVENT_GAMEPAD_BUTTON_DOWN, [this](const SDL_Event& e) {
-                if (this->current.gamepad.insert(e.gbutton.button).second)
-                    this->current.pressed_gamepad.insert(e.gbutton.button);
-            });
-            on(SDL_EVENT_GAMEPAD_BUTTON_UP, [this](const SDL_Event& e) {
-                if (this->current.gamepad.erase(e.gbutton.button))
-                    this->current.released_gamepad.insert(e.gbutton.button);
-            });
-            on(SDL_EVENT_WINDOW_FOCUS_LOST, [this](const SDL_Event&) {
-                this->current.released_keys.insert(this->current.keys.begin(), this->current.keys.end());
-                this->current.released_buttons.insert(this->current.buttons.begin(), this->current.buttons.end());
-                this->current.keys.clear();
-                this->current.buttons.clear();
-                this->current.modifiers = 0;
-            });
-            this->subscriptions.push_back(dispatcher.register_handler_after_frame([this] {
-                this->published.store(std::make_shared<const Snapshot>(this->current));
-            }));
-        } catch (...) {
-            for (auto token : this->subscriptions) dispatcher.disconnect(token);
-            this->subscriptions.clear();
-            throw;
-        }
+        platform::require_main_thread();
+        std::unique_lock lock(mutex);
+        keys.clear();
+        buttons.clear();
+        gamepad.clear();
+        modifiers = 0;
+        begin_frame();
     }
-    Cache::~Cache() {
-        for (auto token : this->subscriptions) core::SDLEventDispatcher::instance().disconnect(token);
+    auto Cache::begin_frame() -> void {
+        previous_keys      = keys;
+        previous_buttons   = buttons;
+        previous_modifiers = modifiers;
+        pressed_keys.clear();
+        released_keys.clear();
+        pressed_buttons.clear();
+        released_buttons.clear();
+        pressed_gamepad.clear();
+        released_gamepad.clear();
+        motion = {};
+        wheel  = {};
+    }
+    auto Cache::update(std::span<const platform::Event> events) -> void {
+        platform::require_main_thread();
+        std::unique_lock lock(mutex);
+        begin_frame();
+        for (const auto& event : events) {
+            std::visit(
+                [&](const auto& e) {
+                    using T = std::decay_t<decltype(e)>;
+                    if constexpr (std::is_same_v<T, platform::KeyEvent>) {
+                        transition(keys, pressed_keys, released_keys, static_cast<Key>(e.scancode), e.down);
+                        modifiers = e.modifiers;
+                    } else if constexpr (std::is_same_v<T, platform::MouseButtonEvent>) {
+                        transition(
+                            buttons, pressed_buttons, released_buttons, static_cast<MouseButton>(e.button), e.down);
+                    } else if constexpr (std::is_same_v<T, platform::GamepadButtonEvent>) {
+                        transition(gamepad, pressed_gamepad, released_gamepad, static_cast<int>(e.button), e.down);
+                    } else if constexpr (std::is_same_v<T, platform::MotionEvent>) {
+                        motion.x += e.x;
+                        motion.y += e.y;
+                    } else if constexpr (std::is_same_v<T, platform::WheelEvent>) {
+                        wheel.x += e.x;
+                        wheel.y += e.y;
+                    } else if constexpr (std::is_same_v<T, platform::WindowEvent>) {
+                        if (e.change == platform::WindowChange::FocusLost) {
+                            released_keys.insert(keys.begin(), keys.end());
+                            released_buttons.insert(buttons.begin(), buttons.end());
+                            keys.clear();
+                            buttons.clear();
+                            modifiers = 0;
+                        }
+                    }
+                },
+                event);
+        }
     }
 } // namespace gkit::input

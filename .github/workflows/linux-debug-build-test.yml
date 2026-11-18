@@ -90,4 +90,4 @@ jobs:
           -DBIN_FOLDER="${{ github.workspace }}/bin/x86_64-gcc-tsan" \
           -DGKIT_SANITIZER=thread -DSDL_DBUS=OFF -DSDL_IBUS=OFF
         cmake --build build/x86_64-gcc-tsan --parallel 2
-        ctest --test-dir build/x86_64-gcc-tsan --output-on-failure -R 'test_(value|registry_concurrency|input_snapshot|resource_loader|log_flush)$'
+        ctest --test-dir build/x86_64-gcc-tsan --output-on-failure -R 'test_(value|registry_concurrency|input|resource_loader|log_flush|processer)$'

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "gkit/core/input/input.hpp"
 #include "gkit/core/unique_object.hpp"
 
 #include <atomic>
@@ -14,21 +13,6 @@ namespace gkit::core {
     namespace detail {
         struct NodeState;
     }
-    /**
-     * @brief Timing and input shared by one update phase.
-     * @note All callbacks in a phase observe the same values. Input edges belong to the input frame,
-     * not to individual physics ticks; multiple fixed ticks may observe the same edge.
-     */
-    struct FrameContext {
-        /** @brief Frame duration in seconds, clamped for process() and fixed for physics_process(). */
-        double delta = 0;
-        /** @brief Zero-based logic-frame number, reset on each run(). */
-        std::uint64_t frame = 0;
-        /** @brief Zero-based physics tick, or completed tick count during process(). */
-        std::uint64_t physics_tick = 0;
-        /** @brief Immutable input snapshot, always present during scheduled callbacks and safe to retain. */
-        std::shared_ptr<const input::Snapshot> input;
-    };
 
     /** @brief Completion status for accepted edits and posted callbacks. */
     enum class NodeError {
@@ -95,8 +79,16 @@ namespace gkit::core {
         virtual auto enter_tree() -> void {}
         /** @brief Called once, after all children are ready. */
         virtual auto ready() -> void {}
-        virtual auto process(const FrameContext&) -> void {}
-        virtual auto physics_process(const FrameContext&) -> void {}
+        /**
+         * @brief Run one logic update after input and fixed-step physics.
+         * @param delta Elapsed frame time in seconds, capped by the Processer configuration.
+         */
+        virtual auto process(double delta) -> void {}
+        /**
+         * @brief Run one fixed-step physics update using the current frame's input.
+         * @param delta Configured duration of one physics step in seconds.
+         */
+        virtual auto physics_process(double delta) -> void {}
         /** @brief Called child-first on removal or shutdown. */
         virtual auto exit_tree() -> void {}
     };

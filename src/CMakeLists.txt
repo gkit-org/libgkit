@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.20)
 
 set (GKIT_OBJS)
 
+add_subdirectory(platform)
+list(APPEND GKIT_OBJS $<TARGET_OBJECTS:gkit_platform>)
+
 add_subdirectory(core)
 list (APPEND GKIT_OBJS $<TARGET_OBJECTS:gkit_core>)
 
@@ -48,7 +51,7 @@ if(GKIT_SANITIZER)
     if(GKIT_SANITIZER STREQUAL "address")
         list(APPEND GKIT_SANITIZER_FLAGS -fsanitize=undefined)
     endif()
-    foreach(module gkit_core gkit_math gkit_resource gkit_scene)
+    foreach(module gkit_platform gkit_core gkit_math gkit_resource gkit_scene)
         target_compile_options(${module} PRIVATE ${GKIT_SANITIZER_FLAGS})
     endforeach()
     foreach(library ${GKIT_LIBS})
