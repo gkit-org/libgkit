@@ -20,7 +20,7 @@ namespace {
         auto& db = reflect::ClassDB::instance();
         db.regist<Base>("ConcurrentBase").add_field("ConcurrentBase", "base", &Base::base);
         db.regist<Child>("ConcurrentChild", "ConcurrentBase").add_field("ConcurrentChild", "child", &Child::child);
-        auto info = db.snapshot("ConcurrentChild");
+        auto info = db.find("ConcurrentChild");
         int count = 0;
         info->for_each_field([&](const auto&, const auto&, const auto*) {
             ++count;
@@ -38,7 +38,7 @@ namespace {
         std::atomic<bool> done = false;
         std::thread reader([&] {
             while (!done.load()) {
-                if (auto published = db.snapshot("Complete")) {
+                if (auto published = db.find("Complete")) {
                     gkit::test::assert_if(published->fields.size() == 1,
                                           "transaction must publish complete description");
                 }
@@ -51,6 +51,11 @@ namespace {
         reader.join();
         Child child;
         gkit::test::assert_if(info->get_field(&child, "base")->as_int64() == 7, "inherited getter");
+        std::weak_ptr<const reflect::ClassInfo> old = info;
+        db.add_field("ConcurrentChild", "another", &Child::child);
+        gkit::test::assert_if(info->fields.size() == 1, "existing snapshot remains readable");
+        info.reset();
+        gkit::test::assert_if(old.expired(), "obsolete unreferenced metadata released");
         auto owner = UniqueObject::create<Child>();
         reflect::SerdeStruct serialized(owner.get_id());
         gkit::test::assert_if(serialized.available(), "serialize registered root");

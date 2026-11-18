@@ -25,8 +25,8 @@ auto test_load_vertex_and_fragment() -> bool {
     const auto path = resource_dir() / "basic.shader";
     auto result     = gkit::resource::ResourceLoader::instance().load<gkit::resource::ShaderSource>(path);
 
-    gkit::test::assert_if(result.has_value(), "load<ShaderSource> must succeed");
-    const auto& shader = result.value();
+    gkit::test::assert_if(bool(result), "load<ShaderSource> must succeed");
+    const auto& shader = result.resource;
     gkit::test::assert_if(shader->is_loaded(), "shader must be loaded");
 
     auto full = shader->source();
@@ -59,9 +59,9 @@ auto test_cache_returns_same_instance() -> bool {
     auto first  = gkit::resource::ResourceLoader::instance().load<gkit::resource::ShaderSource>(path);
     auto second = gkit::resource::ResourceLoader::instance().load<gkit::resource::ShaderSource>(path);
 
-    gkit::test::assert_if(first.has_value(), "first load must succeed");
-    gkit::test::assert_if(second.has_value(), "second load must succeed");
-    gkit::test::assert_if(first.value().get() == second.value().get(),
+    gkit::test::assert_if(bool(first), "first load must succeed");
+    gkit::test::assert_if(bool(second), "second load must succeed");
+    gkit::test::assert_if(first.resource.get() == second.resource.get(),
                           "loading same path twice must return cached instance");
 
     gkit::test::logln("  loading same path twice returns cached instance");
@@ -74,8 +74,8 @@ auto test_load_missing_file() -> bool {
     auto result = gkit::resource::ResourceLoader::instance().load<gkit::resource::ShaderSource>(
         resource_dir() / "does_not_exist.shader");
 
-    gkit::test::assert_if(!result.has_value(), "loading missing file must return nullopt");
-    gkit::test::logln("  missing file returns nullopt");
+    gkit::test::assert_if(!bool(result), "loading missing file must report failure");
+    gkit::test::logln("  missing file reports failure");
     return true;
 }
 

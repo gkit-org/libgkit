@@ -74,8 +74,8 @@ namespace gkit::core::reflect {
                           std::function<Value(const T&)> getter,
                           std::function<void(T&, const Value&)> setter = nullptr) -> ClassDB&;
 
-        [[nodiscard]] auto find(const std::string& class_name) const -> const ClassInfo*;
-        [[nodiscard]] auto find_with_raw(const char* raw_name) const -> const ClassInfo*;
+        [[nodiscard]] auto find(const std::string& class_name) const -> std::shared_ptr<const ClassInfo>;
+        [[nodiscard]] auto find_with_raw(const char* raw_name) const -> std::shared_ptr<const ClassInfo>;
         [[nodiscard]] auto create(const std::string& class_name) const -> std::optional<UniqueObject>;
 
         /** @brief Build a complete description privately, then publish it atomically. */
@@ -97,16 +97,12 @@ namespace gkit::core::reflect {
             this->publish(std::move(completed));
         }
 
-        auto snapshot(const std::string& name) const -> std::shared_ptr<const ClassInfo>;
-
     private:
         ClassDB() = default;
         mutable std::shared_mutex registry_mutex;
         std::map<std::string, std::shared_ptr<const ClassInfo>> classes;
         std::unordered_map<std::string, std::string> raw2_class_name;
         std::unordered_map<std::type_index, std::string> type_names;
-        // Legacy raw lookups remain valid until shutdown, including older snapshots.
-        std::vector<std::shared_ptr<const ClassInfo>> history;
         auto publish(std::shared_ptr<ClassInfo> info) -> void;
         auto editable(const std::string& name, std::type_index type) -> std::shared_ptr<ClassInfo>;
         static auto check_field(const ClassInfo& info, const std::string& name) -> void;

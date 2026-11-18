@@ -31,6 +31,7 @@ namespace gkit {
             std::exception_ptr failure;
 
         public:
+            auto enabled() const noexcept -> bool { return !workers.empty(); }
             explicit WorkerPool(std::size_t count) {
                 try {
                     for (std::size_t i = 0; i < count; ++i)
@@ -100,41 +101,22 @@ namespace gkit {
         };
         using State = core::detail::NodeState;
         /**
-         * @brief Partition a stable tree into non-overlapping update domains before starting a phase.
-         * @note The root domain belongs to the coordinator. Nested parallel marks inherit the outermost domain;
-         * disabling Processer parallelism places every node in the coordinator domain.
-         */
-        auto assign_domains(const std::shared_ptr<State>& root, bool parallel) -> void {
-            std::lock_guard lock(core::detail::tree_mutex);
-            std::vector<std::pair<std::shared_ptr<State>, State*>> pending{{root, root.get()}};
-            while (!pending.empty()) {
-                auto [current, domain] = std::move(pending.back());
-                pending.pop_back();
-                if (parallel && current != root && domain == root.get() && current->node().is_parallel())
-                    domain = current.get();
-                current->domain = domain;
-                for (const auto& child : current->children) pending.push_back({child, domain});
-            }
-        }
-        /**
          * @brief Walk one worker-owned subtree parent-first, applying inherited update gates.
-         * @note User code may post work or stage edits, but cannot mutate topology or directly enter other domains.
+         * @note User code may post work or stage edits, but cannot mutate topology during a phase.
          */
-        auto serial_update(const std::shared_ptr<State>& root, const core::FrameContext& context, bool physics)
-            -> void {
-            core::detail::AccessScope access(root->domain);
-            std::vector<std::shared_ptr<State>> pending{root};
+        auto serial_update(State* root, const core::FrameContext& context, bool physics) -> void {
+            std::vector<State*> pending{root};
             while (!pending.empty()) {
-                auto current = std::move(pending.back());
+                auto* current = pending.back();
                 pending.pop_back();
-                auto& node = current->node();
+                auto& node = current->node;
                 if (!node.updates_enabled()) continue;
                 if (physics)
                     node.physics_process(context);
                 else
                     node.process(context);
                 if (!node.updates_enabled()) continue;
-                pending.insert(pending.end(), current->children.rbegin(), current->children.rend());
+                for (auto* child : current->descendants() | std::views::reverse) pending.push_back(child);
             }
         }
         /**
@@ -142,32 +124,28 @@ namespace gkit {
          * @note Always join the phase before returning or throwing. No ordering is promised between independent
          * domains; local traversal remains insertion-ordered. This barrier separates every physics and logic phase.
          */
-        auto update(const std::shared_ptr<State>& root,
-                    const core::FrameContext& context,
-                    bool physics,
-                    WorkerPool& pool) -> void {
-            core::detail::AccessScope access(root.get());
+        auto update(State* root, const core::FrameContext& context, bool physics, WorkerPool& pool) -> void {
             std::exception_ptr failure;
             try {
-                std::vector<std::shared_ptr<State>> pending{root};
+                std::vector<State*> pending{root};
                 while (!pending.empty()) {
                     pool.check_failure();
-                    auto current = std::move(pending.back());
+                    auto* current = pending.back();
                     pending.pop_back();
-                    if (current->domain != root.get()) {
+                    if (pool.enabled() && current != root && current->node.is_parallel()) {
                         pool.submit([current, context, physics] {
                             serial_update(current, context, physics);
                         });
                         continue;
                     }
-                    auto& node = current->node();
+                    auto& node = current->node;
                     if (!node.updates_enabled()) continue;
                     if (physics)
                         node.physics_process(context);
                     else
                         node.process(context);
                     if (!node.updates_enabled()) continue;
-                    pending.insert(pending.end(), current->children.rbegin(), current->children.rend());
+                    for (auto* child : current->descendants() | std::views::reverse) pending.push_back(child);
                 }
             } catch (...) {
                 failure = std::current_exception();
@@ -182,9 +160,9 @@ namespace gkit {
         }
     } // namespace
     Processer::Processer() :
-        root_owner(core::NodeOwner<>::create()), runtime(std::make_shared<core::detail::TreeRuntime>()) {
+        root_owner(core::UniqueObject::create<core::Node>()), runtime(std::make_unique<core::detail::TreeRuntime>()) {
         std::lock_guard lock(core::detail::tree_mutex);
-        core::detail::assign_runtime(root_owner.state, runtime);
+        core::detail::assign_runtime(root().state.get(), runtime.get());
     }
     Processer::~Processer() {
         // Destruction must follow run() returning; stop() is the cross-thread operation.
@@ -192,37 +170,62 @@ namespace gkit {
             std::lock_guard lock(runtime->queue_mutex);
             runtime->accepting = false;
         }
-        core::detail::AccessScope access(nullptr, runtime.get());
         try {
-            core::detail::drain_edits(runtime, true);
+            core::detail::drain_edits(*runtime, true);
         } catch (...) {
         }
         try {
-            core::detail::drain_posts(runtime, true);
+            core::detail::drain_posts(*runtime, true);
         } catch (...) {
         }
+        std::lock_guard guard(core::detail::tree_mutex);
+        core::detail::assign_runtime(root().state.get(), nullptr);
     }
-    auto Processer::root() const -> core::NodeHandle<> {
-        return root_owner.handle();
+    auto Processer::root() noexcept -> core::Node& {
+        return *static_cast<core::Node*>(root_owner.get());
     }
-    auto Processer::configure(const ProcesserSettings& value) -> void {
+    auto Processer::root() const noexcept -> const core::Node& {
+        return *static_cast<const core::Node*>(root_owner.get());
+    }
+    auto Processer::set_parallel_update_enabled(bool value) noexcept -> Processer& {
         std::lock_guard lock(settings_mutex);
-        if (in_run) throw std::logic_error("configure before run");
-        if (!std::isfinite(value.fixed_delta) || value.fixed_delta <= 0 || value.max_fixed_steps == 0 ||
-            !std::isfinite(value.max_frame_delta) || value.max_frame_delta <= 0 ||
-            !std::isfinite(value.target_frame_rate) || value.target_frame_rate < 0 ||
-            (value.parallel_update_enabled && value.worker_count == 0) ||
-            value.max_frame_delta / value.fixed_delta >=
-                static_cast<double>(std::numeric_limits<std::uint64_t>::max()) ||
-            (value.target_frame_rate > 0 &&
-             1.0 / value.target_frame_rate >
-                 std::chrono::duration<double>(std::chrono::steady_clock::duration::max()).count() / 2))
-            throw std::invalid_argument("invalid frame settings");
-        config = value;
+        config.parallel_update_enabled = value;
+        return *this;
     }
-    auto Processer::settings() const -> ProcesserSettings {
+    auto Processer::set_worker_count(std::size_t value) noexcept -> Processer& {
         std::lock_guard lock(settings_mutex);
-        return config;
+        config.worker_count = value;
+        return *this;
+    }
+    auto Processer::set_fixed_delta(double value) noexcept -> Processer& {
+        std::lock_guard lock(settings_mutex);
+        config.fixed_delta = value;
+        return *this;
+    }
+    auto Processer::set_max_fixed_steps(std::size_t value) noexcept -> Processer& {
+        std::lock_guard lock(settings_mutex);
+        config.max_fixed_steps = value;
+        return *this;
+    }
+    auto Processer::set_max_frame_delta(double value) noexcept -> Processer& {
+        std::lock_guard lock(settings_mutex);
+        config.max_frame_delta = value;
+        return *this;
+    }
+    auto Processer::set_target_frame_rate(double value) noexcept -> Processer& {
+        std::lock_guard lock(settings_mutex);
+        config.target_frame_rate = value;
+        return *this;
+    }
+    auto Processer::set_initialize_sdl(bool value) noexcept -> Processer& {
+        std::lock_guard lock(settings_mutex);
+        config.initialize_sdl = value;
+        return *this;
+    }
+    auto Processer::set_sdl_flags(std::optional<std::uint32_t> value) noexcept -> Processer& {
+        std::lock_guard lock(settings_mutex);
+        config.sdl_flags = value;
+        return *this;
     }
     auto Processer::now() const -> std::chrono::steady_clock::time_point {
         return std::chrono::steady_clock::now();
@@ -247,17 +250,26 @@ namespace gkit {
      * and clears the re-entry guard only after cleanup. Remaining whole physics backlog is counted and discarded.
      */
     auto Processer::run() -> void {
-        ProcesserSettings settings;
+        Config settings;
         {
             std::lock_guard lock(settings_mutex);
             if (in_run) throw std::logic_error("run is not reentrant");
             if (runtime->thread != std::this_thread::get_id()) throw std::logic_error("run on the creating thread");
-            in_run   = true;
             settings = config;
+            if (!std::isfinite(settings.fixed_delta) || settings.fixed_delta <= 0 || settings.max_fixed_steps == 0 ||
+                !std::isfinite(settings.max_frame_delta) || settings.max_frame_delta <= 0 ||
+                !std::isfinite(settings.target_frame_rate) || settings.target_frame_rate < 0 ||
+                (settings.parallel_update_enabled && settings.worker_count == 0) ||
+                settings.max_frame_delta / settings.fixed_delta >=
+                    static_cast<double>(std::numeric_limits<std::uint64_t>::max()) ||
+                (settings.target_frame_rate > 0 &&
+                 1.0 / settings.target_frame_rate >
+                     std::chrono::duration<double>(std::chrono::steady_clock::duration::max()).count() / 2))
+                throw std::invalid_argument("invalid frame settings");
+            in_run = true;
             running.store(true);
         }
         dropped_steps.store(0);
-        core::detail::AccessScope access(nullptr, runtime.get());
         std::exception_ptr failure;
         SDL_InitFlags flags                        = 0;
         core::SDLEventDispatcher::Token quit_token = 0;
@@ -288,7 +300,7 @@ namespace gkit {
             }
             started = true;
             on_start();
-            core::detail::enter_nodes(root_owner.state);
+            core::detail::enter_nodes(root().state.get());
             auto previous      = now();
             double accumulated = 0;
             core::FrameContext context;
@@ -299,18 +311,17 @@ namespace gkit {
                     std::clamp(std::chrono::duration<double>(start - previous).count(), 0.0, settings.max_frame_delta);
                 previous = start;
                 accumulated += context.delta;
-                core::detail::drain_edits(runtime);
+                core::detail::drain_edits(*runtime);
                 if (flags & SDL_INIT_EVENTS) core::SDLEventDispatcher::instance().dispatch_events();
                 context.input = (flags & SDL_INIT_EVENTS) ? Input::instance().snapshot() : empty_input;
                 if (!running.load()) break;
                 before_frame(context);
-                core::detail::drain_posts(runtime);
-                assign_domains(root_owner.state, settings.parallel_update_enabled);
+                core::detail::drain_posts(*runtime);
                 std::size_t steps = 0;
                 while (running.load() && accumulated >= settings.fixed_delta && steps < settings.max_fixed_steps) {
                     auto fixed  = context;
                     fixed.delta = settings.fixed_delta;
-                    update(root_owner.state, fixed, true, pool);
+                    update(root().state.get(), fixed, true, pool);
                     ++context.physics_tick;
                     ++steps;
                     accumulated -= settings.fixed_delta;
@@ -319,7 +330,7 @@ namespace gkit {
                     dropped_steps.fetch_add(static_cast<std::uint64_t>(accumulated / settings.fixed_delta));
                     accumulated = std::fmod(accumulated, settings.fixed_delta);
                 }
-                if (running.load()) update(root_owner.state, context, false, pool);
+                if (running.load()) update(root().state.get(), context, false, pool);
                 after_frame(context);
                 ++context.frame;
                 if (settings.target_frame_rate > 0) {
@@ -337,7 +348,7 @@ namespace gkit {
             runtime->accepting = false;
         }
         if (started) {
-            core::detail::exit_nodes(root_owner.state, failure);
+            core::detail::exit_nodes(root().state.get(), failure);
             try {
                 on_stop();
             } catch (...) {
@@ -345,12 +356,12 @@ namespace gkit {
             }
         }
         try {
-            core::detail::drain_edits(runtime, true);
+            core::detail::drain_edits(*runtime, true);
         } catch (...) {
             if (!failure) failure = std::current_exception();
         }
         try {
-            core::detail::drain_posts(runtime, true);
+            core::detail::drain_posts(*runtime, true);
         } catch (...) {
             if (!failure) failure = std::current_exception();
         }

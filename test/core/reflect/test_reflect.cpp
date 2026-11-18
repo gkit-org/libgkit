@@ -6,7 +6,6 @@
 #include <iostream>
 #include <string>
 
-
 using gkit::core::Object;
 using gkit::core::Value;
 using gkit::core::reflect::ClassDB;
@@ -65,16 +64,16 @@ auto init_reflect() -> void {
 auto test_regist_and_find() -> bool {
     gkit::test::logln("=== Test: regist and find ===");
 
-    auto* info = ClassDB::instance().find("ReflectTestObj");
+    auto info = ClassDB::instance().find("ReflectTestObj");
     gkit::test::assert_if(info != nullptr, "Class info of ReflectTestObj from ClassDB is null");
     gkit::test::assert_if(info->class_name == "ReflectTestObj", "Class name is not experted");
     gkit::test::logln("  find existing class: OK");
 
-    auto* info_with_raw = ClassDB::instance().find_with_raw(typeid(ReflectTestObj).name());
+    auto info_with_raw = ClassDB::instance().find_with_raw(typeid(ReflectTestObj).name());
     gkit::test::assert_if(info_with_raw != nullptr, "Failed to get ClassInfo with raw name");
     gkit::test::logln("  find existing class with raw name: OK");
 
-    auto* missing = ClassDB::instance().find("NonExistent");
+    auto missing = ClassDB::instance().find("NonExistent");
     gkit::test::assert_if(missing == nullptr, "Find result is not experted(nullptr)");
     gkit::test::logln("  find missing class returns nullptr: OK");
     return true;
@@ -83,7 +82,7 @@ auto test_regist_and_find() -> bool {
 auto test_add_field() -> bool {
     std::cout << "=== Test: add_field ===" << '\n';
 
-    auto* info = ClassDB::instance().find("ReflectTestObj");
+    auto info = ClassDB::instance().find("ReflectTestObj");
     assert(info != nullptr);
     assert(info->fields.size() == 4);
     assert(info->fields[0].name == "active");
@@ -99,7 +98,7 @@ auto test_get_field() -> bool {
     std::cout << "=== Test: get_field ===" << '\n';
 
     ReflectTestObj obj;
-    auto* info = ClassDB::instance().find("ReflectTestObj");
+    auto info = ClassDB::instance().find("ReflectTestObj");
 
     auto active_v = info->get_field(&obj, "active");
     assert(active_v.has_value());
@@ -135,7 +134,7 @@ auto test_set_field() -> bool {
     std::cout << "=== Test: set_field ===" << '\n';
 
     ReflectTestObj obj;
-    auto* info = ClassDB::instance().find("ReflectTestObj");
+    auto info = ClassDB::instance().find("ReflectTestObj");
 
     auto ok = info->set_field(&obj, "active", Value(false));
     assert(ok);
@@ -169,7 +168,7 @@ auto test_readonly_property() -> bool {
     std::cout << "=== Test: read-only property ===" << '\n';
 
     ReadOnlyObj obj;
-    auto* info = ClassDB::instance().find("ReadOnlyObj");
+    auto info = ClassDB::instance().find("ReadOnlyObj");
 
     assert(info != nullptr);
     assert(info->fields.size() == 1);
@@ -192,7 +191,7 @@ auto test_readonly_property() -> bool {
 auto test_parent_inheritance() -> bool {
     std::cout << "=== Test: parent inheritance ===" << '\n';
 
-    auto* info = ClassDB::instance().find("ChildObj");
+    auto info = ClassDB::instance().find("ChildObj");
     assert(info != nullptr);
 
     auto* p = info->parent();
@@ -200,7 +199,7 @@ auto test_parent_inheritance() -> bool {
     assert(p->class_name == "ReflectTestObj");
     std::cout << "  parent() resolves correctly: OK" << '\n';
 
-    auto* root = ClassDB::instance().find("ReflectTestObj");
+    auto root = ClassDB::instance().find("ReflectTestObj");
     assert(root->parent() == nullptr);
     std::cout << "  root class has no parent: OK" << '\n';
 
@@ -210,7 +209,7 @@ auto test_parent_inheritance() -> bool {
 auto test_for_each_field_inheritance() -> bool {
     std::cout << "=== Test: for_each_field with inheritance ===" << '\n';
 
-    auto* info = ClassDB::instance().find("ChildObj");
+    auto info = ClassDB::instance().find("ChildObj");
     assert(info != nullptr);
 
     std::vector<std::string> field_names;
@@ -236,7 +235,7 @@ auto test_get_field_inherited() -> bool {
     obj.label  = "child_label";
     obj.weight = 3.14;
 
-    auto* info = ClassDB::instance().find("ChildObj");
+    auto info = ClassDB::instance().find("ChildObj");
 
     auto label_v = info->get_field(&obj, "label");
     assert(label_v.has_value());
@@ -255,7 +254,7 @@ auto test_set_field_inherited() -> bool {
     std::cout << "=== Test: set_field inherited ===" << '\n';
 
     ChildObj obj;
-    auto* info = ClassDB::instance().find("ChildObj");
+    auto info = ClassDB::instance().find("ChildObj");
 
     auto ok = info->set_field(&obj, "active", Value(false));
     assert(ok);

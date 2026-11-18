@@ -3,7 +3,7 @@
 #include "object_pool.hpp"
 
 namespace gkit::core {
-    auto ObjectId::lock() const -> std::shared_ptr<Object> {
+    auto ObjectId::pin() const -> std::shared_ptr<Object> {
         return ObjectPool::instance().lock(*this);
     }
 

@@ -14,7 +14,6 @@ namespace gkit::core::reflect {
         classes[info->class_name]  = info;
         names[info->cpp_type]      = info->class_name;
         raw[info->cpp_type.name()] = info->class_name;
-        this->history.push_back(info);
         this->classes.swap(classes);
         this->type_names.swap(names);
         this->raw2_class_name.swap(raw);
@@ -33,25 +32,21 @@ namespace gkit::core::reflect {
         });
     }
 
-    auto ClassDB::snapshot(const std::string& name) const -> std::shared_ptr<const ClassInfo> {
+    auto ClassDB::find(const std::string& name) const -> std::shared_ptr<const ClassInfo> {
         std::shared_lock guard(this->registry_mutex);
         auto it = this->classes.find(name);
         return it == this->classes.end() ? nullptr : it->second;
     }
 
-    auto ClassDB::find(const std::string& name) const -> const ClassInfo* {
-        return this->snapshot(name).get();
-    }
-
-    auto ClassDB::find_with_raw(const char* name) const -> const ClassInfo* {
+    auto ClassDB::find_with_raw(const char* name) const -> std::shared_ptr<const ClassInfo> {
         if (!name) return nullptr;
         std::shared_lock guard(this->registry_mutex);
         auto it = this->raw2_class_name.find(name);
-        return it == this->raw2_class_name.end() ? nullptr : this->classes.at(it->second).get();
+        return it == this->raw2_class_name.end() ? nullptr : this->classes.at(it->second);
     }
 
     auto ClassDB::create(const std::string& name) const -> std::optional<UniqueObject> {
-        auto info = this->snapshot(name);
+        auto info = this->find(name);
         if (!info || !info->factory) return std::nullopt;
         auto object = info->factory();
         if (!object.get()) return std::nullopt;

@@ -27,20 +27,20 @@ namespace {
         for (int i = 0; i < 8; ++i)
             threads.emplace_back([&, i] {
                 start.arrive_and_wait();
-                results[i] = loader.load_result<Counting>(path).resource;
+                results[i] = loader.load<Counting>(path).resource;
             });
         for (auto& thread : threads) thread.join();
         for (const auto& result : results) gkit::test::assert_if(result == results[0], "concurrent cache identity");
         gkit::test::assert_if(Counting::loads == 1, "load once");
-        auto alias = loader.load_result<Counting>(path.parent_path() / "." / path.filename());
+        auto alias = loader.load<Counting>(path.parent_path() / "." / path.filename());
         gkit::test::assert_if(alias.resource == results[0], "normalized path identity");
-        gkit::test::assert_if(bool(loader.load_result<ShaderSource>(path)), "cache distinguishes resource type");
+        gkit::test::assert_if(bool(loader.load<ShaderSource>(path)), "cache distinguishes resource type");
         std::weak_ptr<const Counting> weak = results[0];
         results.clear();
         alias.resource.reset();
         gkit::test::assert_if(weak.expired(), "cache must not retain unused resources");
-        gkit::test::assert_if(!loader.load_result<ShaderSource>(path.string() + ".missing"), "missing file failure");
-        gkit::test::assert_if(!loader.load_result<Texture>(path), "shader is not an image");
+        gkit::test::assert_if(!loader.load<ShaderSource>(path.string() + ".missing"), "missing file failure");
+        gkit::test::assert_if(!loader.load<Texture>(path), "shader is not an image");
         return true;
     }
     auto test_retry_and_format() -> bool {
@@ -55,19 +55,19 @@ namespace {
             }
         } cleanup{path};
         auto& loader = ResourceLoader::instance();
-        auto missing = loader.load_result<ShaderSource>(path);
+        auto missing = loader.load<ShaderSource>(path);
         gkit::test::assert_if(missing.error == LoadError::Read, "missing file has a read error");
         {
             std::ofstream file(path);
             file << "#shader vertex\n#shader fragment\nvoid main() {}\n";
         }
-        gkit::test::assert_if(loader.load_result<ShaderSource>(path).error == LoadError::Decode,
+        gkit::test::assert_if(loader.load<ShaderSource>(path).error == LoadError::Decode,
                               "empty shader stage must fail");
         {
             std::ofstream file(path);
             file << "  #shader vertex  \r\nvoid main() {}\r\n#shader fragment\r\nvoid main() {}\r\n";
         }
-        auto loaded = loader.load_result<ShaderSource>(path);
+        auto loaded = loader.load<ShaderSource>(path);
         gkit::test::assert_if(bool(loaded) && loaded.resource->has_stage(ShaderStage::Vertex),
                               "failed loads are retryable and CRLF markers parse");
         loader.clear();
@@ -76,13 +76,12 @@ namespace {
             std::ofstream file(path);
             file << "#shader unknown\ninvalid\n";
         }
-        gkit::test::assert_if(!loader.load_result<ShaderSource>(path), "unknown marker rejected");
+        gkit::test::assert_if(!loader.load<ShaderSource>(path), "unknown marker rejected");
         return true;
     }
     auto test_images() -> bool {
-        auto root = std::filesystem::path(__FILE__).parent_path().parent_path().parent_path();
-        auto image =
-            gkit::resource::ResourceLoader::instance().load_result<gkit::resource::Texture>(root / "gkit_logo.png");
+        auto root  = std::filesystem::path(__FILE__).parent_path().parent_path().parent_path();
+        auto image = gkit::resource::ResourceLoader::instance().load<gkit::resource::Texture>(root / "gkit_logo.png");
         gkit::test::assert_if(bool(image), "decode repository PNG without graphics context");
         gkit::test::assert_if(image.resource->width() > 0 && image.resource->height() > 0, "image dimensions");
         gkit::test::assert_if(image.resource->pixels().size() ==

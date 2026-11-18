@@ -169,14 +169,9 @@ namespace gkit::core {
         [[nodiscard]] auto as_map() -> Map&;
 
     public: // Object accessors
-        template<IsObject T = Object>
-        auto lock_object() const -> std::shared_ptr<T> {
-            return this->as_object().lock<T>();
-        }
-
         [[nodiscard]] auto as_object() const noexcept -> ObjectId;
 
-        /** @brief Legacy access: caller must synchronize object lifetime. Prefer lock_object(). */
+        /** @brief Legacy access: caller must synchronize object lifetime. Prefer as_object().with(). */
         [[nodiscard]] auto as_object_ptr() noexcept -> gkit::core::Object*;
         [[nodiscard]] auto as_object_ptr() const noexcept -> const gkit::core::Object*;
 
