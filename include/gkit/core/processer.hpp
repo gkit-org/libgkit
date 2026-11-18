@@ -5,7 +5,7 @@
 #pragma once
 
 #include "gkit/core/node.hpp"
-#include "gkit/platform/runtime.hpp"
+#include "gkit/platform/window.hpp"
 
 #include <chrono>
 #include <condition_variable>
@@ -67,6 +67,8 @@ namespace gkit {
         auto set_target_frame_rate(double value) noexcept -> Processer&;
         /** @brief Set typed options for subsequent runs. These take precedence over legacy SDL setters. */
         auto set_platform_options(platform::RuntimeOptions value) -> Processer&;
+        /** @brief Request one main window. Windowed runs require the video subsystem. */
+        auto set_window_options(std::optional<platform::WindowOptions> value) -> Processer&;
         /** @brief Enable SDL initialization and event polling for the configured subsystems. */
         auto set_initialize_sdl(bool value) noexcept -> Processer&;
         /** @brief Select SDL subsystems. std::nullopt enables audio, events, gamepad, joystick and video. */
@@ -94,22 +96,31 @@ namespace gkit {
         auto stop() noexcept -> void;
         /** @brief Read the number of whole accumulated ticks discarded by the catch-up cap in the latest run. */
         auto dropped_physics_steps() const noexcept -> std::uint64_t { return dropped_steps.load(); }
+        /**
+         * @brief Read a thread-safe copy of the timing for the most recently started frame.
+         * @return The frame delta, zero-based frame number, and number of completed physics steps.
+         * @note The values reset to zero at the start of each run. In before_frame() the physics count
+         * covers earlier frames. In after_frame() it includes all completed steps of the current frame.
+         */
+        [[nodiscard]] auto get_frame_context() const -> core::FrameContext;
 
     protected:
+        /** @brief Access the active main window from coordinator hooks. Throws for a headless run. */
+        auto window() -> platform::Window&;
         /** @brief Coordinator hook after startup succeeds and before parent-first tree entry. */
         virtual auto on_start() -> void {}
         /**
          * @brief Coordinator hook after input and edits, before posted callbacks and updates.
-         * @param context This frame's measured delta and counters.
+         * @see get_frame_context()
          * @note All workers are idle; direct access to this tree is permitted.
          */
-        virtual auto before_frame(const core::FrameContext& context) -> void {}
+        virtual auto before_frame() -> void {}
         /**
          * @brief Coordinator hook after all scheduled tasks finish, before pacing.
-         * @param context This frame's timing, including the completed physics-tick count.
+         * @see get_frame_context()
          * @note May also run when stop() skipped part of the current frame; not called after an update exception.
          */
-        virtual auto after_frame(const core::FrameContext& context) -> void {}
+        virtual auto after_frame() -> void {}
         /** @brief Coordinator cleanup hook after tree exit, including a failed startup hook or update. */
         virtual auto on_stop() -> void {}
         /**
@@ -126,6 +137,13 @@ namespace gkit {
         virtual auto wait_until(std::chrono::steady_clock::time_point deadline) -> void;
 
     private:
+        /** @brief Start optional run services after platform setup and before on_start(). */
+        virtual auto start_run_services() -> void {}
+        /** @brief Finish the frame after after_frame(), while the run is still active. */
+        virtual auto finish_frame() -> void {}
+        /** @brief Release run services before destroying the main window, including on failure. */
+        virtual auto stop_run_services() noexcept -> void {}
+
         struct Config {
             bool parallel_update_enabled = false;
             std::size_t worker_count     = 1;
@@ -134,14 +152,18 @@ namespace gkit {
             double max_frame_delta       = 0.25;
             double target_frame_rate     = 60;
             std::optional<platform::RuntimeOptions> platform_options;
+            std::optional<platform::WindowOptions> window_options;
             bool initialize_sdl = true;
             std::optional<std::uint32_t> sdl_flags;
         };
 
         core::UniqueObject root_owner;
         std::unique_ptr<core::detail::TreeRuntime> runtime;
+        std::unique_ptr<platform::Window> main_window;
         Config config;
         mutable std::mutex settings_mutex;
+        mutable std::mutex frame_mutex;
+        core::FrameContext frame_context;
         std::mutex wait_mutex;
         std::condition_variable wake;
         std::atomic<bool> running                = false;

@@ -1,8 +1,8 @@
 #pragma once
 
 #include "gkit/graphic/config.hpp"
-#include "gkit/graphic/render/render_command.hpp"
 #include "gkit/graphic/render/render_state.hpp"
+#include "gkit/graphic/render/viewport.hpp"
 #include "gkit/graphic/resource/frame_buffer.hpp"
 #include "gkit/graphic/resource/index_buffer.hpp"
 #include "gkit/graphic/resource/render_buffer.hpp"
@@ -18,18 +18,9 @@
 namespace gkit::graphic {
 
     /**
-     * @brief Backend identifier
-     */
-    enum class Backend : std::uint8_t {
-        OpenGL,
-        // Vulkan  // future
-    };
-
-    /**
      * @brief Abstract render device: resource factory + render command entry
      *
-     * Concrete backends (OpenGL/Vulkan) inherit and implement resource creation
-     * and render operations. Renderer owns a RenderDevice selected via create_device.
+     * Concrete backends implement resource creation and rendering operations.
      */
     class RenderDevice {
     public:
@@ -48,13 +39,10 @@ namespace gkit::graphic {
             -> std::unique_ptr<VertexBuffer>                                                                   = 0;
         virtual auto create_index_buffer(const uint32_t* data, uint32_t count) -> std::unique_ptr<IndexBuffer> = 0;
         virtual auto create_shader(const std::string& filepath) -> std::unique_ptr<Shader>                     = 0;
-        /**
-         * @brief Create a texture; empty until the resource module is ready (see RHI design doc §4.4/§4.5)
-         */
-        virtual auto create_texture() -> std::unique_ptr<Texture>                                 = 0;
-        virtual auto create_vertex_array() -> std::unique_ptr<VertexArray>                        = 0;
-        virtual auto create_frame_buffer(int width, int height) -> std::unique_ptr<FrameBuffer>   = 0;
-        virtual auto create_render_buffer(int width, int height) -> std::unique_ptr<RenderBuffer> = 0;
+        virtual auto create_color_attachment(int width, int height) -> std::unique_ptr<Texture>                = 0;
+        virtual auto create_vertex_array() -> std::unique_ptr<VertexArray>                                     = 0;
+        virtual auto create_frame_buffer(int width, int height) -> std::unique_ptr<FrameBuffer>                = 0;
+        virtual auto create_render_buffer(int width, int height) -> std::unique_ptr<RenderBuffer>              = 0;
         // future: create_storage_buffer() / create_uniform_buffer()
 
         // ---- Render command entry ----
@@ -90,10 +78,5 @@ namespace gkit::graphic {
                                    const Shader& shader,
                                    uint32_t instance_count) -> void = 0;
     };
-
-    /**
-     * @brief Backend factory - the single switch point across the project
-     */
-    auto create_device(Backend backend) -> std::unique_ptr<RenderDevice>;
 
 } // namespace gkit::graphic

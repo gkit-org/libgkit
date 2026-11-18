@@ -1,6 +1,7 @@
 #pragma once
 
 #include "gkit/graphic/resource/shader.hpp"
+#include "graphic/backend/opengl/context.hpp"
 
 #include <cstdint>
 #include <string>
@@ -14,15 +15,12 @@
  */
 namespace gkit::graphic::opengl {
 
-    class Shader final : public graphic::Shader {
+    class Shader final : public graphic::Shader, public ContextResource {
         friend class Device;
 
     public:
         Shader(const Shader&)                    = delete;
         auto operator=(const Shader&) -> Shader& = delete;
-
-        Shader(Shader&& other) noexcept;
-        auto operator=(Shader&& other) noexcept -> Shader&;
 
         ~Shader() override;
 
@@ -45,7 +43,7 @@ namespace gkit::graphic::opengl {
          * @brief Construct a shader from a file (only Device may create one)
          * @param filepath path to the shader source file
          */
-        explicit Shader(const std::string& filepath);
+        explicit Shader(const std::shared_ptr<const Context>& context, const std::string& filepath);
 
         auto parse_shader(const std::string& file_path) -> graphic::ShaderProgramSource;
         auto compile_shader(uint32_t type, const std::string& source) -> uint32_t;

@@ -9,31 +9,14 @@
 
 namespace gkit::graphic::opengl {
 
-    Shader::Shader(const std::string& filepath) : file_path(filepath), renderer_id(0) {
+    Shader::Shader(const std::shared_ptr<const Context>& context, const std::string& filepath) :
+        ContextResource(context), file_path(filepath) {
         graphic::ShaderProgramSource source = parse_shader(filepath);
         this->renderer_id                   = create_shader(source.vertex_shader, source.fragment_shader);
     }
 
     Shader::~Shader() {
-        glDeleteProgram(this->renderer_id);
-    }
-
-    Shader::Shader(Shader&& other) noexcept :
-        graphic::Shader(std::move(other)), renderer_id(other.renderer_id), file_path(std::move(other.file_path)),
-        uniform_location_cache(std::move(other.uniform_location_cache)) {
-        other.renderer_id = 0;
-    }
-
-    auto Shader::operator=(Shader&& other) noexcept -> Shader& {
-        if (this != &other) {
-            glDeleteProgram(this->renderer_id);
-            graphic::Shader::operator=(std::move(other));
-            this->renderer_id            = other.renderer_id;
-            this->file_path              = std::move(other.file_path);
-            this->uniform_location_cache = std::move(other.uniform_location_cache);
-            other.renderer_id            = 0;
-        }
-        return *this;
+        if (renderer_id != 0 && has_current_context()) glDeleteProgram(renderer_id);
     }
 
     auto Shader::create_shader(const std::string& vertex_shader, const std::string& fragment_shader) -> uint32_t {
@@ -41,6 +24,8 @@ namespace gkit::graphic::opengl {
         uint32_t fs = compile_shader(GL_FRAGMENT_SHADER, fragment_shader);
 
         if (vs == 0 || fs == 0) {
+            if (vs) glDeleteShader(vs);
+            if (fs) glDeleteShader(fs);
             return 0;
         }
 
@@ -154,7 +139,7 @@ namespace gkit::graphic::opengl {
             msg.level     = gkit::core::Log::LogLevel::Error;
             msg.functions = static_cast<std::uint8_t>(gkit::core::Log::LogFunction::Both);
             msg.message   = "Failed to compile " + std::string(type == GL_VERTEX_SHADER ? "vertex" : "fragment") +
-                            " shader: " + message;
+                          " shader: " + message;
             gkit::core::Log::instance().log(std::move(msg));
             glDeleteShader(id);
             return 0;
@@ -164,16 +149,18 @@ namespace gkit::graphic::opengl {
     }
 
     auto Shader::bind() const -> void {
+        require_context();
         glUseProgram(this->renderer_id);
     }
 
     auto Shader::unbind() const -> void {
+        require_context();
         glUseProgram(0);
     }
 
     auto Shader::is_valid() const -> bool {
         // renderer_id is 0 when compilation/linking failed or the program was moved.
-        return this->renderer_id != 0;
+        return renderer_id != 0 && context_alive();
     }
 
     auto Shader::set_uniform_1i(const std::string& name, int value) -> void {
@@ -209,6 +196,7 @@ namespace gkit::graphic::opengl {
     }
 
     auto Shader::get_uniform_location(const std::string& name) -> int {
+        require_context();
         if (this->uniform_location_cache.find(name) != this->uniform_location_cache.end()) {
             return this->uniform_location_cache[name];
         }

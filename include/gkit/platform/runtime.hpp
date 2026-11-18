@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstdint>
+#include <filesystem>
+#include <string>
 #include <variant>
 #include <vector>
 
@@ -76,6 +78,8 @@ namespace gkit::platform {
         ~Runtime();
         Runtime(const Runtime&)                    = delete;
         auto operator=(const Runtime&) -> Runtime& = delete;
+        /** @brief Whether this session requested native video support. */
+        auto has_video() const noexcept -> bool;
         /** @brief Whether the acquired subsystems include platform events, explicitly or by dependency. */
         auto has_events() const noexcept -> bool;
         /** @brief Main-thread event pump. The caller owns the returned batch. */
@@ -87,4 +91,8 @@ namespace gkit::platform {
 
     /** @brief Throw std::logic_error when a main-thread operation would be invalid. */
     auto require_main_thread() -> void;
+    /** @brief Return the application resource base as a native filesystem path. Throws on platform failure. */
+    auto base_path() -> std::filesystem::path;
+    /** @brief Locate and, when necessary, create the per-user directory for this organization and application. */
+    auto user_data_path(const std::string& organization, const std::string& application) -> std::filesystem::path;
 } // namespace gkit::platform

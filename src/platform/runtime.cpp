@@ -4,11 +4,15 @@
 
 #include <SDL3/SDL.h>
 
+#include <memory>
 #include <stdexcept>
-#include <string>
+#include <string_view>
 
 namespace gkit::platform {
     namespace {
+        auto filesystem_path(std::string_view utf8) -> std::filesystem::path {
+            return std::u8string(utf8.begin(), utf8.end());
+        }
         auto native_flags(RuntimeOptions o) -> SDL_InitFlags {
             return (o.events ? SDL_INIT_EVENTS : 0u) | (o.video ? SDL_INIT_VIDEO : 0u) |
                    (o.audio ? SDL_INIT_AUDIO : 0u) | (o.gamepad ? SDL_INIT_GAMEPAD : 0u) |
@@ -79,6 +83,9 @@ namespace gkit::platform {
     Runtime::~Runtime() {
         SDL_QuitSubSystem(flags);
     }
+    auto Runtime::has_video() const noexcept -> bool {
+        return (flags & SDL_INIT_VIDEO) != 0;
+    }
     auto Runtime::has_events() const noexcept -> bool {
         return (flags & (SDL_INIT_EVENTS | SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK | SDL_INIT_GAMEPAD |
                          SDL_INIT_CAMERA)) != 0;
@@ -92,5 +99,18 @@ namespace gkit::platform {
             });
         }
         return events;
+    }
+    auto base_path() -> std::filesystem::path {
+        const auto* path = SDL_GetBasePath();
+        if (!path) throw std::runtime_error(std::string("SDL_GetBasePath: ") + SDL_GetError());
+        return filesystem_path(path);
+    }
+    auto user_data_path(const std::string& organization, const std::string& application) -> std::filesystem::path {
+        if (organization.empty() || application.empty())
+            throw std::invalid_argument("missing organization or application");
+        std::unique_ptr<char, decltype(&SDL_free)> path(SDL_GetPrefPath(organization.c_str(), application.c_str()),
+                                                        SDL_free);
+        if (!path) throw std::runtime_error(std::string("SDL_GetPrefPath: ") + SDL_GetError());
+        return filesystem_path(path.get());
     }
 } // namespace gkit::platform

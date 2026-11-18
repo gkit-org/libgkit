@@ -4,8 +4,6 @@
 #include "gkit/math/vector4.hpp"
 #include "graphic/backend/opengl/vertex_buffer.hpp"
 
-#include <utility>
-
 #include <glad/gl.h>
 
 namespace {
@@ -24,30 +22,12 @@ namespace {
 
 namespace gkit::graphic::opengl {
 
-    VertexArray::VertexArray() {
+    VertexArray::VertexArray(const std::shared_ptr<const Context>& context) : ContextResource(context) {
         glGenVertexArrays(1, &this->renderer_id);
     }
 
-    VertexArray::VertexArray(VertexArray&& other) noexcept :
-        graphic::VertexArray(std::move(other)), renderer_id(other.renderer_id), attrib_index(other.attrib_index) {
-        other.renderer_id = 0;
-    }
-
-    auto VertexArray::operator=(VertexArray&& other) noexcept -> VertexArray& {
-        if (this != &other) {
-            if (this->renderer_id != 0) {
-                glDeleteVertexArrays(1, &this->renderer_id);
-            }
-            graphic::VertexArray::operator=(std::move(other));
-            this->renderer_id  = other.renderer_id;
-            this->attrib_index = other.attrib_index;
-            other.renderer_id  = 0;
-        }
-        return *this;
-    }
-
     VertexArray::~VertexArray() {
-        if (this->renderer_id != 0) {
+        if (renderer_id != 0 && has_current_context()) {
             glDeleteVertexArrays(1, &this->renderer_id);
             this->renderer_id = 0;
         }
@@ -94,10 +74,12 @@ namespace gkit::graphic::opengl {
     }
 
     auto VertexArray::bind() const -> void {
+        require_context();
         glBindVertexArray(this->renderer_id);
     }
 
     auto VertexArray::unbind() const -> void {
+        require_context();
         glBindVertexArray(0);
     }
 

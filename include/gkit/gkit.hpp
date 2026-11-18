@@ -12,7 +12,12 @@
 #include <gkit/core/templates/singleton.hpp>
 #include <gkit/core/value.hpp>
 
+// platform
+#include <gkit/platform/runtime.hpp>
+#include <gkit/platform/window.hpp>
+
 // graphic
+#include <gkit/graphic/application.hpp>
 #include <gkit/graphic/render/renderer.hpp>
 #include <gkit/graphic/resource/shader.hpp>
 

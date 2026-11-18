@@ -9,6 +9,7 @@ include_directories(${GKIT_SOURCE_DIR}/third_party/glad_generated/include)
 # build core tests
 file(GLOB_RECURSE TEST_SRCS CONFIGURE_DEPENDS
     "core/*.cpp"
+    "platform/*.cpp"
     "math/*.cpp"
     "utils/*.cpp"
     "resource/*.cpp"
@@ -58,3 +59,5 @@ add_executable(test_framework_failure framework_failure.cpp)
 target_link_libraries(test_framework_failure PRIVATE gkit_static)
 add_test(NAME test_framework_failure COMMAND test_framework_failure)
 set_tests_properties(test_framework_failure PROPERTIES WILL_FAIL TRUE TIMEOUT 10 LABELS unit)
+
+set_tests_properties(test_platform PROPERTIES ENVIRONMENT "SDL_VIDEO_DRIVER=dummy")

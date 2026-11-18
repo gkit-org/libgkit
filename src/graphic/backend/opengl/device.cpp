@@ -1,18 +1,21 @@
 #include "graphic/backend/opengl/device.hpp"
 
+#include "graphic/backend/opengl/config.hpp"
 #include "graphic/backend/opengl/frame_buffer.hpp"
 #include "graphic/backend/opengl/index_buffer.hpp"
 #include "graphic/backend/opengl/render_buffer.hpp"
 #include "graphic/backend/opengl/shader.hpp"
+#include "graphic/backend/opengl/texture.hpp"
 #include "graphic/backend/opengl/vertex_array.hpp"
 #include "graphic/backend/opengl/vertex_buffer.hpp"
-#include "graphic/backend/opengl/config.hpp"
+
+#include <utility>
 
 #include <glad/gl.h>
 
 namespace gkit::graphic::opengl {
 
-    Device::Device() {
+    Device::Device(std::shared_ptr<const Context> context) : context(std::move(context)) {
         this->state_manager.force_apply_all();
     }
 
@@ -20,37 +23,52 @@ namespace gkit::graphic::opengl {
         -> std::unique_ptr<graphic::VertexBuffer> {
         // Direct new (not make_unique) so Device's friendship grants access to the
         // private constructor; make_unique instantiates the new inside std::.
-        return std::unique_ptr<graphic::VertexBuffer>(new VertexBuffer(data, size, dynamic));
+        return std::unique_ptr<graphic::VertexBuffer>(new VertexBuffer(context, data, size, dynamic));
     }
 
     auto Device::create_index_buffer(const uint32_t* data, uint32_t count) -> std::unique_ptr<graphic::IndexBuffer> {
-        return std::unique_ptr<graphic::IndexBuffer>(new IndexBuffer(data, count));
+        return std::unique_ptr<graphic::IndexBuffer>(new IndexBuffer(context, data, count));
     }
 
     auto Device::create_shader(const std::string& filepath) -> std::unique_ptr<graphic::Shader> {
-        return std::unique_ptr<graphic::Shader>(new Shader(filepath));
+        return std::unique_ptr<graphic::Shader>(new Shader(context, filepath));
     }
 
-    auto Device::create_texture() -> std::unique_ptr<graphic::Texture> {
-        // Empty until the resource module is ready (see RHI design doc §4.4/§4.5)
-        return nullptr;
+    auto Device::create_color_attachment(int width, int height) -> std::unique_ptr<graphic::Texture> {
+        return std::unique_ptr<graphic::Texture>(new Texture(context, width, height));
     }
 
     auto Device::create_vertex_array() -> std::unique_ptr<graphic::VertexArray> {
-        return std::unique_ptr<graphic::VertexArray>(new VertexArray());
+        return std::unique_ptr<graphic::VertexArray>(new VertexArray(context));
     }
 
     auto Device::create_frame_buffer(int width, int height) -> std::unique_ptr<graphic::FrameBuffer> {
-        return std::unique_ptr<graphic::FrameBuffer>(new FrameBuffer(width, height));
+        return std::unique_ptr<graphic::FrameBuffer>(new FrameBuffer(context, width, height));
     }
 
     auto Device::create_render_buffer(int width, int height) -> std::unique_ptr<graphic::RenderBuffer> {
-        return std::unique_ptr<graphic::RenderBuffer>(new RenderBuffer(width, height));
+        return std::unique_ptr<graphic::RenderBuffer>(new RenderBuffer(context, width, height));
     }
 
     auto Device::clear(ClearFlags flags) -> void {
-        auto mask = to_gl_clear_mask(flags);
+        const auto mask      = to_gl_clear_mask(flags);
+        GLboolean depth_mask = GL_TRUE;
+        GLint stencil_mask = 0, back_stencil_mask = 0;
+        if (mask & GL_DEPTH_BUFFER_BIT) {
+            glGetBooleanv(GL_DEPTH_WRITEMASK, &depth_mask);
+            glDepthMask(GL_TRUE);
+        }
+        if (mask & GL_STENCIL_BUFFER_BIT) {
+            glGetIntegerv(GL_STENCIL_WRITEMASK, &stencil_mask);
+            glGetIntegerv(GL_STENCIL_BACK_WRITEMASK, &back_stencil_mask);
+            glStencilMask(~GLuint{0});
+        }
         glClear(mask);
+        if (mask & GL_DEPTH_BUFFER_BIT) glDepthMask(depth_mask);
+        if (mask & GL_STENCIL_BUFFER_BIT) {
+            glStencilMaskSeparate(GL_FRONT, static_cast<GLuint>(stencil_mask));
+            glStencilMaskSeparate(GL_BACK, static_cast<GLuint>(back_stencil_mask));
+        }
     }
 
     auto Device::apply_state(const graphic::RenderState& state) -> void {

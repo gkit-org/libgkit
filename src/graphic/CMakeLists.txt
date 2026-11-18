@@ -1,10 +1,10 @@
 set (GKIT_GRAPHIC "gkit_graphic")
 
 set (GRAPHIC_SRC
+    "./application.cpp"
     "./renderer.cpp"
     "./render_object.cpp"
     "./render_queue.cpp"
-    "./create_device.cpp"
 
     # Backend implementations (one subdirectory per graphics API)
     "./backend/opengl/device.cpp"
@@ -25,4 +25,4 @@ target_include_directories(${GKIT_GRAPHIC} PRIVATE ${GKIT_SOURCE_DIR}/include)  
 target_include_directories(${GKIT_GRAPHIC} PRIVATE ${GKIT_SOURCE_DIR}/src)         # top include for source file
 target_include_directories(${GKIT_GRAPHIC} PRIVATE ${GKIT_SOURCE_DIR}/third_party/glad_generated/include)  # glad generated headers
 
-target_link_libraries(${GKIT_GRAPHIC} PRIVATE glad_gl)
+target_link_libraries(${GKIT_GRAPHIC} PRIVATE glad_gl SDL3::SDL3-static)

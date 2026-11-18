@@ -1,7 +1,8 @@
 #pragma once
 
-#include "gkit/graphic/render/render_device.hpp"
+#include "graphic/backend/opengl/context.hpp"
 #include "graphic/backend/opengl/state_manager.hpp"
+#include "graphic/render_device.hpp"
 
 #include <memory>
 #include <string>
@@ -16,7 +17,7 @@ namespace gkit::graphic::opengl {
 
     class Device final : public graphic::RenderDevice {
     public:
-        Device();
+        explicit Device(std::shared_ptr<const Context> context);
         ~Device() override = default;
 
         auto create_vertex_buffer(const void* data, uint32_t size, bool dynamic)
@@ -24,7 +25,7 @@ namespace gkit::graphic::opengl {
         auto create_index_buffer(const uint32_t* data, uint32_t count)
             -> std::unique_ptr<graphic::IndexBuffer> override;
         auto create_shader(const std::string& filepath) -> std::unique_ptr<graphic::Shader> override;
-        auto create_texture() -> std::unique_ptr<graphic::Texture> override;
+        auto create_color_attachment(int width, int height) -> std::unique_ptr<graphic::Texture> override;
         auto create_vertex_array() -> std::unique_ptr<graphic::VertexArray> override;
         auto create_frame_buffer(int width, int height) -> std::unique_ptr<graphic::FrameBuffer> override;
         auto create_render_buffer(int width, int height) -> std::unique_ptr<graphic::RenderBuffer> override;
@@ -40,6 +41,7 @@ namespace gkit::graphic::opengl {
                            uint32_t instance_count) -> void override;
 
     private:
+        std::shared_ptr<const Context> context;
         StateManager state_manager; // Incremental GL state application
     };
 

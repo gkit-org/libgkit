@@ -220,6 +220,16 @@ namespace gkit {
         config.platform_options = value;
         return *this;
     }
+    auto Processer::set_window_options(std::optional<platform::WindowOptions> value) -> Processer& {
+        std::lock_guard lock(settings_mutex);
+        config.window_options = std::move(value);
+        return *this;
+    }
+    auto Processer::window() -> platform::Window& {
+        platform::require_main_thread();
+        if (!main_window) throw std::logic_error("no active main window");
+        return *main_window;
+    }
     auto Processer::set_initialize_sdl(bool value) noexcept -> Processer& {
         std::lock_guard lock(settings_mutex);
         config.initialize_sdl = value;
@@ -245,6 +255,10 @@ namespace gkit {
             running.store(false);
         }
         wake.notify_all();
+    }
+    auto Processer::get_frame_context() const -> core::FrameContext {
+        std::lock_guard lock(frame_mutex);
+        return frame_context;
     }
     /**
      * @brief Execute the scheduler's startup, frame loop and unconditional cleanup boundary.
@@ -277,6 +291,10 @@ namespace gkit {
         std::optional<platform::Runtime> session;
         bool started = false;
         try {
+            {
+                std::lock_guard lock(frame_mutex);
+                frame_context = {};
+            }
             WorkerPool pool(settings.parallel_update_enabled ? settings.worker_count : 0);
             if (settings.platform_options)
                 session.emplace(*settings.platform_options);
@@ -286,7 +304,12 @@ namespace gkit {
                 else
                     session.emplace(platform::RuntimeOptions{true, true, true, true, true});
             }
+            if (settings.window_options) {
+                if (!session || !session->has_video()) throw std::invalid_argument("main window requires video");
+                main_window = std::make_unique<platform::Window>(*settings.window_options);
+            }
             if (session && session->has_events()) Input::instance().initialize();
+            start_run_services();
             {
                 std::lock_guard lock(runtime->queue_mutex);
                 runtime->accepting = true;
@@ -297,32 +320,48 @@ namespace gkit {
             }
             started = true;
             on_start();
-            auto previous      = now();
-            double accumulated = 0;
-            core::FrameContext context;
+            auto previous       = now();
+            double accumulated  = 0;
+            std::uint64_t frame = 0;
             while (running.load()) {
-                auto start = now();
-                context.delta =
+                const auto start = now();
+                const auto delta =
                     std::clamp(std::chrono::duration<double>(start - previous).count(), 0.0, settings.max_frame_delta);
                 previous = start;
-                accumulated += context.delta;
+                accumulated += delta;
+                {
+                    std::lock_guard lock(frame_mutex);
+                    frame_context.delta = delta;
+                    frame_context.frame = frame;
+                }
                 if (session && session->has_events()) {
                     auto events = session->poll_events();
-                    for (const auto& event : events)
+                    for (const auto& event : events) {
                         if (std::holds_alternative<platform::QuitEvent>(event)) stop();
+                        if (const auto* change = std::get_if<platform::WindowEvent>(&event);
+                            change && main_window && change->window == main_window->state().id) {
+                            if (change->change == platform::WindowChange::Close)
+                                stop();
+                            else
+                                main_window->refresh();
+                        }
+                    }
                     Input::instance().update(events);
                 }
                 if (!running.load()) break;
-                if (context.frame == 0) core::detail::enter_nodes(root().state.get());
+                if (frame == 0) core::detail::enter_nodes(root().state.get());
                 if (!running.load()) break;
                 core::detail::drain_edits(*runtime);
                 if (!running.load()) break;
-                before_frame(context);
+                before_frame();
                 core::detail::drain_posts(*runtime);
                 std::size_t steps = 0;
                 while (running.load() && accumulated >= settings.fixed_delta && steps < settings.max_fixed_steps) {
                     update(root().state.get(), settings.fixed_delta, true, pool);
-                    ++context.physics_tick;
+                    {
+                        std::lock_guard lock(frame_mutex);
+                        ++frame_context.physics_tick;
+                    }
                     ++steps;
                     accumulated -= settings.fixed_delta;
                 }
@@ -330,9 +369,10 @@ namespace gkit {
                     dropped_steps.fetch_add(static_cast<std::uint64_t>(accumulated / settings.fixed_delta));
                     accumulated = std::fmod(accumulated, settings.fixed_delta);
                 }
-                if (running.load()) update(root().state.get(), context.delta, false, pool);
-                after_frame(context);
-                ++context.frame;
+                if (running.load()) update(root().state.get(), delta, false, pool);
+                after_frame();
+                if (running.load()) finish_frame();
+                ++frame;
                 if (settings.target_frame_rate > 0) {
                     auto period = std::chrono::duration_cast<std::chrono::steady_clock::duration>(
                         std::chrono::duration<double>(1.0 / settings.target_frame_rate));
@@ -370,6 +410,8 @@ namespace gkit {
         } catch (...) {
             if (!failure) failure = std::current_exception();
         }
+        stop_run_services();
+        main_window.reset();
         session.reset();
         {
             std::lock_guard lock(core::detail::tree_mutex);

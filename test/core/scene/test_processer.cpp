@@ -31,11 +31,11 @@ namespace {
         auto now() const -> std::chrono::steady_clock::time_point override {
             return std::chrono::steady_clock::time_point{} + std::chrono::seconds(time++);
         }
-        auto before_frame(const FrameContext& context) -> void override {
-            if (before) before(context);
+        auto before_frame() -> void override {
+            if (before) before(get_frame_context());
         }
-        auto after_frame(const FrameContext& context) -> void override {
-            if (after) after(context);
+        auto after_frame() -> void override {
+            if (after) after(get_frame_context());
             if (++frames >= limit) stop();
         }
     };
@@ -98,7 +98,17 @@ namespace {
             node.add_child("child", std::move(child_owner));
         });
         app.root().add_child("parent", std::move(parent_owner));
+        app.before = [&](const FrameContext& context) {
+            check(context.delta == 1 && context.frame == std::uint64_t(app.frames) &&
+                  context.physics_tick == 2 * context.frame);
+        };
+        app.after = [&](const FrameContext& context) {
+            check(context.delta == 1 && context.frame == std::uint64_t(app.frames) &&
+                  context.physics_tick == 2 * (context.frame + 1));
+        };
         app.run();
+        const auto last_frame = app.get_frame_context();
+        check(last_frame.frame == 1 && last_frame.physics_tick == 4);
         check(app.dropped_physics_steps() == 12);
         check(events ==
               std::vector<std::string>{
@@ -325,7 +335,7 @@ namespace {
     }
     struct WaitingApp : Processer {
         std::promise<void> waiting;
-        auto before_frame(const FrameContext&) -> void override { waiting.set_value(); }
+        auto before_frame() -> void override { waiting.set_value(); }
     };
     auto test_cross_thread_stop() -> bool {
         WaitingApp app;
@@ -357,10 +367,11 @@ namespace {
     }
 
     struct InputProbe : Node {
-        const int& frame;
+        const Processer& processer;
         int entries = 0, ticks = 0, updates = 0;
-        explicit InputProbe(const int& frame) : frame(frame) {}
+        explicit InputProbe(const Processer& processer) : processer(processer) {}
         auto check_input() const -> void {
+            const auto frame     = processer.get_frame_context().frame;
             const auto& controls = Input::instance();
             check(controls.is_key_pressed(input::Key::A) == (frame == 0));
             check(controls.is_key_just_pressed(input::Key::A) == (frame == 0));
@@ -383,13 +394,13 @@ namespace {
         platform::Runtime host;
         App app;
         app.set_platform_options({}).set_parallel_update_enabled(true).set_worker_count(1);
-        auto worker    = UniqueObject::create<InputProbe>(app.frames);
+        auto worker    = UniqueObject::create<InputProbe>(app);
         auto worker_id = worker.get_id();
         worker_id.with<InputProbe>([](auto& probe) {
             probe.set_parallel(true);
         });
         app.root().add_child("worker", std::move(worker));
-        auto added    = UniqueObject::create<InputProbe>(app.frames);
+        auto added    = UniqueObject::create<InputProbe>(app);
         auto added_id = added.get_id();
         SDL_Event key{};
         key.type         = SDL_EVENT_KEY_DOWN;

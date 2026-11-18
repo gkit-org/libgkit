@@ -1,8 +1,9 @@
 #pragma once
 
-#include "gkit/graphic/vertex_buffer_layout.hpp"
 #include "gkit/graphic/resource/vertex_array.hpp"
 #include "gkit/graphic/resource/vertex_buffer.hpp"
+#include "gkit/graphic/vertex_buffer_layout.hpp"
+#include "graphic/backend/opengl/context.hpp"
 
 #include <cstdint>
 
@@ -14,13 +15,10 @@
  */
 namespace gkit::graphic::opengl {
 
-    class VertexArray final : public graphic::VertexArray {
+    class VertexArray final : public graphic::VertexArray, public ContextResource {
         friend class Device;
 
     public:
-        VertexArray(VertexArray&& other) noexcept;
-        auto operator=(VertexArray&& other) noexcept -> VertexArray&;
-
         ~VertexArray() override;
 
         auto add_buffer(const graphic::VertexBuffer& vb, const graphic::VertexBufferLayout& layout) -> void override;
@@ -29,7 +27,7 @@ namespace gkit::graphic::opengl {
         auto unbind() const -> void override;
 
     private:
-        VertexArray();
+        VertexArray(const std::shared_ptr<const Context>& context);
 
         uint32_t renderer_id  = 0; // GL vertex array handle
         uint32_t attrib_index = 0; // current attribute index
