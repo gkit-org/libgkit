@@ -52,6 +52,31 @@ namespace {
         return true;
     }
 
+    auto test_nearest_ancestor() -> bool {
+        using gkit::scene::Scene;
+        struct Level : Scene {};
+        auto outer          = UniqueObject::create<Scene>();
+        auto inner          = UniqueObject::create<Level>();
+        auto group          = UniqueObject::create<Node>();
+        auto leaf           = UniqueObject::create<Node>();
+        const auto inner_id = inner.get_id(), group_id = group.get_id(), leaf_id = leaf.get_id();
+        auto& root = *static_cast<Scene*>(outer.get());
+        static_cast<Node*>(group.get())->add_child("leaf", std::move(leaf));
+        static_cast<Scene*>(inner.get())->add_child("group", std::move(group));
+        root.add_child("level", std::move(inner));
+
+        check(!root.find_ancestor<Scene>());
+        check(leaf_id.with<Node>([&](Node& node) {
+            check(node.find_ancestor<Node>() == group_id);
+            check(node.find_ancestor<Scene>() == inner_id);
+            check(!node.find_ancestor<gkit::scene::Object2D>());
+            node.reparent(root.id());
+            check(node.find_ancestor<Scene>() == root.id());
+            check(!node.find_ancestor<Level>());
+        }));
+        return true;
+    }
+
     auto test_access_and_reflection() -> bool {
         auto owner = UniqueObject::create<gkit::scene::Object2D>();
         auto id    = owner.get_id();
@@ -128,6 +153,7 @@ namespace {
 int main() {
     gkit::test::TestRunner()
         .add_test_func(test_edits_and_ownership)
+        .add_test_func(test_nearest_ancestor)
         .add_test_func(test_access_and_reflection)
         .add_test_func(test_concurrent_snapshots_and_deep_tree)
         .run();

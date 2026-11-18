@@ -2,7 +2,7 @@
 
 #include "gkit/graphic/config.hpp"
 #include "gkit/graphic/render/render_state.hpp"
-#include "gkit/graphic/render/viewport.hpp"
+#include "gkit/graphic/render/viewport_rect.hpp"
 #include "gkit/graphic/resource/frame_buffer.hpp"
 #include "gkit/graphic/resource/material.hpp"
 
@@ -26,8 +26,10 @@ namespace gkit::graphic {
         std::shared_ptr<RenderObject> object;
         /** @brief Shader, textures and uniforms captured at submission. */
         Material material;
-        /** @brief Viewport to set before drawing; empty = target size. */
-        std::optional<Viewport> viewport;
+        /** @brief ViewportRect to set before drawing; empty = target size. */
+        std::optional<ViewportRect> viewport;
+        /** @brief Optional scissor rectangle in target pixels. */
+        std::optional<ViewportRect> clip;
         /** @brief Render state snapshot (applied before drawing). */
         RenderState state;
         /** @brief 1 = non-instanced. */

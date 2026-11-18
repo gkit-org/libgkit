@@ -158,7 +158,8 @@ namespace gkit {
         }
     } // namespace
     Processer::Processer() :
-        root_owner(core::UniqueObject::create<core::Node>()), runtime(std::make_unique<core::detail::TreeRuntime>()) {
+        root_owner(core::UniqueObject::create<core::Node>()),
+        runtime(std::make_unique<core::detail::TreeRuntime>(root_owner.get_id())) {
         std::lock_guard lock(core::detail::tree_mutex);
         core::detail::assign_runtime(root().state.get(), runtime.get());
     }
@@ -219,16 +220,6 @@ namespace gkit {
         std::lock_guard lock(settings_mutex);
         config.platform_options = value;
         return *this;
-    }
-    auto Processer::set_window_options(std::optional<platform::WindowOptions> value) -> Processer& {
-        std::lock_guard lock(settings_mutex);
-        config.window_options = std::move(value);
-        return *this;
-    }
-    auto Processer::window() -> platform::Window& {
-        platform::require_main_thread();
-        if (!main_window) throw std::logic_error("no active main window");
-        return *main_window;
     }
     auto Processer::set_initialize_sdl(bool value) noexcept -> Processer& {
         std::lock_guard lock(settings_mutex);
@@ -304,12 +295,7 @@ namespace gkit {
                 else
                     session.emplace(platform::RuntimeOptions{true, true, true, true, true});
             }
-            if (settings.window_options) {
-                if (!session || !session->has_video()) throw std::invalid_argument("main window requires video");
-                main_window = std::make_unique<platform::Window>(*settings.window_options);
-            }
             if (session && session->has_events()) Input::instance().initialize();
-            start_run_services();
             {
                 std::lock_guard lock(runtime->queue_mutex);
                 runtime->accepting = true;
@@ -318,6 +304,7 @@ namespace gkit {
                 std::lock_guard lock(core::detail::tree_mutex);
                 runtime->active = true;
             }
+            start_run_services(session ? &*session : nullptr);
             started = true;
             on_start();
             auto previous       = now();
@@ -338,15 +325,9 @@ namespace gkit {
                     auto events = session->poll_events();
                     for (const auto& event : events) {
                         if (std::holds_alternative<platform::QuitEvent>(event)) stop();
-                        if (const auto* change = std::get_if<platform::WindowEvent>(&event);
-                            change && main_window && change->window == main_window->state().id) {
-                            if (change->change == platform::WindowChange::Close)
-                                stop();
-                            else
-                                main_window->refresh();
-                        }
                     }
                     Input::instance().update(events);
+                    if (running.load()) handle_events(events);
                 }
                 if (!running.load()) break;
                 if (frame == 0) core::detail::enter_nodes(root().state.get());
@@ -411,7 +392,6 @@ namespace gkit {
             if (!failure) failure = std::current_exception();
         }
         stop_run_services();
-        main_window.reset();
         session.reset();
         {
             std::lock_guard lock(core::detail::tree_mutex);

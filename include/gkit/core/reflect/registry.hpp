@@ -18,6 +18,7 @@
 #include <vector>
 
 namespace gkit::core::reflect {
+    /** @brief Execute a registration callback during initialization of a namespace-scope static variable. */
     struct RegistHolder {
         explicit RegistHolder(std::function<void()>&& regist_func) { regist_func(); };
     };
@@ -62,6 +63,9 @@ namespace gkit::core::reflect {
         friend gkit::core::templates::Singleton<ClassDB>;
 
     public:
+        /** @brief Access the registry with all built-in types registered, including during static initialization. */
+        static auto instance() -> ClassDB&;
+
         template<IsObject T>
         auto regist(const std::string& class_name, const std::string& parent = "") -> ClassDB&;
 

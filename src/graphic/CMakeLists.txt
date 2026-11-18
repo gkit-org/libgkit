@@ -3,6 +3,8 @@ set (GKIT_GRAPHIC "gkit_graphic")
 set (GRAPHIC_SRC
     "./application.cpp"
     "./renderer.cpp"
+    "./sprite_pass.cpp"
+    "./window.cpp"
     "./render_object.cpp"
     "./render_queue.cpp"
 

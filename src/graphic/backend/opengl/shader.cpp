@@ -15,6 +15,11 @@ namespace gkit::graphic::opengl {
         this->renderer_id                   = create_shader(source.vertex_shader, source.fragment_shader);
     }
 
+    Shader::Shader(const std::shared_ptr<const Context>& context, const ShaderProgramSource& source) :
+        ContextResource(context), renderer_id(create_shader(source.vertex_shader, source.fragment_shader)) {
+        if (!renderer_id) throw std::runtime_error("failed to build the sprite shader");
+    }
+
     Shader::~Shader() {
         if (renderer_id != 0 && has_current_context()) glDeleteProgram(renderer_id);
     }

@@ -16,18 +16,19 @@ namespace gkit::scene {
      */
     class Object2D : public gkit::core::Node {
     public:
-        /** @brief Construct an identity transform and register the Object2D reflection type. */
+        /** @brief Construct an Object2D with an identity transform. */
         Object2D();
         /** @brief Release transform state; Node lifecycle callbacks are managed separately. */
         virtual ~Object2D() = default;
 
     public:
         // Transform2D
-        /** @brief Read or replace the local transform as one synchronized value. */
+        /** @brief Read the local transform as one synchronized value. */
         auto get_transform() const -> Transform2D {
             std::lock_guard guard(mutex);
             return transform;
         }
+        /** @brief Replace the local transform as one synchronized value. */
         auto set_transform(const Transform2D& value) -> void {
             std::lock_guard guard(mutex);
             transform = value;

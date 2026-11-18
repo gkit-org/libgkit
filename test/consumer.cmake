@@ -13,7 +13,25 @@ concept ChainableSettings = requires(T& loop) {
     { loop.set_target_frame_rate(60) } noexcept -> std::same_as<T&>;
 };
 static_assert(ChainableSettings<gkit::Processer>);
+
+namespace {
+    class ConsumerSprite : public gkit::scene::Sprite2D {};
+
+    static const gkit::core::reflect::RegistHolder regist_holder([] {
+        gkit::core::reflect::ClassDB::instance().regist<ConsumerSprite>("ConsumerSprite", "Sprite2D");
+    });
+}
+
 int main() {
+    for (const char* name : {"Object", "Node", "Scene", "Object2D", "Sprite2D", "Viewport", "Window"}) {
+        auto object = gkit::core::UniqueObject::create_with_classname(name);
+        if (!object || object->get()->class_name() != name) return 1;
+    }
+    auto sprite = gkit::core::UniqueObject::create_with_classname("ConsumerSprite");
+    auto info = gkit::core::reflect::ClassDB::instance().find("ConsumerSprite");
+    if (!sprite || sprite->get()->class_name() != "ConsumerSprite" || !info ||
+        !info->set_field(sprite->get(), "name", gkit::core::Value(std::string("sprite")))) return 1;
+
     gkit::Processer loop;
     loop.set_initialize_sdl(false).set_target_frame_rate(120);
     auto player = gkit::core::UniqueObject::create<gkit::scene::Object2D>();

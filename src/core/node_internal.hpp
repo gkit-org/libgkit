@@ -12,10 +12,12 @@ namespace gkit::core::detail {
     extern std::mutex tree_mutex;
     struct TreeRuntime;
 
+    struct Edit;
     struct NodeState {
         explicit NodeState(Node& node) : node(node) {}
         Node& node;
-        ObjectId id, parent;
+        ObjectId id, parent, managed_child;
+        std::vector<Edit> construction_edits;
         std::vector<UniqueObject> children;
         std::unordered_map<std::string, ObjectId> child_names;
         std::string name;
@@ -37,6 +39,7 @@ namespace gkit::core::detail {
 
     enum class EditKind {
         Add,
+        SetChild,
         Detach,
         Remove,
         Rename,
@@ -49,10 +52,13 @@ namespace gkit::core::detail {
         Node::Completion complete;
         std::optional<UniqueObject> owner;
         auto submit() -> void;
+        auto submit(std::unique_lock<std::mutex>& guard) -> void;
         auto apply(TreeRuntime* runtime, std::unique_lock<std::mutex>& guard, bool cancel) -> void;
     };
 
     struct TreeRuntime {
+        explicit TreeRuntime(ObjectId root) : root(root) {}
+        const ObjectId root;
         const std::thread::id thread = std::this_thread::get_id();
         bool active                  = false; // tree_mutex
         std::mutex queue_mutex;

@@ -28,7 +28,7 @@ namespace gkit::graphic {
          * @param session Identifies the context used for geometry uploads.
          * @param screen Default viewport for the window.
          */
-        auto flush(RenderDevice& device, const std::shared_ptr<const void>& session, Viewport screen) -> void;
+        auto flush(RenderDevice& device, const std::shared_ptr<const void>& session, ViewportRect screen) -> void;
 
         /**
          * @brief Drop all queued commands without executing

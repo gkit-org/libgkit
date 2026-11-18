@@ -5,7 +5,7 @@
 #pragma once
 
 #include "gkit/core/node.hpp"
-#include "gkit/platform/window.hpp"
+#include "gkit/platform/runtime.hpp"
 
 #include <chrono>
 #include <condition_variable>
@@ -67,8 +67,6 @@ namespace gkit {
         auto set_target_frame_rate(double value) noexcept -> Processer&;
         /** @brief Set typed options for subsequent runs. These take precedence over legacy SDL setters. */
         auto set_platform_options(platform::RuntimeOptions value) -> Processer&;
-        /** @brief Request one main window. Windowed runs require the video subsystem. */
-        auto set_window_options(std::optional<platform::WindowOptions> value) -> Processer&;
         /** @brief Enable SDL initialization and event polling for the configured subsystems. */
         auto set_initialize_sdl(bool value) noexcept -> Processer&;
         /** @brief Select SDL subsystems. std::nullopt enables audio, events, gamepad, joystick and video. */
@@ -105,8 +103,6 @@ namespace gkit {
         [[nodiscard]] auto get_frame_context() const -> core::FrameContext;
 
     protected:
-        /** @brief Access the active main window from coordinator hooks. Throws for a headless run. */
-        auto window() -> platform::Window&;
         /** @brief Coordinator hook after startup succeeds and before parent-first tree entry. */
         virtual auto on_start() -> void {}
         /**
@@ -138,10 +134,12 @@ namespace gkit {
 
     private:
         /** @brief Start optional run services after platform setup and before on_start(). */
-        virtual auto start_run_services() -> void {}
+        virtual auto start_run_services(const platform::Runtime*) -> void {}
+        /** @brief Receive the input batch after Input updates and before tree edits. */
+        virtual auto handle_events(const std::vector<platform::Event>&) -> void {}
         /** @brief Finish the frame after after_frame(), while the run is still active. */
         virtual auto finish_frame() -> void {}
-        /** @brief Release run services before destroying the main window, including on failure. */
+        /** @brief Release run services before releasing platform subsystems, including on failure. */
         virtual auto stop_run_services() noexcept -> void {}
 
         struct Config {
@@ -152,14 +150,12 @@ namespace gkit {
             double max_frame_delta       = 0.25;
             double target_frame_rate     = 60;
             std::optional<platform::RuntimeOptions> platform_options;
-            std::optional<platform::WindowOptions> window_options;
             bool initialize_sdl = true;
             std::optional<std::uint32_t> sdl_flags;
         };
 
         core::UniqueObject root_owner;
         std::unique_ptr<core::detail::TreeRuntime> runtime;
-        std::unique_ptr<platform::Window> main_window;
         Config config;
         mutable std::mutex settings_mutex;
         mutable std::mutex frame_mutex;

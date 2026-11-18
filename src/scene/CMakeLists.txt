@@ -5,6 +5,7 @@ set (SCENE_SRC
 
     # 2D scene
     "2d/object2d.cpp"
+    "2d/sprite2d.cpp"
     "2d/transform2d.cpp"
 
     # 3D scene

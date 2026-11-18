@@ -1,5 +1,6 @@
 #include "gkit/core/input/input.hpp"
 #include "gkit/core/processer.hpp"
+#include "gkit/platform/window.hpp"
 #include "test_utils.hpp"
 
 #include <SDL3/SDL.h>
@@ -13,8 +14,10 @@ namespace {
         gkit::platform::WindowId id = 0;
         int stops                   = 0;
         bool push_key               = true;
+        std::optional<gkit::platform::Window> native;
+        gkit::platform::WindowOptions options;
         auto on_start() -> void override {
-            auto state = window().state();
+            auto state = native.emplace(options).state();
             assert_if(state.width == 320 && state.height == 240 && state.drawable(), "window geometry");
             assert_if(state.id && state.id != id, "new window identity");
             id = state.id;
@@ -31,15 +34,16 @@ namespace {
             if (push_key) SDL_PushEvent(&e);
         }
         auto after_frame() -> void override {
-            assert_if(get_frame_context().frame == 0, "close should stop before next update");
+            assert_if(get_frame_context().frame == 0, "global quit stops before the next update");
             assert_if(gkit::Input::instance().is_key_pressed(gkit::input::Key::A) == push_key, "per-run event batch");
             SDL_Event e{};
-            e.type            = SDL_EVENT_WINDOW_CLOSE_REQUESTED;
-            e.window.windowID = id;
+            e.type = SDL_EVENT_QUIT;
             SDL_PushEvent(&e);
         }
         auto on_stop() -> void override {
-            assert_if(window().state().id == id, "main window alive through teardown");
+            if (!native) return;
+            assert_if(native->state().id == id, "window alive through teardown");
+            native.reset();
             ++stops;
         }
     };
@@ -59,7 +63,7 @@ namespace {
         WindowApp app;
         app.set_initialize_sdl(false).set_platform_options({.video = true}).set_target_frame_rate(0);
         WindowOptions options{.width = -1, .surface = Surface::Plain};
-        app.set_window_options(options);
+        app.options = options;
         try {
             app.run();
             return false;
@@ -68,7 +72,7 @@ namespace {
         assert_if((SDL_WasInit(SDL_INIT_VIDEO) & SDL_INIT_VIDEO) == 0, "window failure releases video");
         options.width  = 320;
         options.height = 240;
-        app.set_window_options(options);
+        app.options    = options;
         app.run();
         app.push_key = false;
         app.run();

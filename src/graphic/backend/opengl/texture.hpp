@@ -20,7 +20,11 @@ namespace gkit::graphic::opengl {
         [[nodiscard]] auto get_renderer_id() const -> std::uint32_t { return renderer_id; }
 
     private:
-        Texture(const std::shared_ptr<const Context>& context, int width, int height);
+        Texture(const std::shared_ptr<const Context>& context,
+                int width,
+                int height,
+                const void* pixels = nullptr,
+                int pitch          = 0);
 
         std::uint32_t renderer_id = 0;
         int width;

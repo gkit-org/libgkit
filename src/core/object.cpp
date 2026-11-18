@@ -3,12 +3,6 @@
 #include "gkit/core/reflect/registry.hpp"
 
 namespace gkit::core {
-    static auto regist_holder = gkit::core::reflect::RegistHolder([]() {
-        auto& classdb = gkit::core::reflect::ClassDB::instance();
-        classdb.regist<Object>("Object");
-        return;
-    });
-
     auto Object::class_name() const -> std::string {
         auto* raw_name  = typeid(*this).name();
         auto class_info = reflect::ClassDB::instance().find_with_raw(raw_name);

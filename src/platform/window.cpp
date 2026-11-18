@@ -1,4 +1,5 @@
 #include "platform/window_access.hpp"
+#include "platform/window_close_policy.hpp"
 
 #include <SDL3/SDL.h>
 
@@ -11,6 +12,25 @@ namespace gkit::platform {
             if (!ok) throw std::runtime_error(std::string(operation) + ": " + SDL_GetError());
         }
     } // namespace
+    detail::KeepRunningOnWindowClose::KeepRunningOnWindowClose() {
+        require_main_thread();
+        if (!SDL_GetHintBoolean(SDL_HINT_QUIT_ON_LAST_WINDOW_CLOSE, true)) return;
+        if (const char* value = SDL_GetHint(SDL_HINT_QUIT_ON_LAST_WINDOW_CLOSE)) previous = value;
+        if (!SDL_SetHint(SDL_HINT_QUIT_ON_LAST_WINDOW_CLOSE, "0")) {
+            override_priority = true;
+            check(SDL_SetHintWithPriority(SDL_HINT_QUIT_ON_LAST_WINDOW_CLOSE, "0", SDL_HINT_OVERRIDE), "close policy");
+        }
+        changed = true;
+    }
+    detail::KeepRunningOnWindowClose::~KeepRunningOnWindowClose() {
+        if (!changed) return;
+        SDL_ResetHint(SDL_HINT_QUIT_ON_LAST_WINDOW_CLOSE);
+        const char* restored = SDL_GetHint(SDL_HINT_QUIT_ON_LAST_WINDOW_CLOSE);
+        if (previous && (!restored || *previous != restored))
+            SDL_SetHintWithPriority(SDL_HINT_QUIT_ON_LAST_WINDOW_CLOSE,
+                                    previous->c_str(),
+                                    override_priority ? SDL_HINT_OVERRIDE : SDL_HINT_NORMAL);
+    }
     struct Window::Impl {
         Runtime video{RuntimeOptions{.video = true}};
         std::unique_ptr<SDL_Window, decltype(&SDL_DestroyWindow)> native{nullptr, SDL_DestroyWindow};

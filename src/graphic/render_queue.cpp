@@ -75,7 +75,8 @@ namespace gkit::graphic {
 
     } // namespace
 
-    auto RenderQueue::flush(RenderDevice& device, const std::shared_ptr<const void>& session, Viewport screen) -> void {
+    auto RenderQueue::flush(RenderDevice& device, const std::shared_ptr<const void>& session, ViewportRect screen)
+        -> void {
         // Sort: opaque front-to-back, transparent back-to-front; group state/shader.
         std::stable_sort(
             this->commands.begin(), this->commands.end(), [](const RenderCommand& a, const RenderCommand& b) {
@@ -107,11 +108,12 @@ namespace gkit::graphic {
 
             // GL viewport is global state; each command sets its own viewport,
             // defaulting to the render target size when none was specified.
-            const Viewport vp = cmd.viewport.value_or(
+            const ViewportRect vp = cmd.viewport.value_or(
                 cmd.target != nullptr
-                    ? Viewport{.x = 0, .y = 0, .width = cmd.target->width(), .height = cmd.target->height()}
+                    ? ViewportRect{.x = 0, .y = 0, .width = cmd.target->width(), .height = cmd.target->height()}
                     : screen);
             device.set_viewport(vp);
+            device.set_clip(cmd.clip);
 
             // Clear the currently bound target (FBO or screen) if the command asks for it.
             if (cmd.clear) {
@@ -141,6 +143,7 @@ namespace gkit::graphic {
         if (last_target != nullptr) {
             last_target->unbind();
         }
+        device.set_clip(std::nullopt);
         this->commands.clear();
     }
 

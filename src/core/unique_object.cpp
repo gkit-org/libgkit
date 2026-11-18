@@ -22,6 +22,13 @@ namespace gkit::core {
         if (id_opt) {
             uobj.id  = *id_opt;
             uobj.obj = owned.get();
+            if (auto* node = dynamic_cast<Node*>(uobj.obj)) {
+                auto edits = std::move(detail::NodeState::of(*node).construction_edits);
+                for (auto& edit : edits) {
+                    edit.anchor = uobj.id;
+                    edit.submit();
+                }
+            }
         }
         return uobj;
     }

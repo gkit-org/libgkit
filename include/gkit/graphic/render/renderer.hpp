@@ -4,7 +4,7 @@
 #pragma once
 
 #include "gkit/graphic/render/render_object.hpp"
-#include "gkit/graphic/render/viewport.hpp"
+#include "gkit/graphic/render/viewport_rect.hpp"
 #include "gkit/graphic/resource/frame_buffer.hpp"
 
 #include <memory>
@@ -12,15 +12,14 @@
 #include <string>
 
 namespace gkit::graphic {
+    class Viewport;
     class Application;
-    namespace opengl {
-        struct Context;
-    }
+    class RenderDevice;
 
     /**
-     * @brief Renderer for the current Application run.
+     * @brief Renderer for the currently open window session.
      * @note Obtain it through Application::renderer() on the coordinator thread. Resource creation is
-     * available during the run. Clear and draw calls are accepted only inside Application::render().
+     * available while the window is open. Clear and draw calls are accepted only inside Application::render().
      */
     class Renderer {
     public:
@@ -42,7 +41,7 @@ namespace gkit::graphic {
          * @throws std::invalid_argument For an empty object, invalid material, viewport or instance count.
          * @throws std::logic_error Outside render() or if the resources belong to an expired context.
          */
-        auto draw(std::shared_ptr<RenderObject> object, std::optional<Viewport> viewport = std::nullopt) -> void;
+        auto draw(std::shared_ptr<RenderObject> object, std::optional<ViewportRect> viewport = std::nullopt) -> void;
         /**
          * @brief Enqueue a draw to an off-screen target. Off-screen draws execute before window draws.
          * @param target The retained framebuffer. Configure its attachments before queuing draws.
@@ -52,23 +51,26 @@ namespace gkit::graphic {
          */
         auto draw_to(std::shared_ptr<const FrameBuffer> target,
                      std::shared_ptr<RenderObject> object,
-                     std::optional<Viewport> viewport = std::nullopt) -> void;
+                     std::optional<ViewportRect> viewport = std::nullopt) -> void;
 
     private:
         friend class Application;
-        explicit Renderer(std::shared_ptr<const opengl::Context> context);
+        friend class SpritePass;
+        explicit Renderer(std::shared_ptr<RenderDevice> device);
         ~Renderer();
         Renderer(const Renderer&)                    = delete;
         auto operator=(const Renderer&) -> Renderer& = delete;
 
+        auto draw_sprites(Viewport& root, int width, int height, int pixel_width, int pixel_height) -> void;
         auto begin_frame() -> void;
-        auto finish_frame(Viewport screen) -> void;
+        auto finish_frame(ViewportRect screen) -> void;
         auto discard_frame() noexcept -> void;
         auto require_context() const -> void;
         auto require_frame() const -> void;
         auto enqueue(std::shared_ptr<const FrameBuffer> target,
                      std::shared_ptr<RenderObject> object,
-                     std::optional<Viewport> viewport) -> void;
+                     std::optional<ViewportRect> viewport,
+                     std::optional<ViewportRect> clip = std::nullopt) -> void;
 
         struct Impl;
         std::unique_ptr<Impl> impl;

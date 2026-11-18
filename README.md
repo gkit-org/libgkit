@@ -35,6 +35,7 @@ For Clang or MSVC, use `x86_64-llvm-debug` or `windows-x86_64-msvc-debug`.
 
 Create nodes with `UniqueObject::create<T>()`. Moving the owner into a parent transfers the subtree.
 Keep its `ObjectId` to access it later. `with<T>()` returns false for an expired ID or a mismatched type.
+Use `node.find_ancestor<T>()` to get the nearest matching ancestor's ID, starting at the parent.
 
 ```cpp
 gkit::Processer loop;

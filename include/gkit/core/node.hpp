@@ -48,6 +48,7 @@ namespace gkit::core {
         friend class gkit::Processer;
         std::unique_ptr<detail::NodeState> state;
         std::atomic<bool> enabled{true}, parallel{false};
+        auto find_ancestor_if(bool (*matches)(const Node&)) const -> std::optional<ObjectId>;
 
     public:
         using Completion = std::function<void(EditResult)>;
@@ -57,12 +58,25 @@ namespace gkit::core {
         auto operator=(const Node&) -> Node& = delete;
         auto id() const noexcept -> ObjectId;
         auto parent() const -> std::optional<ObjectId>;
+        /**
+         * @brief Find the nearest ancestor of type @p T, starting at the immediate parent.
+         * @tparam T A node type. Derived instances also match.
+         * @return The matching ID, or std::nullopt if the parent chain has no match.
+         * @note The search observes one tree topology. Use ObjectId::with<T>() to borrow the result later.
+         */
+        template<std::derived_from<Node> T>
+        [[nodiscard]] auto find_ancestor() const -> std::optional<ObjectId> {
+            return find_ancestor_if([](const Node& ancestor) {
+                return dynamic_cast<const T*>(&ancestor) != nullptr;
+            });
+        }
         auto name() const -> std::string;
         auto find_child(const std::string& name) const -> std::optional<ObjectId>;
         auto children() const -> std::vector<ChildInfo>;
 
         /** @brief Edits complete inline on stopped trees or at a frame boundary during run().
-         * Completion runs outside tree locks. Receive rejected additions and detached owners there. */
+         * Adds from a derived constructor are committed after UniqueObject finishes construction; their callbacks
+         * must outlive the constructor. Completion runs outside tree locks. Receive rejected additions and detached owners there. */
         auto add_child(std::string name, UniqueObject child, Completion complete = {}) -> void;
         auto detach_child(ObjectId child, Completion complete) -> void;
         auto remove_child(ObjectId child, Completion complete = {}) -> void;

@@ -45,6 +45,8 @@ namespace gkit::graphic::opengl {
          */
         explicit Shader(const std::shared_ptr<const Context>& context, const std::string& filepath);
 
+        Shader(const std::shared_ptr<const Context>& context, const ShaderProgramSource& source);
+
         auto parse_shader(const std::string& file_path) -> graphic::ShaderProgramSource;
         auto compile_shader(uint32_t type, const std::string& source) -> uint32_t;
         auto create_shader(const std::string& vertex_shader, const std::string& fragment_shader) -> uint32_t;
