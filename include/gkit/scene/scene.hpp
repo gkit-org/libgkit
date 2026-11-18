@@ -13,8 +13,8 @@ namespace gkit::scene {
      * a disabled, inactive or paused ancestor. Scene uses the same ownership and execution-domain rules as core::Node.
      */
     class Scene : public core::Node {
-        bool active = true;
-        bool paused = false;
+        std::atomic<bool> active = true;
+        std::atomic<bool> paused = false;
 
     public:
         /** @brief Construct an active, unpaused scene and register its reflected properties. */

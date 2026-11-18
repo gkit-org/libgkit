@@ -1,5 +1,6 @@
 #include "gkit/core/unique_object.hpp"
 
+#include "core/node_internal.hpp"
 #include "gkit/core/object_id.hpp"
 #include "gkit/core/reflect/registry.hpp"
 #include "object_pool.hpp"
@@ -33,14 +34,13 @@ namespace gkit::core {
     }
 
     UniqueObject::~UniqueObject() noexcept {
-        auto& obj_pool = ObjectPool::instance();
-        obj_pool.release(this->id);
+        if (auto* node = dynamic_cast<Node*>(obj)) detail::NodeState::of(*node).retire();
+        if (obj) ObjectPool::instance().release(id);
     }
 
     auto UniqueObject::operator=(UniqueObject&& other) noexcept -> UniqueObject& {
         if (this != &other) {
-            auto& obj_pool = ObjectPool::instance();
-            obj_pool.release(this->id);
+            UniqueObject retired(std::move(*this));
             this->id  = other.id;
             this->obj = other.obj;
             other.obj = nullptr;

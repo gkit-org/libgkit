@@ -19,8 +19,10 @@ namespace gkit::graphic {
      * @brief Shader source split by stage
      */
     struct ShaderProgramSource {
-        std::string vertex_shader; // Vertex shader source code
-        std::string fragment_shader; // Fragment shader source code
+        /** @brief Vertex shader source code. */
+        std::string vertex_shader;
+        /** @brief Fragment shader source code. */
+        std::string fragment_shader;
     };
 
     class Shader {

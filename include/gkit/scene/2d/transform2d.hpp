@@ -9,16 +9,12 @@ namespace gkit::scene {
         ~Transform2D() = default;
 
     public:
-        /*********************************
-         * Getters
-         *********************************/
+        // Getters
         inline auto get_position() const -> math::Vector2 { return position; }
         inline auto get_rotation() const -> float { return rotation; }
         inline auto get_scale() const -> math::Vector2 { return scale; }
 
-        /*********************************
-         * Setters
-         *********************************/
+        // Setters
         inline auto set_position(const math::Vector2& position) -> void { this->position = position; }
         inline auto set_rotation(const float rotation) -> void { this->rotation = rotation; }
         inline auto set_scale(const math::Vector2& scale) -> void { this->scale = scale; }

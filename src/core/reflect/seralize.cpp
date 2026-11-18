@@ -19,7 +19,7 @@ namespace gkit::core::reflect {
         if (obj_ptr == nullptr) throw std::invalid_argument("expired object id");
 
         auto& db        = ClassDB::instance();
-        auto class_info = db.snapshot(obj_ptr->class_name());
+        auto class_info = db.find(obj_ptr->class_name());
         if (!class_info) throw std::invalid_argument("unregistered object type");
 
         class_info->for_each_field(
@@ -32,9 +32,7 @@ namespace gkit::core::reflect {
             });
     }
 
-    /**
-     * SerdeStruct
-     */
+    // SerdeStruct
     SerdeStruct::SerdeStruct(Value v) { // NOLINT(performance-unnecessary-value-param)
         this->from(std::move(v));
     }
@@ -66,18 +64,15 @@ namespace gkit::core::reflect {
         this->available_flag = false;
         if (!v.available()) throw std::invalid_argument("invalid object id");
 
-        auto pinned   = v.lock();
-        auto* obj_ptr = pinned.get();
-        if (obj_ptr == nullptr) throw std::invalid_argument("expired object id");
-
         this->serde_root = std::make_unique<SerdeNode>("", Type::Object);
-        expand_object_children(*this->serde_root, obj_ptr);
+        if (!v.with([&](Object& obj) {
+                expand_object_children(*this->serde_root, &obj);
+            }))
+            throw std::invalid_argument("expired object id");
         this->available_flag = true;
     }
 
-    /**
-     * SerdeNode
-     */
+    // SerdeNode
     SerdeNode::SerdeNode(const std::string& k, const Value& v) {
         this->key  = k;
         this->type = v.type();

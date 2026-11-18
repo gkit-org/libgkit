@@ -48,13 +48,13 @@ namespace gkit::core::reflect {
         // Format hooks (pure virtual)
         // =====================================================================
 
-        /// @brief Begin/end delimiters around a node (keyed or unkeyed).
+        /** @brief Begin/end delimiters around a node (keyed or unkeyed). */
         virtual auto wrapper(Type type, const std::string& key) const -> WrapperPair = 0;
 
-        /// @brief Separator between sibling elements of a container.
+        /** @brief Separator between sibling elements of a container. */
         virtual auto element_gap(Type type) const -> std::string = 0;
 
-        /// @brief Encode a leaf value into the target format.
+        /** @brief Encode a leaf value into the target format. */
         virtual auto leaf_value(const Value& v) const -> std::string = 0;
     };
 

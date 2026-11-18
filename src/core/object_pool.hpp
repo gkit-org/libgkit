@@ -9,6 +9,9 @@
 #include <unordered_map>
 
 namespace gkit::core {
+    namespace detail {
+        struct NodeState;
+    }
     /**
      * @brief Internal registry mapping ObjectId to live Object instances.
      *
@@ -41,6 +44,7 @@ namespace gkit::core {
          * @return The object pointer, or nullptr if @p id is invalid or unknown.
          */
         auto deref_from(const ObjectId& id) noexcept -> Object*;
+        auto find_node(ObjectId id) -> detail::NodeState*;
         auto lock(const ObjectId& id) -> std::shared_ptr<Object>;
     };
 } // namespace gkit::core

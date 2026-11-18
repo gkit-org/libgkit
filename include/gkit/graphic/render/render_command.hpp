@@ -17,10 +17,14 @@ namespace gkit::graphic {
      * state, so it must be set per command).
      */
     struct Viewport {
-        int x      = 0; // Left coordinate
-        int y      = 0; // Bottom coordinate
-        int width  = 0; // Viewport width
-        int height = 0; // Viewport height
+        /** @brief Left coordinate. */
+        int x = 0;
+        /** @brief Bottom coordinate. */
+        int y = 0;
+        /** @brief Viewport width. */
+        int width = 0;
+        /** @brief Viewport height. */
+        int height = 0;
     };
 
     class RenderObject;
@@ -34,15 +38,24 @@ namespace gkit::graphic {
      * controls (target, viewport, clear, sorting metadata).
      */
     struct RenderCommand {
-        const FrameBuffer* target = nullptr; // Render target (nullptr = screen)
-        RenderObject* object      = nullptr; // Geometry + material source (lazily uploaded on execute)
-        std::optional<Viewport> viewport; // Viewport to set before drawing; empty = target size
-        RenderState state; // Render state snapshot (applied before drawing)
-        uint32_t instance_count = 1; // 1 = non-instanced
-        bool transparent        = false; // Sort front-to-back (opaque) or back-to-front (transparent)
-        float depth_key         = 0.0f; // Depth sort key (filled by upper layer)
-        bool clear              = false; // Whether to clear the target before drawing
-        ClearFlags clear_flags  = ClearFlags::All; // What to clear when clear is set
+        /** @brief Render target (nullptr = screen). */
+        const FrameBuffer* target = nullptr;
+        /** @brief Geometry + material source (lazily uploaded on execute). */
+        RenderObject* object = nullptr;
+        /** @brief Viewport to set before drawing; empty = target size. */
+        std::optional<Viewport> viewport;
+        /** @brief Render state snapshot (applied before drawing). */
+        RenderState state;
+        /** @brief 1 = non-instanced. */
+        uint32_t instance_count = 1;
+        /** @brief Sort front-to-back (opaque) or back-to-front (transparent). */
+        bool transparent = false;
+        /** @brief Depth sort key (filled by upper layer). */
+        float depth_key = 0.0f;
+        /** @brief Whether to clear the target before drawing. */
+        bool clear = false;
+        /** @brief What to clear when clear is set. */
+        ClearFlags clear_flags = ClearFlags::All;
     };
 
 } // namespace gkit::graphic

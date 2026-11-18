@@ -10,44 +10,64 @@ namespace gkit::graphic {
      * @brief Depth test state
      */
     struct DepthState {
-        bool enabled             = false; // Whether depth test is enabled
-        CompareFunc compare_func = CompareFunc::Less; // Depth comparison function
-        bool write_mask          = true; // Depth write mask
+        /** @brief Whether depth test is enabled. */
+        bool enabled = false;
+        /** @brief Depth comparison function. */
+        CompareFunc compare_func = CompareFunc::Less;
+        /** @brief Depth write mask. */
+        bool write_mask = true;
     };
 
     /**
      * @brief Blend state
      */
     struct BlendState {
-        bool enabled           = false; // Whether blending is enabled
-        BlendFunc src_rgb      = BlendFunc::One; // Source RGB blend factor
-        BlendFunc dst_rgb      = BlendFunc::Zero; // Destination RGB blend factor
-        BlendFunc src_alpha    = BlendFunc::One; // Source alpha blend factor
-        BlendFunc dst_alpha    = BlendFunc::Zero; // Destination alpha blend factor
-        BlendEquation equation = BlendEquation::Add; // Blend equation
+        /** @brief Whether blending is enabled. */
+        bool enabled = false;
+        /** @brief Source RGB blend factor. */
+        BlendFunc src_rgb = BlendFunc::One;
+        /** @brief Destination RGB blend factor. */
+        BlendFunc dst_rgb = BlendFunc::Zero;
+        /** @brief Source alpha blend factor. */
+        BlendFunc src_alpha = BlendFunc::One;
+        /** @brief Destination alpha blend factor. */
+        BlendFunc dst_alpha = BlendFunc::Zero;
+        /** @brief Blend equation. */
+        BlendEquation equation = BlendEquation::Add;
     };
 
     /**
      * @brief Cull face state
      */
     struct CullFaceState {
-        bool enabled         = false; // Whether cull face is enabled
-        CullFaceMode mode    = CullFaceMode::Back; // Cull face mode
-        FrontFace front_face = FrontFace::CounterClockwise; // Front face winding order
+        /** @brief Whether cull face is enabled. */
+        bool enabled = false;
+        /** @brief Cull face mode. */
+        CullFaceMode mode = CullFaceMode::Back;
+        /** @brief Front face winding order. */
+        FrontFace front_face = FrontFace::CounterClockwise;
     };
 
     /**
      * @brief Stencil state
      */
     struct StencilState {
-        bool enabled             = false; // Whether stencil test is enabled
-        CompareFunc compare_func = CompareFunc::Always; // Stencil comparison function
-        uint32_t ref             = 0; // Stencil reference value
-        uint32_t read_mask       = 0xFF; // Stencil read mask
-        uint32_t write_mask      = 0xFF; // Stencil write mask
-        StencilOp fail           = StencilOp::Keep; // Stencil fail operation
-        StencilOp z_fail         = StencilOp::Keep; // Stencil depth fail operation
-        StencilOp z_pass         = StencilOp::Keep; // Stencil depth pass operation
+        /** @brief Whether stencil test is enabled. */
+        bool enabled = false;
+        /** @brief Stencil comparison function. */
+        CompareFunc compare_func = CompareFunc::Always;
+        /** @brief Stencil reference value. */
+        uint32_t ref = 0;
+        /** @brief Stencil read mask. */
+        uint32_t read_mask = 0xFF;
+        /** @brief Stencil write mask. */
+        uint32_t write_mask = 0xFF;
+        /** @brief Stencil fail operation. */
+        StencilOp fail = StencilOp::Keep;
+        /** @brief Stencil depth fail operation. */
+        StencilOp z_fail = StencilOp::Keep;
+        /** @brief Stencil depth pass operation. */
+        StencilOp z_pass = StencilOp::Keep;
     };
 
     /**
@@ -58,10 +78,14 @@ namespace gkit::graphic {
      * incrementally by StateManager.
      */
     struct RenderState {
-        DepthState depth; // Depth test state
-        BlendState blend; // Blend state
-        CullFaceState cull_face; // Cull face state
-        StencilState stencil; // Stencil state
+        /** @brief Depth test state. */
+        DepthState depth;
+        /** @brief Blend state. */
+        BlendState blend;
+        /** @brief Cull face state. */
+        CullFaceState cull_face;
+        /** @brief Stencil state. */
+        StencilState stencil;
 
         auto operator==(const RenderState& other) const -> bool {
             const auto& a = *this;

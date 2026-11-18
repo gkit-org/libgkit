@@ -39,9 +39,12 @@ namespace gkit::graphic {
      * flush finishes (lifetime contract).
      */
     struct UboBlock {
-        const void* data = nullptr; // Pointer to the user struct (e.g. SceneParams)
-        size_t size      = 0; // Size of the struct in bytes
-        uint32_t binding = 0; // UBO binding point
+        /** @brief Pointer to the user struct (e.g. SceneParams). */
+        const void* data = nullptr;
+        /** @brief Size of the struct in bytes. */
+        size_t size = 0;
+        /** @brief UBO binding point. */
+        uint32_t binding = 0;
     };
 
     /**

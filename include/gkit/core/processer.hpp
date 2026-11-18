@@ -10,32 +10,19 @@
 #include <condition_variable>
 #include <mutex>
 
-namespace gkit {
-    /**
-     * @brief Scheduler configuration copied by Processer::configure() before run().
-     * @note Invalid timing values are rejected before starting workers or initializing SDL.
-     */
-    struct ProcesserSettings {
-        bool parallel_update_enabled = false; ///< Run explicitly marked independent subtrees on workers.
-        std::size_t worker_count =
-            1; ///< Worker count, excluding the coordinator; positive when parallelism is enabled.
-        double fixed_delta          = 1.0 / 60.0; ///< Positive finite physics step in seconds.
-        std::size_t max_fixed_steps = 4; ///< Maximum physics ticks per frame; must be positive.
-        double max_frame_delta      = 0.25; ///< Positive finite clamp for measured elapsed time, in seconds.
-        double target_frame_rate    = 60; ///< Finite non-negative logic-frame rate; zero disables pacing.
-        bool initialize_sdl         = true; ///< Disable for a headless scheduler with an empty input snapshot.
-        /// SDL_InitFlags override. nullopt initializes audio, events, gamepad, joystick and video as before.
-        std::optional<std::uint32_t> sdl_flags;
-    };
+namespace gkit::core::detail {
+    struct TreeRuntime;
+}
 
+namespace gkit {
     /**
      * @brief Owns a non-null generic Node root and manages its complete running-tree lifetime.
      * @note Construct and run on the same thread, which must be SDL's main thread when SDL is enabled.
      * Derive to customize coordinator hooks; run() itself owns ordering, barriers, cleanup and exception propagation.
      * A Processer must outlive its running loop. Call stop() from other threads, then wait for run() to return before
      * destroying it. Lifecycle and coordinator hooks may access this tree while all workers are idle.
-     * @note Parallel marking is opt-in per subtree. Mutable node state is confined to its execution domain;
-     * use core::NodeHandle::post() or core::PublishedState across domains. The core module does not depend on scene.
+     * @note Parallel marking is opt-in per subtree. Library node properties can be accessed concurrently.
+     * Synchronize custom node fields or use core::Node::post() for coordinator access.
      */
     class Processer {
     public:
@@ -49,18 +36,25 @@ namespace gkit {
         virtual ~Processer();
         Processer(const Processer&)                    = delete;
         auto operator=(const Processer&) -> Processer& = delete;
-        /** @brief Return the always-present root identity; attach application nodes beneath this root. */
-        auto root() const -> core::NodeHandle<>;
-        /**
-         * @brief Validate and copy all scheduler settings atomically.
-         * @param value Configuration used by subsequent run() calls.
-         * @throws std::logic_error If a run is active, including its cleanup phase.
-         * @throws std::invalid_argument For invalid steps/rates, an unrepresentable duration, or zero enabled workers.
-         * @note Thread-safe. Failed configuration leaves the previous settings unchanged.
-         */
-        auto configure(const ProcesserSettings& value) -> void;
-        /** @brief Return a thread-safe copy of the configured settings. */
-        auto settings() const -> ProcesserSettings;
+        /** @brief Return the root owned by this Processer; attach application nodes beneath this root. */
+        auto root() noexcept -> core::Node&;
+        auto root() const noexcept -> const core::Node&;
+        /** @brief Enable worker updates for explicitly marked independent subtrees on the next run. */
+        auto set_parallel_update_enabled(bool value) noexcept -> Processer&;
+        /** @brief Set the number of workers, excluding the coordinator. Parallel updates require at least one. */
+        auto set_worker_count(std::size_t value) noexcept -> Processer&;
+        /** @brief Set the physics step in seconds to a positive finite value. */
+        auto set_fixed_delta(double value) noexcept -> Processer&;
+        /** @brief Set the maximum number of physics ticks per frame to a positive value. */
+        auto set_max_fixed_steps(std::size_t value) noexcept -> Processer&;
+        /** @brief Set a positive finite upper bound on measured frame time in seconds. */
+        auto set_max_frame_delta(double value) noexcept -> Processer&;
+        /** @brief Set the target logic-frame rate. Zero disables pacing. */
+        auto set_target_frame_rate(double value) noexcept -> Processer&;
+        /** @brief Enable SDL initialization. Disable it for headless runs with an empty input snapshot. */
+        auto set_initialize_sdl(bool value) noexcept -> Processer&;
+        /** @brief Select SDL subsystems. std::nullopt enables audio, events, gamepad, joystick and video. */
+        auto set_sdl_flags(std::optional<std::uint32_t> value) noexcept -> Processer&;
         /**
          * @brief Enter the tree, process frames until stopped, and leave the tree before returning.
          * @note Each frame commits queued edits, dispatches SDL events, invokes before_frame(), drains posted callbacks,
@@ -68,6 +62,7 @@ namespace gkit {
          * All update tasks finish before each phase boundary. Excess whole physics steps are discarded; fractional
          * remainder is retained. Settings remain fixed throughout this call.
          * @throws std::logic_error For re-entry or execution on the wrong thread.
+         * @throws std::invalid_argument If the configured timing or worker count is invalid.
          * @throws std::runtime_error If SDL initialization fails.
          * @note Allocation, worker creation and callback exceptions propagate after workers finish, entered nodes exit,
          * pending requests are cancelled and acquired SDL subsystems are released. The first failure is preserved.
@@ -114,9 +109,20 @@ namespace gkit {
         virtual auto wait_until(std::chrono::steady_clock::time_point deadline) -> void;
 
     private:
-        core::NodeOwner<> root_owner;
-        std::shared_ptr<core::detail::TreeRuntime> runtime;
-        ProcesserSettings config;
+        struct Config {
+            bool parallel_update_enabled = false;
+            std::size_t worker_count     = 1;
+            double fixed_delta           = 1.0 / 60.0;
+            std::size_t max_fixed_steps  = 4;
+            double max_frame_delta       = 0.25;
+            double target_frame_rate     = 60;
+            bool initialize_sdl          = true;
+            std::optional<std::uint32_t> sdl_flags;
+        };
+
+        core::UniqueObject root_owner;
+        std::unique_ptr<core::detail::TreeRuntime> runtime;
+        Config config;
         mutable std::mutex settings_mutex;
         std::mutex wait_mutex;
         std::condition_variable wake;

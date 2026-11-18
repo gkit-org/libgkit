@@ -269,7 +269,7 @@ auto test_render_loop() -> bool {
     return true;
 }
 
-/// @brief Pure-logic checks for the Material helper API (no GPU/window required)
+// Pure-logic checks for the Material helper API (no GPU/window required)
 auto test_material_helpers() -> bool {
     // Texture is only stored by pointer in the material and never dereferenced
     // by these checks, so a placeholder instance (like fbo_texture in the render

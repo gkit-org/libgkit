@@ -33,7 +33,22 @@ For Clang or MSVC, use `x86_64-llvm-debug` or `windows-x86_64-msvc-debug`.
 
 ## Scene trees
 
-Use `core::NodeOwner<T>::create()` to build a subtree, then attach it through
-`Processer::root().with()` and `Node::edit_children()`. `scene::Scene` is a Node with activation and pause controls.
-Configure frame timing and opt-in parallel subtrees before `run()`; use `NodeHandle::post()` for cross-domain operations.
-See the [scene tests](test/core/scene/test_processer.cpp) for lifecycle, batching, and concurrency examples.
+Create nodes with `UniqueObject::create<T>()`. Moving the owner into a parent transfers the subtree.
+Keep its `ObjectId` to access it later. `with<T>()` returns false for an expired ID or a mismatched type.
+
+```cpp
+gkit::Processer loop;
+loop.set_initialize_sdl(false).set_target_frame_rate(120);
+auto player = gkit::core::UniqueObject::create<gkit::scene::Object2D>();
+auto id = player.get_id();
+loop.root().add_child("player", std::move(player));
+auto found = id.with<gkit::scene::Object2D>([](auto& node) { node.set_rotation(0.5f); });
+```
+
+Edits complete immediately on stopped trees and at frame boundaries during a run. Use the optional
+completion callback to handle errors or recover an unsuccessful addition. `detach_child()` delivers the
+subtree owner to its completion callback. Child lists and transforms are returned by value.
+
+Node properties support concurrent reads and writes. Synchronize custom node fields or use `Node::post()`
+to run a callback on the coordinator. Each `run()` validates the latest settings before initializing SDL
+or starting workers. Changes made during a run apply to the next run.
