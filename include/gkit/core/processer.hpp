@@ -39,14 +39,21 @@ namespace gkit {
         /** @brief Return the root owned by this Processer; attach application nodes beneath this root. */
         auto root() noexcept -> core::Node&;
         auto root() const noexcept -> const core::Node&;
-        /** Configure the next run. run() validates a coherent copy before startup. */
+        /** @brief Enable worker updates for explicitly marked independent subtrees on the next run. */
         auto set_parallel_update_enabled(bool value) noexcept -> Processer&;
+        /** @brief Set the number of workers, excluding the coordinator. Parallel updates require at least one. */
         auto set_worker_count(std::size_t value) noexcept -> Processer&;
+        /** @brief Set the physics step in seconds to a positive finite value. */
         auto set_fixed_delta(double value) noexcept -> Processer&;
+        /** @brief Set the maximum number of physics ticks per frame to a positive value. */
         auto set_max_fixed_steps(std::size_t value) noexcept -> Processer&;
+        /** @brief Set a positive finite upper bound on measured frame time in seconds. */
         auto set_max_frame_delta(double value) noexcept -> Processer&;
+        /** @brief Set the target logic-frame rate. Zero disables pacing. */
         auto set_target_frame_rate(double value) noexcept -> Processer&;
+        /** @brief Enable SDL initialization. Disable it for headless runs with an empty input snapshot. */
         auto set_initialize_sdl(bool value) noexcept -> Processer&;
+        /** @brief Select SDL subsystems. std::nullopt enables audio, events, gamepad, joystick and video. */
         auto set_sdl_flags(std::optional<std::uint32_t> value) noexcept -> Processer&;
         /**
          * @brief Enter the tree, process frames until stopped, and leave the tree before returning.
@@ -103,15 +110,13 @@ namespace gkit {
 
     private:
         struct Config {
-            bool parallel_update_enabled = false; ///< Run explicitly marked independent subtrees on workers.
-            std::size_t worker_count =
-                1; ///< Worker count, excluding the coordinator; positive when parallelism is enabled.
-            double fixed_delta          = 1.0 / 60.0; ///< Positive finite physics step in seconds.
-            std::size_t max_fixed_steps = 4; ///< Maximum physics ticks per frame; must be positive.
-            double max_frame_delta      = 0.25; ///< Positive finite clamp for measured elapsed time, in seconds.
-            double target_frame_rate    = 60; ///< Finite non-negative logic-frame rate; zero disables pacing.
-            bool initialize_sdl         = true; ///< Disable for a headless scheduler with an empty input snapshot.
-            /// SDL_InitFlags override. nullopt initializes audio, events, gamepad, joystick and video as before.
+            bool parallel_update_enabled = false;
+            std::size_t worker_count     = 1;
+            double fixed_delta           = 1.0 / 60.0;
+            std::size_t max_fixed_steps  = 4;
+            double max_frame_delta       = 0.25;
+            double target_frame_rate     = 60;
+            bool initialize_sdl          = true;
             std::optional<std::uint32_t> sdl_flags;
         };
 

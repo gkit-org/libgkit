@@ -43,11 +43,16 @@ namespace gkit::graphic {
 
         // ---- Render state / target ----
         RenderState state;
-        uint32_t instance_count = 1; // 1 = non-instanced
-        bool transparent        = false; // Sorting class
-        float depth_key         = 0.0f; // Depth sort key
-        bool clear              = false; // Whether to clear the target before drawing
-        ClearFlags clear_flags  = ClearFlags::All; // What to clear when clear is set
+        /** @brief 1 = non-instanced. */
+        uint32_t instance_count = 1;
+        /** @brief Sorting class. */
+        bool transparent = false;
+        /** @brief Depth sort key. */
+        float depth_key = 0.0f;
+        /** @brief Whether to clear the target before drawing. */
+        bool clear = false;
+        /** @brief What to clear when clear is set. */
+        ClearFlags clear_flags = ClearFlags::All;
 
         /**
          * @brief Lazily upload vertices/indices to GPU and return the vertex array

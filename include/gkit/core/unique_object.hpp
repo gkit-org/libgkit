@@ -22,25 +22,25 @@ namespace gkit::core {
         UniqueObject() = default;
 
     public:
-        /// @brief Release the owned object back to the ObjectPool.
+        /** @brief Release the owned object back to the ObjectPool. */
         ~UniqueObject() noexcept;
 
         UniqueObject(const UniqueObject&) noexcept   = delete;
         auto operator=(const UniqueObject&) noexcept = delete;
 
-        /// @brief Transfer ownership from another handle.
+        /** @brief Transfer ownership from another handle. */
         UniqueObject(UniqueObject&& other) noexcept;
 
-        /// @brief Transfer ownership from another handle, releasing the current one.
+        /** @brief Transfer ownership from another handle, releasing the current one. */
         auto operator=(UniqueObject&& other) noexcept -> UniqueObject&;
 
-        /// @brief The owned object pointer, or nullptr if the handle is empty.
+        /** @brief The owned object pointer, or nullptr if the handle is empty. */
         [[nodiscard]] auto get() -> Object* { return this->obj; }
 
-        /// @brief The owned object pointer (const), or nullptr if the handle is empty.
+        /** @brief The owned object pointer (const), or nullptr if the handle is empty. */
         [[nodiscard]] auto get() const -> const Object* { return this->obj; }
 
-        /// @brief The object id, or an unavailable id if the handle is empty.
+        /** @brief The object id, or an unavailable id if the handle is empty. */
         [[nodiscard]] inline auto get_id() const -> const ObjectId& { return this->id; }
 
         /**
@@ -61,7 +61,7 @@ namespace gkit::core {
         static auto create_with_classname(const std::string& class_name) -> std::optional<UniqueObject>;
 
     private:
-        /// @brief Register an already-constructed object into the pool and wrap it in a handle.
+        /** @brief Register an already-constructed object into the pool and wrap it in a handle. */
         static auto from_raw_ptr(Object* obj) -> UniqueObject;
     };
 

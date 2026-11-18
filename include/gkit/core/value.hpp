@@ -164,7 +164,7 @@ namespace gkit::core {
         [[nodiscard]] auto as_array() const -> const Array&;
         [[nodiscard]] auto as_map() const -> const Map&;
 
-        /** Mutable accessors **/
+        // Mutable accessors
         [[nodiscard]] auto as_array() -> Array&;
         [[nodiscard]] auto as_map() -> Map&;
 

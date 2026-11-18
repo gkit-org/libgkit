@@ -33,7 +33,7 @@ namespace gkit::resource {
 
     public:
         ~ResourceLoader();
-        /** Merge concurrent loads of the same resource and preserve decoding errors. */
+        /** @brief Merge concurrent loads of the same resource and preserve decoding errors. */
         template<IsResource T>
         auto load(const std::filesystem::path& path) -> LoadResult<T> {
             auto result =

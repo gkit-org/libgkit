@@ -32,9 +32,7 @@ namespace gkit::core::reflect {
             });
     }
 
-    /**
-     * SerdeStruct
-     */
+    // SerdeStruct
     SerdeStruct::SerdeStruct(Value v) { // NOLINT(performance-unnecessary-value-param)
         this->from(std::move(v));
     }
@@ -74,9 +72,7 @@ namespace gkit::core::reflect {
         this->available_flag = true;
     }
 
-    /**
-     * SerdeNode
-     */
+    // SerdeNode
     SerdeNode::SerdeNode(const std::string& k, const Value& v) {
         this->key  = k;
         this->type = v.type();

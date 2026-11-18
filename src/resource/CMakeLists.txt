@@ -5,7 +5,6 @@ set (RESOURCE_SRC
     "./resource_loader.cpp"
     "./texture.cpp"
     "./shader_source.cpp"
-    "./metadata.cpp"
 )
 
 add_library(${GKIT_RESOURCE} OBJECT ${RESOURCE_SRC})

@@ -8,9 +8,12 @@
  * @brief Vertex element data type (backend-agnostic)
  */
 enum class VertexElementType : std::uint8_t {
-    Float  = 0, // 4-byte float
-    Uint32 = 1, // 4-byte unsigned int
-    Uint8  = 2, // 1-byte unsigned byte
+    /** @brief 4-byte float. */
+    Float = 0,
+    /** @brief 4-byte unsigned int. */
+    Uint32 = 1,
+    /** @brief 1-byte unsigned byte. */
+    Uint8 = 2,
 };
 
 namespace gkit::graphic {
@@ -35,9 +38,12 @@ namespace gkit::graphic {
             }
         }
 
-        VertexElementType type; // element type
-        uint32_t count; // number of components
-        unsigned char normalized; // whether to normalize
+        /** @brief Element type. */
+        VertexElementType type;
+        /** @brief Number of components. */
+        uint32_t count;
+        /** @brief Whether to normalize. */
+        unsigned char normalized;
     };
 
     /**

@@ -22,9 +22,7 @@ namespace gkit::scene {
         virtual ~Object2D() = default;
 
     public:
-        /***********************************
-         * Transform2D
-         **********************************/
+        // Transform2D
         /** @brief Read or replace the local transform as one synchronized value. */
         auto get_transform() const -> Transform2D {
             std::lock_guard guard(mutex);

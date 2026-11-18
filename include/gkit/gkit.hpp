@@ -1,6 +1,6 @@
 #pragma once
 
-/** core **/
+// core
 #include <gkit/core/input/action.hpp>
 #include <gkit/core/input/input.hpp>
 #include <gkit/core/input/keys.hpp>
@@ -12,11 +12,11 @@
 #include <gkit/core/templates/singleton.hpp>
 #include <gkit/core/value.hpp>
 
-/** graphic **/
+// graphic
 #include <gkit/graphic/render/renderer.hpp>
 #include <gkit/graphic/resource/shader.hpp>
 
-/** math **/
+// math
 #include <gkit/math/color.hpp>
 #include <gkit/math/constants.hpp>
 #include <gkit/math/matrix3.hpp>
@@ -26,13 +26,12 @@
 #include <gkit/math/vector3.hpp>
 #include <gkit/math/vector4.hpp>
 
-/** resource **/
-#include <gkit/resource/metadata.hpp>
+// resource
 #include <gkit/resource/resource.hpp>
 #include <gkit/resource/resource_loader.hpp>
 #include <gkit/resource/texture.hpp>
 
-/** scene **/
+// scene
 #include <gkit/scene/2d/object2d.hpp>
 #include <gkit/scene/2d/renderable2d.hpp>
 #include <gkit/scene/2d/transform2d.hpp>

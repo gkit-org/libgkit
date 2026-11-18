@@ -20,20 +20,28 @@ namespace gkit::core {
      * not to individual physics ticks; multiple fixed ticks may observe the same edge.
      */
     struct FrameContext {
-        double delta               = 0; ///< Seconds: measured/clamped for process(), fixed for physics_process().
-        std::uint64_t frame        = 0; ///< Zero-based logic-frame number, reset on each run().
-        std::uint64_t physics_tick = 0; ///< Zero-based physics tick, or completed tick count during process().
-        std::shared_ptr<const input::Snapshot>
-            input; ///< Non-null during scheduled callbacks; immutable and retainable.
+        /** @brief Frame duration in seconds, clamped for process() and fixed for physics_process(). */
+        double delta = 0;
+        /** @brief Zero-based logic-frame number, reset on each run(). */
+        std::uint64_t frame = 0;
+        /** @brief Zero-based physics tick, or completed tick count during process(). */
+        std::uint64_t physics_tick = 0;
+        /** @brief Immutable input snapshot, always present during scheduled callbacks and safe to retain. */
+        std::shared_ptr<const input::Snapshot> input;
     };
 
     /** @brief Completion status for accepted edits and posted callbacks. */
     enum class NodeError {
-        None, ///< The operation completed successfully.
-        Expired, ///< The anchor/target expired or left its submitting runtime before execution.
-        InvalidEdit, ///< The requested tree operation failed validation.
-        CallbackFailed, ///< The posted callback threw; run() also propagates the exception after cleanup.
-        Stopped ///< The scheduler cancelled this operation during shutdown.
+        /** @brief The operation completed successfully. */
+        None,
+        /** @brief The anchor/target expired or left its submitting runtime before execution. */
+        Expired,
+        /** @brief The requested tree operation failed validation. */
+        InvalidEdit,
+        /** @brief The posted callback threw an exception that run() propagates after cleanup. */
+        CallbackFailed,
+        /** @brief The scheduler cancelled this operation during shutdown. */
+        Stopped
     };
 
     struct ChildInfo {
@@ -43,11 +51,14 @@ namespace gkit::core {
 
     struct EditResult {
         NodeError error = NodeError::None;
-        /// Detached subtree, or the original addition on rejection or cancellation.
+        /** @brief Detached subtree, or the original addition on rejection or cancellation. */
         std::optional<UniqueObject> owner;
     };
 
-    /** Create tree nodes through UniqueObject::create<T>(). Tree operations are synchronized. Derived classes synchronize their own fields. */
+    /**
+     * @brief Create tree nodes through UniqueObject::create<T>().
+     * Tree operations are synchronized. Derived classes synchronize their own fields.
+     */
     class Node : public Object {
         friend struct detail::NodeState;
         friend class gkit::Processer;
@@ -66,27 +77,27 @@ namespace gkit::core {
         auto find_child(const std::string& name) const -> std::optional<ObjectId>;
         auto children() const -> std::vector<ChildInfo>;
 
-        /** Edits complete inline on stopped trees or at a frame boundary during run().
+        /** @brief Edits complete inline on stopped trees or at a frame boundary during run().
          * Completion runs outside tree locks. Receive rejected additions and detached owners there. */
         auto add_child(std::string name, UniqueObject child, Completion complete = {}) -> void;
         auto detach_child(ObjectId child, Completion complete) -> void;
         auto remove_child(ObjectId child, Completion complete = {}) -> void;
         auto rename(std::string name, Completion complete = {}) -> void;
         auto reparent(ObjectId parent, Completion complete = {}) -> void;
-        /** Schedule custom code on the coordinator. False means the request was not accepted. */
+        /** @brief Schedule custom code on the coordinator. False means the request was not accepted. */
         auto post(std::function<void(Node&)> callback, std::function<void(NodeError)> complete = {}) -> bool;
 
         auto set_enabled(bool value) noexcept -> void { enabled.store(value); }
         virtual auto updates_enabled() const -> bool { return enabled.load(); }
         auto set_parallel(bool value) noexcept -> void { parallel.store(value); }
         auto is_parallel() const noexcept -> bool { return parallel.load(); }
-        /** Called parent-first on entry and again after reattachment. */
+        /** @brief Called parent-first on entry and again after reattachment. */
         virtual auto enter_tree() -> void {}
-        /** Called once, after all children are ready. */
+        /** @brief Called once, after all children are ready. */
         virtual auto ready() -> void {}
         virtual auto process(const FrameContext&) -> void {}
         virtual auto physics_process(const FrameContext&) -> void {}
-        /** Called child-first on removal or shutdown. */
+        /** @brief Called child-first on removal or shutdown. */
         virtual auto exit_tree() -> void {}
     };
 } // namespace gkit::core

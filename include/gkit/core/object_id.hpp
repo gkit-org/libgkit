@@ -19,7 +19,7 @@ namespace gkit::core {
 
         explicit ObjectId(const templates::GenId<ObjectIdTag>& base) noexcept : templates::GenId<ObjectIdTag>(base) {}
 
-        /** Pin the matching object for this call. References must stay inside the callback. */
+        /** @brief Pin the matching object for this call. References must stay inside the callback. */
         template<IsObject T = Object, class Fn>
         auto with(Fn&& callback) const -> bool {
             auto pinned  = pin();
