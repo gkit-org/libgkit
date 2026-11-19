@@ -1,5 +1,6 @@
 #include "core/node_internal.hpp"
 #include "core/object_pool.hpp"
+#include "gkit/core/reflect/registry.hpp"
 
 #include <algorithm>
 
@@ -326,6 +327,11 @@ namespace gkit::core::detail {
 } // namespace gkit::core::detail
 
 namespace gkit::core {
+    auto Node::_regist_method(reflect::ClassDB& db) -> void {
+        db.regist<Node>("Node").add_property("Node", "name", &Node::get_name, &Node::set_name);
+    }
+
+
     Node::Node() : state(std::make_unique<detail::NodeState>(*this)) {}
 
 

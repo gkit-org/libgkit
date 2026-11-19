@@ -1,10 +1,12 @@
 set (GKIT_GRAPHIC "gkit_graphic")
 
 set (GRAPHIC_SRC
+    "./register_types.cpp"
     "./application.cpp"
     "./renderer.cpp"
     "./sprite_pass.cpp"
     "./window.cpp"
+    "./viewport.cpp"
     "./render_object.cpp"
     "./render_queue.cpp"
 

@@ -1,6 +1,7 @@
 set (GKIT_MATH "gkit_math")
 
 set (MATH_SRC
+    "./register_types.cpp"
     "./vector2.cpp"
     "./vector3.cpp"
     "./vector4.cpp"

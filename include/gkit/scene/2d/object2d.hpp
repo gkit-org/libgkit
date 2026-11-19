@@ -16,6 +16,9 @@ namespace gkit::scene {
      */
     class Object2D : public gkit::core::Node {
     public:
+        /** @brief Register the transform-bearing node type in the supplied registry. */
+        static auto _regist_method(core::reflect::ClassDB& db) -> void;
+
         /** @brief Construct an Object2D with an identity transform. */
         Object2D();
 

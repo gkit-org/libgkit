@@ -15,6 +15,9 @@ namespace gkit::graphic {
      * Settings apply the next time it opens. */
     class Window final : public Viewport {
     public:
+        /** @brief Register the window type in the supplied registry. */
+        static auto _regist_method(core::reflect::ClassDB& db) -> void;
+
         /** @brief Construct a closed node with the default application window options. */
         Window() = default;
 

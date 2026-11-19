@@ -1,8 +1,14 @@
 #include "gkit/graphic/window.hpp"
 
 #include "core/node_internal.hpp"
+#include "gkit/core/reflect/registry.hpp"
 
 namespace gkit::graphic {
+    auto Window::_regist_method(core::reflect::ClassDB& db) -> void {
+        db.regist<Window>("Window", "Viewport");
+    }
+
+
     auto Window::notify_tree_change(bool entering) -> void {
         if (!tree_changed) return;
         {

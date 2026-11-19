@@ -10,6 +10,9 @@ namespace gkit::graphic {
      * The default fills its parent. Content is clipped to all enclosing viewports in tree order. */
     class Viewport : public core::Node {
     public:
+        /** @brief Register the viewport type in the supplied registry. */
+        static auto _regist_method(core::reflect::ClassDB& db) -> void;
+
         /** @brief Construct a viewport that fills its parent. */
         Viewport() = default;
 

@@ -1,6 +1,7 @@
 set (GKIT_CORE "gkit_core")
 
 set (CORE_SRC
+    "./register_types.cpp"
     # Input module
     "./input/action.cpp"
     "./input/cache.cpp"

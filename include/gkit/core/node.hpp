@@ -4,6 +4,7 @@
 
 #include <atomic>
 #include <functional>
+#include <utility>
 #include <vector>
 
 namespace gkit {
@@ -54,6 +55,9 @@ namespace gkit::core {
         auto find_ancestor_if(bool (*matches)(const Node&)) const -> std::optional<ObjectId>;
 
     public:
+        /** @brief Register the node type and its name property in the supplied registry. */
+        static auto _regist_method(reflect::ClassDB& db) -> void;
+
         using Completion = std::function<void(EditResult)>;
 
         Node();
@@ -72,6 +76,12 @@ namespace gkit::core {
          */
         template<std::derived_from<Node> T>
         [[nodiscard]] auto find_ancestor() const -> std::optional<ObjectId>;
+
+        /** @brief Read the current node name under the tree lock. */
+        [[nodiscard]] auto get_name() const -> std::string { return name(); }
+
+        /** @brief Submit a rename through the tree edit queue. Use rename() to receive the result. */
+        auto set_name(std::string name) -> void { rename(std::move(name)); }
 
         [[nodiscard]] auto name() const -> std::string;
         [[nodiscard]] auto find_child(const std::string& name) const -> std::optional<ObjectId>;

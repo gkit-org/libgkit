@@ -15,18 +15,17 @@ concept ChainableSettings = requires(T& loop) {
 static_assert(ChainableSettings<gkit::Processer>);
 
 namespace {
-    class ConsumerSprite : public gkit::scene::Sprite2D {};
-
-    static const gkit::core::reflect::RegistHolder regist_holder([] {
-        gkit::core::reflect::ClassDB::instance().regist<ConsumerSprite>("ConsumerSprite", "Sprite2D");
-    });
+    class ConsumerSprite : public gkit::scene::Sprite2D {
+    public:
+        static auto _regist_method(gkit::core::reflect::ClassDB& db) -> void {
+            db.regist<ConsumerSprite>("ConsumerSprite", "Sprite2D");
+        }
+    };
 }
 
 int main() {
-    for (const char* name : {"Object", "Node", "Scene", "Object2D", "Sprite2D", "Viewport", "Window"}) {
-        auto object = gkit::core::UniqueObject::create_with_classname(name);
-        if (!object || object->get()->class_name() != name) return 1;
-    }
+    auto& db = gkit::core::reflect::ClassDB::instance();
+    gkit::core::reflect::regist_types<ConsumerSprite>(db);
     auto sprite = gkit::core::UniqueObject::create_with_classname("ConsumerSprite");
     auto info = gkit::core::reflect::ClassDB::instance().find("ConsumerSprite");
     if (!sprite || sprite->get()->class_name() != "ConsumerSprite" || !info ||
@@ -42,10 +41,36 @@ int main() {
     return found && (a * 2).x == 2 ? 0 : 1;
 }
 ]=])
-file(WRITE "${WORK_DIR}/CMakeLists.txt" "cmake_minimum_required(VERSION 3.20)\nproject(consumer LANGUAGES CXX)\nadd_executable(consumer main.cpp)\ntarget_compile_features(consumer PRIVATE cxx_std_20)\ntarget_include_directories(consumer PRIVATE \"${INCLUDE_DIR}\")\ntarget_link_libraries(consumer PRIVATE \"${LIBRARY}\")\n")
+# This executable has no references to concrete built-in types that could pull extra archive members into the link.
+file(WRITE "${WORK_DIR}/names_only.cpp" [=[
+#include <gkit/core/reflect/registry.hpp>
+
+const auto WINDOW_INFO = gkit::core::reflect::ClassDB::instance().find("Window");
+
+auto main() -> int {
+    if (!WINDOW_INFO) return 1;
+    for (const char* name : {"Object", "Node", "Scene", "Object2D", "Sprite2D", "Viewport", "Window"}) {
+        auto object = gkit::core::UniqueObject::create_with_classname(name);
+        if (!object || object->get()->class_name() != name) return 1;
+    }
+    return 0;
+}
+]=])
+file(WRITE "${WORK_DIR}/CMakeLists.txt" "cmake_minimum_required(VERSION 3.20)\nproject(consumer LANGUAGES CXX)\n")
+file(APPEND "${WORK_DIR}/CMakeLists.txt" "add_library(engine INTERFACE)\n"
+    "target_compile_features(engine INTERFACE cxx_std_20)\n"
+    "target_include_directories(engine INTERFACE \"${INCLUDE_DIR}\")\n"
+    "target_link_libraries(engine INTERFACE \"${LIBRARY}\")\n")
 if(STATIC_CONSUMER)
-    file(APPEND "${WORK_DIR}/CMakeLists.txt" "find_package(SDL3 CONFIG REQUIRED COMPONENTS SDL3-static)\ntarget_link_libraries(consumer PRIVATE SDL3::SDL3-static)\n")
+    file(APPEND "${WORK_DIR}/CMakeLists.txt" "find_package(SDL3 CONFIG REQUIRED COMPONENTS SDL3-static)\n"
+        "target_link_libraries(engine INTERFACE SDL3::SDL3-static)\n")
 endif()
+file(APPEND "${WORK_DIR}/CMakeLists.txt" [=[
+add_executable(consumer main.cpp)
+add_executable(names_only names_only.cpp)
+target_link_libraries(consumer PRIVATE engine)
+target_link_libraries(names_only PRIVATE engine)
+]=])
 # Match the library configuration, including the Windows debug CRT and STL ABI.
 execute_process(COMMAND "${CMAKE_COMMAND}" -S "${WORK_DIR}" -B "${WORK_DIR}/build" -G Ninja
     "-DSDL3_DIR=${SDL3_DIR}" "-DCMAKE_CXX_COMPILER=${CXX}" "-DCMAKE_BUILD_TYPE=${BUILD_CONFIG}" RESULT_VARIABLE result)
@@ -56,12 +81,14 @@ execute_process(COMMAND "${CMAKE_COMMAND}" --build "${WORK_DIR}/build" RESULT_VA
 if(NOT result EQUAL 0)
     message(FATAL_ERROR "consumer build failed")
 endif()
-if(WIN32)
-    execute_process(COMMAND "${CMAKE_COMMAND}" -E env "PATH=${RUNTIME_DIR};$ENV{PATH}"
-        "${WORK_DIR}/build/consumer.exe" RESULT_VARIABLE result)
-else()
-    execute_process(COMMAND "${WORK_DIR}/build/consumer" RESULT_VARIABLE result)
-endif()
-if(NOT result EQUAL 0)
-    message(FATAL_ERROR "consumer execution failed: ${result}")
-endif()
+foreach(program consumer names_only)
+    if(WIN32)
+        execute_process(COMMAND "${CMAKE_COMMAND}" -E env "PATH=${RUNTIME_DIR};$ENV{PATH}"
+            "${WORK_DIR}/build/${program}.exe" RESULT_VARIABLE result)
+    else()
+        execute_process(COMMAND "${WORK_DIR}/build/${program}" RESULT_VARIABLE result)
+    endif()
+    if(NOT result EQUAL 0)
+        message(FATAL_ERROR "${program} execution failed: ${result}")
+    endif()
+endforeach()

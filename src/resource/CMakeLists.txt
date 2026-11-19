@@ -1,6 +1,7 @@
 set (GKIT_RESOURCE "gkit_resource")
 
 set (RESOURCE_SRC
+    "./register_types.cpp"
     "./resource.cpp"
     "./resource_loader.cpp"
     "./texture.cpp"

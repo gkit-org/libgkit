@@ -3,6 +3,7 @@
 #include "test_utils.hpp"
 
 #include <cassert>
+#include <cstdint>
 #include <iostream>
 #include <string>
 
@@ -49,10 +50,7 @@ auto init_reflect() -> void {
         .add_field<ReflectTestObj>("ReflectTestObj", "scale", &ReflectTestObj::scale)
         .add_field<ReflectTestObj>("ReflectTestObj", "label", &ReflectTestObj::label);
 
-    db.regist<ReadOnlyObj>("ReadOnlyObj")
-        .add_property<ReadOnlyObj>("ReadOnlyObj", "secret", [](const ReadOnlyObj& o) -> Value {
-            return Value(o.get_secret());
-        });
+    db.regist<ReadOnlyObj>("ReadOnlyObj").add_property("ReadOnlyObj", "secret", &ReadOnlyObj::get_secret);
 
     db.regist<ChildObj>("ChildObj", "ReflectTestObj").add_field<ChildObj>("ChildObj", "weight", &ChildObj::weight);
 }
@@ -194,6 +192,36 @@ auto test_readonly_property() -> bool {
 }
 
 
+auto test_member_property_validation() -> bool {
+    struct Counter : Object {
+        std::int16_t count = 0;
+        [[nodiscard]] auto get_count() const -> std::int16_t { return count; }
+        auto set_count(const std::int16_t& value) -> void { count = value; }
+    };
+
+    auto& db = ClassDB::instance();
+    db.regist<Counter>("Counter").add_property("Counter", "count", &Counter::get_count, &Counter::set_count);
+    const auto info = db.find("Counter");
+    Counter counter;
+    gkit::test::assert_if(info->set_field(&counter, "count", Value(42)) && counter.get_count() == 42,
+                          "a setter taking a const reference receives the converted value");
+    try {
+        info->set_field(&counter, "count", Value(65536));
+        return false;
+    } catch (const std::out_of_range&) {
+        gkit::test::assert_if(info->get_field(&counter, "count")->as_int64() == 42,
+                              "a rejected value leaves the property unchanged");
+    }
+    Object other;
+    try {
+        static_cast<void>(info->get_field(&other, "count"));
+        return false;
+    } catch (const std::invalid_argument&) {
+        return true;
+    }
+}
+
+
 auto test_parent_inheritance() -> bool {
     std::cout << "=== Test: parent inheritance ===" << '\n';
 
@@ -323,6 +351,7 @@ auto main() -> int {
                            .add_test_func(test_get_field)
                            .add_test_func(test_set_field)
                            .add_test_func(test_readonly_property)
+                           .add_test_func(test_member_property_validation)
                            .add_test_func(test_parent_inheritance)
                            .add_test_func(test_for_each_field_inheritance)
                            .add_test_func(test_get_field_inherited)

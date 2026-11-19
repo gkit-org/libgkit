@@ -8,6 +8,9 @@ namespace gkit::scene {
      * Size is measured in logical pixels. An unconfigured sprite draws nothing. */
     class Sprite2D : public Object2D {
     public:
+        /** @brief Register the sprite type in the supplied registry. */
+        static auto _regist_method(core::reflect::ClassDB& db) -> void;
+
         /** @brief Construct an untextured sprite at the origin. */
         Sprite2D() = default;
 

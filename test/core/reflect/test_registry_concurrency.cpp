@@ -2,7 +2,7 @@
 #include "gkit/core/reflect/registry.hpp"
 #include "test_utils.hpp"
 
-#include <atomic>
+#include <latch>
 #include <thread>
 
 namespace {
@@ -36,20 +36,22 @@ namespace {
             duplicate = true;
         }
         gkit::test::assert_if(duplicate, "duplicate inherited field rejected");
-        std::atomic<bool> done = false;
-        std::thread reader([&]() -> void {
-            while (!done.load()) {
-                if (auto published = db.find("Complete")) {
-                    gkit::test::assert_if(published->fields.size() == 1,
-                                          "transaction must publish complete description");
-                }
-            }
+        std::latch registered(1);
+        std::latch observed(1);
+        std::thread writer([&]() -> void {
+            db.regist<Complete>("Complete");
+            registered.count_down();
+            observed.wait();
+            db.add_field("Complete", "value", &Complete::value);
         });
-        db.register_class<Complete>("Complete", [](auto& staging) -> void {
-            staging.add_field("Complete", "value", &Complete::value);
-        });
-        done = true;
-        reader.join();
+        registered.wait();
+        const auto initial = db.find("Complete");
+        observed.count_down();
+        writer.join();
+        const auto updated = db.find("Complete");
+        gkit::test::assert_if(initial && initial->fields.empty(), "adding a field preserves a reader's snapshot");
+        gkit::test::assert_if(updated && updated->fields.size() == 1 && updated->fields.front().name == "value",
+                              "new readers see the field after publication");
         Child child;
         gkit::test::assert_if(info->get_field(&child, "base")->as_int64() == 7, "inherited getter");
         std::weak_ptr<const reflect::ClassInfo> old = info;

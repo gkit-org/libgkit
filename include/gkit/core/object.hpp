@@ -12,9 +12,13 @@ namespace gkit::core {
     template<class T>
     concept IsObject = std::derived_from<T, Object>;
 
-    namespace reflect::detail {
-        class ObjectNode;
-    }
+    namespace reflect {
+        class ClassDB;
+
+        namespace detail {
+            class ObjectNode;
+        }
+    } // namespace reflect
 
     /**
      * @brief The base object in libgkit,
@@ -25,6 +29,9 @@ namespace gkit::core {
         friend ObjectPool;
 
     public:
+        /** @brief Register the base object type in the supplied registry. */
+        static auto _regist_method(reflect::ClassDB& db) -> void;
+
         Object()          = default;
         virtual ~Object() = default;
 
