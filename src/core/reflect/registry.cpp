@@ -19,18 +19,21 @@ namespace gkit::core::reflect {
         this->raw2_class_name.swap(raw);
     }
 
+
     auto ClassDB::editable(const std::string& name, std::type_index type) -> std::shared_ptr<ClassInfo> {
         auto original = this->classes.at(name);
         if (original->cpp_type != type) throw std::invalid_argument("field owner does not match registered type");
         return std::make_shared<ClassInfo>(*original);
     }
 
+
     auto ClassDB::check_field(const ClassInfo& info, const std::string& name) -> void {
         if (name.empty()) throw std::invalid_argument("empty field name");
-        info.for_each_field([&](const FieldDesc& field, const auto&, const auto*) {
+        info.for_each_field([&](const FieldDesc& field, const auto&, const auto*) -> void {
             if (field.name == name) throw std::invalid_argument("duplicate field");
         });
     }
+
 
     auto ClassDB::find(const std::string& name) const -> std::shared_ptr<const ClassInfo> {
         std::shared_lock guard(this->registry_mutex);
@@ -38,12 +41,14 @@ namespace gkit::core::reflect {
         return it == this->classes.end() ? nullptr : it->second;
     }
 
+
     auto ClassDB::find_with_raw(const char* name) const -> std::shared_ptr<const ClassInfo> {
         if (!name) return nullptr;
         std::shared_lock guard(this->registry_mutex);
         auto it = this->raw2_class_name.find(name);
         return it == this->raw2_class_name.end() ? nullptr : this->classes.at(it->second);
     }
+
 
     auto ClassDB::create(const std::string& name) const -> std::optional<UniqueObject> {
         auto info = this->find(name);
@@ -53,9 +58,11 @@ namespace gkit::core::reflect {
         return object;
     }
 
+
     auto ClassInfo::parent() const -> const ClassInfo* {
         return this->parent_info.get();
     }
+
 
     auto ClassInfo::get_field(const Object* obj, const std::string& name) const -> std::optional<Value> {
         for (size_t i = 0; i < this->fields.size(); ++i) {
@@ -68,6 +75,7 @@ namespace gkit::core::reflect {
         }
         return std::nullopt;
     }
+
 
     auto ClassInfo::set_field(Object* obj, const std::string& name, const Value& v) const -> bool {
         for (size_t i = 0; i < this->fields.size(); ++i) {

@@ -12,7 +12,12 @@
 #include <gkit/core/templates/singleton.hpp>
 #include <gkit/core/value.hpp>
 
+// platform
+#include <gkit/platform/runtime.hpp>
+#include <gkit/platform/window.hpp>
+
 // graphic
+#include <gkit/graphic/application.hpp>
 #include <gkit/graphic/render/renderer.hpp>
 #include <gkit/graphic/resource/shader.hpp>
 
@@ -34,6 +39,7 @@
 // scene
 #include <gkit/scene/2d/object2d.hpp>
 #include <gkit/scene/2d/renderable2d.hpp>
+#include <gkit/scene/2d/sprite2d.hpp>
 #include <gkit/scene/2d/transform2d.hpp>
 #include <gkit/scene/scene.hpp>
 

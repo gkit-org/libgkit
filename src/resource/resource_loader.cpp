@@ -23,8 +23,13 @@ namespace gkit::resource {
         std::map<Key, Pending> pending;
         std::uint64_t epoch = 0;
     };
+
     ResourceLoader::ResourceLoader() : impl(std::make_unique<Impl>()) {}
+
+
     ResourceLoader::~ResourceLoader() = default;
+
+
     auto ResourceLoader::load_file(const std::filesystem::path& path, std::type_index type, Decoder decode)
         -> LoadResult<Resource> {
         std::error_code error;
@@ -81,15 +86,18 @@ namespace gkit::resource {
         }
         return future.get();
     }
+
+
     auto ResourceLoader::clear() -> void {
         std::lock_guard guard(impl->cache_mutex);
         ++impl->epoch;
         impl->cache.clear();
     }
 
+
     auto ResourceLoader::prune() -> void {
         std::lock_guard guard(impl->cache_mutex);
-        std::erase_if(impl->cache, [](const auto& entry) {
+        std::erase_if(impl->cache, [](const auto& entry) -> bool {
             return entry.second.expired();
         });
     }

@@ -12,7 +12,7 @@ auto test_flush() -> bool {
     gkit::test::assert_if(log.set_log_file_path(path), "set output path");
     std::vector<std::thread> producers;
     for (int i = 0; i < 4; ++i)
-        producers.emplace_back([&] {
+        producers.emplace_back([&]() -> void {
             for (int n = 0; n < 100; ++n) {
                 log.log({"flush-record",
                          gkit::core::Log::LogLevel::Info,
@@ -33,6 +33,8 @@ auto test_flush() -> bool {
     std::filesystem::remove(path);
     return true;
 }
+
+
 auto main() -> int {
     gkit::test::TestRunner().add_test_func(test_flush).run();
 }

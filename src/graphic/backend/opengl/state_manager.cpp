@@ -42,12 +42,14 @@ namespace gkit::graphic::opengl {
         }
     }
 
+
     auto StateManager::force_apply_all() -> void {
         apply_depth_state();
         apply_blend_state();
         apply_cull_face_state();
         apply_stencil_state();
     }
+
 
     auto StateManager::apply_depth_state() -> void {
         if (this->depth_state.enabled) {
@@ -58,6 +60,7 @@ namespace gkit::graphic::opengl {
         glDepthFunc(to_gl_compare_func(this->depth_state.compare_func));
         glDepthMask(this->depth_state.write_mask ? GL_TRUE : GL_FALSE);
     }
+
 
     auto StateManager::apply_blend_state() -> void {
         if (this->blend_state.enabled) {
@@ -72,6 +75,7 @@ namespace gkit::graphic::opengl {
         glBlendEquation(to_gl_blend_equation(this->blend_state.equation));
     }
 
+
     auto StateManager::apply_cull_face_state() -> void {
         if (this->cull_face_state.enabled) {
             glEnable(GL_CULL_FACE);
@@ -81,6 +85,7 @@ namespace gkit::graphic::opengl {
         glCullFace(to_gl_cull_face_mode(this->cull_face_state.mode));
         glFrontFace(to_gl_front_face(this->cull_face_state.front_face));
     }
+
 
     auto StateManager::apply_stencil_state() -> void {
         if (this->stencil_state.enabled) {

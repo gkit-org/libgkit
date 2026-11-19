@@ -24,6 +24,7 @@ auto mat4_str(const gkit::math::Matrix4& mat) -> std::string {
     return oss.str();
 }
 
+
 auto mat3_str(const gkit::math::Matrix3& mat) -> std::string {
     std::ostringstream oss;
     oss << std::fixed << std::setprecision(3);
@@ -37,13 +38,16 @@ auto mat3_str(const gkit::math::Matrix3& mat) -> std::string {
     return oss.str();
 }
 
+
 auto vec3_str(const gkit::math::Vector3& v) -> std::string {
     return std::format("({:.3f}, {:.3f}, {:.3f})", v.x, v.y, v.z);
 }
 
+
 auto vec4_str(const gkit::math::Vector4& v) -> std::string {
     return std::format("({:.3f}, {:.3f}, {:.3f}, {:.3f})", v.x, v.y, v.z, v.w);
 }
+
 
 auto test_matrix_constructors() -> bool {
     using namespace gkit::math; // NOLINT(google-build-using-namespace
@@ -61,6 +65,7 @@ auto test_matrix_constructors() -> bool {
                           "diagonal constructor failed");
     return true;
 }
+
 
 auto test_matrix_vector_multiplication() -> bool {
     using namespace gkit::math; // NOLINT(google-build-using-namespace
@@ -90,6 +95,7 @@ auto test_matrix_vector_multiplication() -> bool {
     return true;
 }
 
+
 auto test_determinant() -> bool {
     using namespace gkit::math; // NOLINT(google-build-using-namespace
     gkit::test::logln("=== determinant ===");
@@ -99,6 +105,7 @@ auto test_determinant() -> bool {
     gkit::test::logln("  det(identity) = {} (expected: 1)", Matrix4::determinant(identity));
     return true;
 }
+
 
 auto test_translation_and_scale() -> bool {
     using namespace gkit::math; // NOLINT(google-build-using-namespace
@@ -116,6 +123,7 @@ auto test_translation_and_scale() -> bool {
     gkit::test::logln("  scale * (2,2,2) = {} (expected: (4,6,8))", vec3_str(scaled_point));
     return true;
 }
+
 
 auto test_rotation() -> bool {
     using namespace gkit::math; // NOLINT(google-build-using-namespace
@@ -144,6 +152,7 @@ auto test_rotation() -> bool {
     return true;
 }
 
+
 auto test_axis_rotation() -> bool {
     using namespace gkit::math; // NOLINT(google-build-using-namespace
     gkit::test::logln("=== rotation around arbitrary axis ===");
@@ -154,6 +163,7 @@ auto test_axis_rotation() -> bool {
                           "axis rotation determinant must be 1");
     return true;
 }
+
 
 auto test_transpose_and_multiplication() -> bool {
     using namespace gkit::math; // NOLINT(google-build-using-namespace
@@ -172,6 +182,7 @@ auto test_transpose_and_multiplication() -> bool {
     gkit::test::logln("  TRS (T * R * S):\n{}", mat4_str(trs));
     return true;
 }
+
 
 auto test_inverse() -> bool {
     using namespace gkit::math; // NOLINT(google-build-using-namespace
@@ -196,6 +207,7 @@ auto test_inverse() -> bool {
                           "TRS * inverse(TRS) must be identity");
     return true;
 }
+
 
 auto test_set_identity_and_extract() -> bool {
     using namespace gkit::math; // NOLINT(google-build-using-namespace
@@ -238,6 +250,7 @@ auto test_set_identity_and_extract() -> bool {
     return true;
 }
 
+
 auto test_projection() -> bool {
     using namespace gkit::math; // NOLINT(google-build-using-namespace
     gkit::test::logln("=== projection ===");
@@ -252,6 +265,7 @@ auto test_projection() -> bool {
     gkit::test::logln("  look_at:\n{}", mat4_str(look));
     return true;
 }
+
 
 auto test_matrix_properties() -> bool {
     using namespace gkit::math; // NOLINT(google-build-using-namespace
@@ -274,6 +288,7 @@ auto test_matrix_properties() -> bool {
     return true;
 }
 
+
 auto test_from_rows_lerp_shear() -> bool {
     using namespace gkit::math; // NOLINT(google-build-using-namespace
     gkit::test::logln("=== from_rows, lerp, shear ===");
@@ -293,6 +308,7 @@ auto test_from_rows_lerp_shear() -> bool {
     gkit::test::logln("  shear (1, 2, 3):\n{}", mat4_str(shear));
     return true;
 }
+
 
 auto test_accessors() -> bool {
     using namespace gkit::math; // NOLINT(google-build-using-namespace
@@ -320,6 +336,7 @@ auto test_accessors() -> bool {
     return true;
 }
 
+
 auto test_compound_operators() -> bool {
     using namespace gkit::math; // NOLINT(google-build-using-namespace
     gkit::test::logln("=== compound operators ===");
@@ -334,6 +351,7 @@ auto test_compound_operators() -> bool {
     gkit::test::assert_if(compound.m[0][0] == 4.0f && compound.m[1][1] == 4.0f, "operator*= failed");
     return true;
 }
+
 
 auto test_rotation_between_and_quaternion() -> bool {
     using namespace gkit::math; // NOLINT(google-build-using-namespace
@@ -352,6 +370,7 @@ auto test_rotation_between_and_quaternion() -> bool {
     gkit::test::logln("  quaternion from rot_x(90deg): {}", vec4_str(quat));
     return true;
 }
+
 
 auto main() -> int {
     auto test_runner = gkit::test::TestRunner()

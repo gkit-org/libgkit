@@ -3,6 +3,8 @@
 #include "gkit/graphic/resource/render_buffer.hpp"
 #include "gkit/graphic/resource/texture.hpp"
 
+#include <memory>
+
 namespace gkit::graphic {
 
     /**
@@ -26,11 +28,11 @@ namespace gkit::graphic {
         /**
          * @brief Attach a color texture to the given slot
          *
-         * @param texture color attachment (non-const: a framebuffer texture may be
-         *                resized to match this FBO's dimensions on attach)
-         * @param slot color attachment slot
+         * @param texture Color attachment from the current session with matching dimensions.
+         * @param slot Color attachment slot.
+         * @note The framebuffer retains the texture. Finish configuring attachments before submitting draws.
          */
-        virtual auto attach_color_texture(Texture& texture, int slot) -> void = 0;
+        virtual auto attach_color_texture(std::shared_ptr<const Texture> texture, int slot) -> void = 0;
 
         /**
          * @brief Detach the color texture from the given slot
@@ -38,9 +40,9 @@ namespace gkit::graphic {
         virtual auto detach_color_texture(int slot) -> void = 0;
 
         /**
-         * @brief Attach a depth/stencil renderbuffer
+         * @brief Attach and retain a depth/stencil renderbuffer from the current session with matching dimensions.
          */
-        virtual auto attach_depth_stencil(const RenderBuffer& rbo) -> void = 0;
+        virtual auto attach_depth_stencil(std::shared_ptr<const RenderBuffer> rbo) -> void = 0;
 
         /**
          * @brief Detach the depth/stencil attachment
@@ -48,7 +50,7 @@ namespace gkit::graphic {
         virtual auto detach_depth_stencil() -> void = 0;
 
         /**
-         * @brief Check framebuffer completeness
+         * @brief Throw std::runtime_error if the framebuffer is incomplete.
          */
         virtual auto check() -> void = 0;
 

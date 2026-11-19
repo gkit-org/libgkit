@@ -11,11 +11,13 @@ namespace {
     struct Counting : gkit::resource::Resource {
         using Resource::Resource;
         static inline std::atomic<int> loads = 0;
+
         auto load_from_file() -> void override {
             ++loads;
             this->is_available = true;
         }
     };
+
     auto test_cache() -> bool {
         using namespace gkit::resource;
         auto path    = std::filesystem::path(__FILE__).parent_path() / "basic.shader";
@@ -25,7 +27,7 @@ namespace {
         std::vector<std::shared_ptr<const Counting>> results(8);
         std::vector<std::thread> threads;
         for (int i = 0; i < 8; ++i)
-            threads.emplace_back([&, i] {
+            threads.emplace_back([&, i]() -> void {
                 start.arrive_and_wait();
                 results[i] = loader.load<Counting>(path).resource;
             });
@@ -43,12 +45,15 @@ namespace {
         gkit::test::assert_if(!loader.load<Texture>(path), "shader is not an image");
         return true;
     }
+
+
     auto test_retry_and_format() -> bool {
         using namespace gkit::resource;
         auto path = std::filesystem::temp_directory_path() /
                     ("gkit-shader-" + std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
         struct Cleanup {
             std::filesystem::path path;
+
             ~Cleanup() {
                 std::error_code error;
                 std::filesystem::remove(path, error);
@@ -79,6 +84,8 @@ namespace {
         gkit::test::assert_if(!loader.load<ShaderSource>(path), "unknown marker rejected");
         return true;
     }
+
+
     auto test_images() -> bool {
         auto root  = std::filesystem::path(__FILE__).parent_path().parent_path().parent_path();
         auto image = gkit::resource::ResourceLoader::instance().load<gkit::resource::Texture>(root / "gkit_logo.png");
@@ -90,6 +97,7 @@ namespace {
         return true;
     }
 } // namespace
+
 auto main() -> int {
     gkit::test::TestRunner()
         .add_test_func(test_cache)

@@ -1,69 +1,85 @@
+/** @file renderer.hpp
+ * @brief Resource creation and draw submission for a windowed application.
+ */
 #pragma once
 
-#include "gkit/core/templates/singleton.hpp"
-#include "gkit/graphic/config.hpp"
-#include "gkit/graphic/render/render_device.hpp"
 #include "gkit/graphic/render/render_object.hpp"
-#include "gkit/graphic/render/render_queue.hpp"
+#include "gkit/graphic/render/viewport_rect.hpp"
+#include "gkit/graphic/resource/frame_buffer.hpp"
 
 #include <memory>
+#include <optional>
+#include <string>
 
-/**
- * @brief Renderer class providing public rendering interface
- *
- * The Renderer provides a unified interface for rendering operations.
- * Uses singleton pattern for global access.
- * Holds a RenderDevice selected via init(Backend).
- */
 namespace gkit::graphic {
+    class Viewport;
+    class Application;
+    class RenderDevice;
 
-    class Renderer : public core::templates::Singleton<Renderer> {
-        friend class core::templates::Singleton<Renderer>;
-
-    private:
-        Renderer() = default;
-
+    /**
+     * @brief Renderer for the currently open window session.
+     * @note Obtain it through Application::renderer() on the coordinator thread. Resource creation is
+     * available while the window is open. Clear and draw calls are accepted only inside Application::render().
+     */
+    class Renderer {
     public:
-        /**
-         * @brief Select the render backend and create the device (defaults to OpenGL)
-         * @param backend backend identifier
-         */
-        auto init(Backend backend = Backend::OpenGL) -> void;
+        /** @brief Load a shader from a file. Throws std::runtime_error on compilation or linking failure. */
+        [[nodiscard]] auto create_shader(const std::string& path) -> std::shared_ptr<Shader>;
 
-        /**
-         * @brief Clear the current framebuffer
-         *
-         * @param flags Bitmask specifying which buffers to clear (e.g., ClearFlags::Color | ClearFlags::Depth)
-         *              Defaults to ClearFlags::All (clears all buffers)
-         */
+        /** @brief Create an off-screen framebuffer with positive dimensions in pixels. */
+        [[nodiscard]] auto create_frame_buffer(int width, int height) -> std::shared_ptr<FrameBuffer>;
+
+        /** @brief Create an RGBA texture usable as a framebuffer color attachment. */
+        [[nodiscard]] auto create_color_attachment(int width, int height) -> std::shared_ptr<Texture>;
+
+        /** @brief Create a depth-stencil attachment with positive dimensions in pixels. */
+        [[nodiscard]] auto create_render_buffer(int width, int height) -> std::shared_ptr<RenderBuffer>;
+
+        /** @brief Clear the window framebuffer before executing this frame's queued draws. */
         auto clear(ClearFlags flags = ClearFlags::All) -> void;
 
         /**
-         * @brief Enqueue a draw from a reusable render object
-         * @param obj Render object (geometry + material + state)
-         * @param target render target (default nullptr = screen)
-         * @param viewport viewport to use for this draw (default full window)
-         * @note Enqueued into the render queue; executed on flush(). The object is
-         *       non-const because its GPU resources are lazily uploaded on execute.
+         * @brief Enqueue a draw to the window.
+         * @param object Geometry and material. The queue retains the object and captures its draw state by value.
+         * @param viewport Optional viewport in pixels. The default covers the window drawable.
+         * @throws std::invalid_argument For an empty object, invalid material, viewport or instance count.
+         * @throws std::logic_error Outside render() or if the resources belong to an expired context.
          */
-        auto draw(RenderObject& obj,
-                  const FrameBuffer* target = nullptr,
-                  const Viewport& viewport  = Viewport{0, 0, static_cast<int>(SCR_WIDTH), static_cast<int>(SCR_HEIGHT)})
-            -> void;
+        auto draw(std::shared_ptr<RenderObject> object, std::optional<ViewportRect> viewport = std::nullopt) -> void;
 
         /**
-         * @brief Execute the queued render commands (sort + apply state + draw)
+         * @brief Enqueue a draw to an off-screen target. Off-screen draws execute before window draws.
+         * @param target The retained framebuffer. Configure its attachments before queuing draws.
+         * @param object Geometry and material.
+         * @param viewport Optional viewport in pixels. The default covers the target.
+         * @see draw()
          */
-        auto flush() -> void;
-
-        /**
-         * @brief Access the current render device
-         */
-        [[nodiscard]] auto get_device() -> RenderDevice&;
+        auto draw_to(std::shared_ptr<const FrameBuffer> target,
+                     std::shared_ptr<RenderObject> object,
+                     std::optional<ViewportRect> viewport = std::nullopt) -> void;
 
     private:
-        std::unique_ptr<RenderDevice> device;
-        RenderQueue queue;
-    };
+        friend class Application;
+        friend class SpritePass;
 
+        explicit Renderer(std::shared_ptr<RenderDevice> device);
+        ~Renderer();
+        Renderer(const Renderer&)                    = delete;
+        auto operator=(const Renderer&) -> Renderer& = delete;
+
+        auto draw_sprites(Viewport& root, int width, int height, int pixel_width, int pixel_height) -> void;
+        auto begin_frame() -> void;
+        auto finish_frame(ViewportRect screen) -> void;
+        auto discard_frame() noexcept -> void;
+        auto require_context() const -> void;
+        auto require_frame() const -> void;
+        auto enqueue(std::shared_ptr<const FrameBuffer> target,
+                     std::shared_ptr<RenderObject> object,
+                     std::optional<ViewportRect> viewport,
+                     std::optional<ViewportRect> clip = std::nullopt) -> void;
+
+        struct Impl;
+
+        std::unique_ptr<Impl> impl;
+    };
 } // namespace gkit::graphic

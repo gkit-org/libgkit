@@ -1,7 +1,7 @@
 #include "./min_window_for_input_test.hpp"
+#include "gkit/platform/runtime.hpp"
 #include "test_utils.hpp"
 
-#include <core/misc/sdl_event_dispatcher.hpp>
 #include <cstdint>
 #include <cstdio>
 #include <iostream>
@@ -18,7 +18,7 @@ auto test_mouse_input_loop() -> bool {
     auto win    = gkit::test::Window{};
     auto& input = gkit::Input::instance();
     input.initialize();
-    auto& event_dispatcher = gkit::core::SDLEventDispatcher::instance();
+    gkit::platform::Runtime runtime;
 
     auto shoot_action = Action("Shoot");
     shoot_action.set_action(
@@ -37,7 +37,7 @@ auto test_mouse_input_loop() -> bool {
     input.register_action(jump_url_action);
 
     while (1) {
-        event_dispatcher.dispatch_events();
+        input.update(runtime.poll_events());
 
         if (input.is_action_pressed("Shoot")) {
             std::cout << "Action Shoot is pressed" << '\n';
@@ -76,6 +76,7 @@ auto test_mouse_input_loop() -> bool {
 
     return true;
 }
+
 
 auto main() -> int {
     auto test_runner = gkit::test::TestRunner().add_test_func(test_mouse_input_loop);

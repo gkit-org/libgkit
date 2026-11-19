@@ -10,9 +10,13 @@ namespace gkit::core::detail {
     auto NodeState::resolve(ObjectId id) -> NodeState* {
         return ObjectPool::instance().find_node(id);
     }
+
+
     auto NodeState::find(ObjectId child) -> std::vector<UniqueObject>::iterator {
         return std::ranges::find(children, child, &UniqueObject::get_id);
     }
+
+
     auto NodeState::append(const std::string& key, UniqueObject& child) -> bool {
         auto [it, inserted] = child_names.emplace(key, child.get_id());
         if (!inserted) return false;
@@ -24,6 +28,7 @@ namespace gkit::core::detail {
         }
         return true;
     }
+
 
     // Release registrations outside the topology lock, even if application callbacks still pin a node.
     auto NodeState::retire() noexcept -> void {
@@ -46,6 +51,7 @@ namespace gkit::core::detail {
         }
     }
 
+
     // Stable topology during coordinator traversal. Parent links keep deep-tree cleanup iterative.
     template<class Before, class After>
     static auto walk(NodeState* root, Before before, After after) -> void {
@@ -64,34 +70,40 @@ namespace gkit::core::detail {
             }
         }
     }
+
+
     auto assign_runtime(NodeState* root, TreeRuntime* runtime) -> void {
         if (root->runtime == runtime) return;
         walk(
             root,
-            [runtime](NodeState& state) {
+            [runtime](NodeState& state) -> void {
                 state.runtime = runtime;
             },
-            [](NodeState&) {});
+            [](NodeState&) -> void {});
     }
+
+
     auto enter_nodes(NodeState* root) -> void {
         walk(
             root,
-            [](NodeState& state) {
+            [](NodeState& state) -> void {
                 state.entered = true;
                 state.node.enter_tree();
             },
-            [](NodeState& state) {
+            [](NodeState& state) -> void {
                 if (!state.prepared) {
                     state.prepared = true;
                     state.node.ready();
                 }
             });
     }
+
+
     auto exit_nodes(NodeState* root, std::exception_ptr& failure) noexcept -> void {
         walk(
             root,
-            [](NodeState&) {},
-            [&](NodeState& state) {
+            [](NodeState&) -> void {},
+            [&](NodeState& state) -> void {
                 if (!state.entered) return;
                 state.entered = false;
                 try {
@@ -102,8 +114,14 @@ namespace gkit::core::detail {
             });
     }
 
+
     auto Edit::submit() -> void {
         std::unique_lock guard(tree_mutex);
+        submit(guard);
+    }
+
+
+    auto Edit::submit(std::unique_lock<std::mutex>& guard) -> void {
         auto* origin  = NodeState::resolve(anchor);
         auto* runtime = origin ? origin->runtime : nullptr;
         if (runtime && runtime->active) {
@@ -120,6 +138,7 @@ namespace gkit::core::detail {
         }
     }
 
+
     auto Edit::apply(TreeRuntime* runtime, std::unique_lock<std::mutex>& guard, bool cancel) -> void {
         auto* origin       = NodeState::resolve(anchor);
         auto* other        = NodeState::resolve(target);
@@ -132,7 +151,8 @@ namespace gkit::core::detail {
             error = NodeError::Expired;
         else {
             switch (kind) {
-            case EditKind::Add: {
+            case EditKind::Add:
+            case EditKind::SetChild: {
                 if (!other || other->retired || other->parent.available() || other->runtime || name.empty()) {
                     error = NodeError::InvalidEdit;
                     break;
@@ -144,11 +164,19 @@ namespace gkit::core::detail {
                         break;
                     }
                 if (error != NodeError::None) break;
-                if (!origin->append(name, *owner)) {
+                if (kind == EditKind::SetChild && origin->managed_child.available()) {
+                    auto slot                    = origin->find(origin->managed_child);
+                    removed                      = NodeState::resolve(origin->managed_child);
+                    name                         = removed->name;
+                    origin->child_names.at(name) = target;
+                    std::swap(*slot, *owner);
+                    removed->parent = {};
+                } else if (!origin->append(name, *owner)) {
                     error = NodeError::InvalidEdit;
                     break;
                 }
-                owner.reset();
+                if (!removed) owner.reset();
+                if (kind == EditKind::SetChild) origin->managed_child = target;
                 other->parent = anchor;
                 other->name   = std::move(name);
                 assign_runtime(other, runtime);
@@ -194,6 +222,7 @@ namespace gkit::core::detail {
                 }
                 parent->child_names.erase(origin->name);
                 parent->children.erase(it);
+                if (parent->managed_child == anchor) parent->managed_child = {};
                 origin->parent = target;
                 break;
             }
@@ -207,6 +236,7 @@ namespace gkit::core::detail {
                 owner.emplace(std::move(*it));
                 origin->child_names.erase(other->name);
                 origin->children.erase(it);
+                if (origin->managed_child == target) origin->managed_child = {};
                 other->parent = {};
                 removed       = other;
                 break;
@@ -218,19 +248,19 @@ namespace gkit::core::detail {
         if (removed && !running) assign_runtime(removed, nullptr);
         guard.unlock();
         std::exception_ptr failure;
-        if (added && running) {
+        if (removed && running) {
+            exit_nodes(removed, failure);
+            std::lock_guard lock(tree_mutex);
+            assign_runtime(removed, nullptr);
+        }
+        if (added && running && !failure) {
             try {
                 enter_nodes(added);
             } catch (...) {
                 failure = std::current_exception();
             }
         }
-        if (removed && running) {
-            exit_nodes(removed, failure);
-            std::lock_guard lock(tree_mutex);
-            assign_runtime(removed, nullptr);
-        }
-        if (kind == EditKind::Remove) owner.reset();
+        if (kind == EditKind::Remove || (kind == EditKind::SetChild && removed)) owner.reset();
         if (complete) {
             try {
                 complete({error, std::move(owner)});
@@ -240,6 +270,7 @@ namespace gkit::core::detail {
         }
         if (failure) std::rethrow_exception(failure);
     }
+
 
     auto drain_edits(TreeRuntime& runtime, bool cancel) -> void {
         std::deque<Edit> edits;
@@ -258,6 +289,8 @@ namespace gkit::core::detail {
         }
         if (failure) std::rethrow_exception(failure);
     }
+
+
     auto drain_posts(TreeRuntime& runtime, bool cancel) -> void {
         std::deque<TreeRuntime::Post> posts;
         {
@@ -270,7 +303,7 @@ namespace gkit::core::detail {
             try {
                 if (!cancel && !failure) {
                     error = NodeError::Expired;
-                    post.target.with<Node>([&](Node& node) {
+                    post.target.with<Node>([&](Node& node) -> void {
                         {
                             std::lock_guard guard(tree_mutex);
                             if (NodeState::of(node).runtime != &runtime) return;
@@ -294,41 +327,55 @@ namespace gkit::core::detail {
 } // namespace gkit::core::detail
 
 namespace gkit::core {
-    Node::Node() : state(std::make_unique<detail::NodeState>(*this)) {
-        static const bool registered = [] {
-            reflect::ClassDB::instance().register_class<Node>("Node", [](auto& db) {
-                db.template add_property<Node>(
-                    "Node",
-                    "name",
-                    [](const Node& node) {
-                        return Value(node.name());
-                    },
-                    [](Node& node, const Value& value) {
-                        node.rename(value.as_string());
-                    });
-            });
-            return true;
-        }();
+    auto Node::_regist_method(reflect::ClassDB& db) -> void {
+        db.regist<Node>("Node").add_property("Node", "name", &Node::get_name, &Node::set_name);
     }
+
+
+    Node::Node() : state(std::make_unique<detail::NodeState>(*this)) {}
+
+
     Node::~Node() = default;
+
+
     auto Node::id() const noexcept -> ObjectId {
         return state->id;
     }
+
+
     auto Node::parent() const -> std::optional<ObjectId> {
         std::lock_guard guard(detail::tree_mutex);
         if (state->parent.available()) return state->parent;
         return {};
     }
+
+
+    auto Node::find_ancestor_if(bool (*matches)(const Node&)) const -> std::optional<ObjectId> {
+        std::lock_guard guard(detail::tree_mutex);
+        for (auto id = state->parent; id.available();) {
+            auto* ancestor = detail::NodeState::resolve(id);
+            if (!ancestor) break;
+            if (matches(ancestor->node)) return id;
+            id = ancestor->parent;
+        }
+        return std::nullopt;
+    }
+
+
     auto Node::name() const -> std::string {
         std::lock_guard guard(detail::tree_mutex);
         return state->name;
     }
+
+
     auto Node::find_child(const std::string& name) const -> std::optional<ObjectId> {
         std::lock_guard guard(detail::tree_mutex);
         auto it = state->child_names.find(name);
         if (it != state->child_names.end()) return it->second;
         return {};
     }
+
+
     auto Node::children() const -> std::vector<ChildInfo> {
         std::lock_guard guard(detail::tree_mutex);
         std::vector<ChildInfo> result;
@@ -336,23 +383,40 @@ namespace gkit::core {
         for (auto* child : state->descendants()) result.push_back({child->name, child->id});
         return result;
     }
+
+
     auto Node::add_child(std::string name, UniqueObject child, Completion complete) -> void {
-        detail::Edit{
-            detail::EditKind::Add, id(), child.get_id(), std::move(name), std::move(complete), std::move(child)}
-            .submit();
+        detail::Edit edit{
+            detail::EditKind::Add, id(), child.get_id(), std::move(name), std::move(complete), std::move(child)};
+        if (!id().available()) {
+            // Derived constructors may compose children before the pool publishes this node.
+            state->construction_edits.push_back(std::move(edit));
+            return;
+        }
+        edit.submit();
     }
+
+
     auto Node::detach_child(ObjectId child, Completion complete) -> void {
         detail::Edit{detail::EditKind::Detach, id(), child, {}, std::move(complete), {}}.submit();
     }
+
+
     auto Node::remove_child(ObjectId child, Completion complete) -> void {
         detail::Edit{detail::EditKind::Remove, id(), child, {}, std::move(complete), {}}.submit();
     }
+
+
     auto Node::rename(std::string name, Completion complete) -> void {
         detail::Edit{detail::EditKind::Rename, id(), {}, std::move(name), std::move(complete), {}}.submit();
     }
+
+
     auto Node::reparent(ObjectId parent, Completion complete) -> void {
         detail::Edit{detail::EditKind::Reparent, id(), parent, {}, std::move(complete), {}}.submit();
     }
+
+
     auto Node::post(std::function<void(Node&)> callback, std::function<void(NodeError)> complete) -> bool {
         if (!callback) throw std::invalid_argument("empty node callback");
         std::lock_guard guard(detail::tree_mutex);

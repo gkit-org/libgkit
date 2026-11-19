@@ -24,6 +24,7 @@ auto mat_str(const Matrix3& mat) -> std::string {
                        m22);
 }
 
+
 auto test_identity_and_vector() -> bool {
     gkit::test::logln("=== identity matrix ===");
 
@@ -39,6 +40,7 @@ auto test_identity_and_vector() -> bool {
     gkit::test::logln("  det(identity) = {}", Matrix3::determinant(identity));
     return true;
 }
+
 
 auto test_rotation() -> bool {
     gkit::test::logln("=== rotation matrix ===");
@@ -57,6 +59,7 @@ auto test_rotation() -> bool {
     gkit::test::logln("  det(rotation_x) = {} (expected: 1)", Matrix3::determinant(rot_x));
     return true;
 }
+
 
 auto test_inverse() -> bool {
     gkit::test::logln("=== inverse ===");
@@ -78,6 +81,7 @@ auto test_inverse() -> bool {
     return true;
 }
 
+
 auto test_scale_transpose_diagonal() -> bool {
     gkit::test::logln("=== scale, transpose, diagonal ===");
 
@@ -97,6 +101,7 @@ auto test_scale_transpose_diagonal() -> bool {
     return true;
 }
 
+
 auto test_multiplication_and_orthogonality() -> bool {
     gkit::test::logln("=== matrix multiplication and orthogonality ===");
 
@@ -115,6 +120,7 @@ auto test_multiplication_and_orthogonality() -> bool {
                           "rotation matrix must be orthonormal");
     return true;
 }
+
 
 auto main() -> int {
     auto test_runner = gkit::test::TestRunner()

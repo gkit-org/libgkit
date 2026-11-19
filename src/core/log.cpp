@@ -22,6 +22,7 @@ namespace {
         return ERROR_LOG_TIP;
     }
 
+
     /**
      * @brief Expand leading "~/" using HOME, retaining the configured path when HOME is unavailable.
      * @note MSVC-compatible CRTs return an owned environment copy; release it even if path construction throws.
@@ -61,6 +62,7 @@ gkit::core::Log::MpscBoundedQueue::MpscBoundedQueue(std::size_t requested_capaci
     }
 }
 
+
 auto gkit::core::Log::MpscBoundedQueue::try_enqueue(Message&& msg) noexcept -> bool {
     std::size_t pos = enqueue_pos.load(std::memory_order_relaxed);
     for (;;) {
@@ -84,6 +86,7 @@ auto gkit::core::Log::MpscBoundedQueue::try_enqueue(Message&& msg) noexcept -> b
     }
 }
 
+
 auto gkit::core::Log::MpscBoundedQueue::try_dequeue(Message& msg) noexcept -> bool {
     const std::size_t pos    = dequeue_pos.load(std::memory_order_relaxed);
     auto& slot               = buffer[pos & mask];
@@ -102,6 +105,7 @@ auto gkit::core::Log::MpscBoundedQueue::try_dequeue(Message& msg) noexcept -> bo
     return false;
 }
 
+
 auto gkit::core::Log::MpscBoundedQueue::empty() const noexcept -> bool {
     const std::size_t pos = dequeue_pos.load(std::memory_order_relaxed);
     const auto& slot      = buffer[pos & mask];
@@ -109,13 +113,16 @@ auto gkit::core::Log::MpscBoundedQueue::empty() const noexcept -> bool {
     return static_cast<std::intptr_t>(seq) - static_cast<std::intptr_t>(pos + 1u) < 0;
 }
 
+
 gkit::core::Log::Log() : log_msg_queue(LOG_QUEUE_CAPACITY) {
     this->log_thread = std::thread(&Log::log_handler, this);
 }
 
+
 gkit::core::Log::~Log() {
     this->shutdown();
 }
+
 
 auto gkit::core::Log::shutdown() -> void {
     std::lock_guard shutdown_guard(this->shutdown_mutex);
@@ -127,9 +134,11 @@ auto gkit::core::Log::shutdown() -> void {
     if (this->log_thread.joinable()) this->log_thread.join();
 }
 
+
 auto gkit::core::Log::log(Message msg) -> void {
     (void)try_log(std::move(msg));
 }
+
 
 auto gkit::core::Log::try_log(Message&& msg) -> bool {
     std::lock_guard guard(this->admission_mutex);
@@ -148,6 +157,7 @@ auto gkit::core::Log::try_log(Message&& msg) -> bool {
     return false;
 }
 
+
 auto gkit::core::Log::flush(std::chrono::milliseconds timeout) -> bool {
     std::uint64_t target;
     {
@@ -162,11 +172,13 @@ auto gkit::core::Log::flush(std::chrono::milliseconds timeout) -> bool {
     return !this->sink_failed.load();
 }
 
+
 auto gkit::core::Log::stats() const noexcept -> Stats {
     return {.enqueued     = enqueued_count.load(std::memory_order_relaxed),
             .dropped_full = dropped_full_count.load(std::memory_order_relaxed),
             .processed    = processed_count.load(std::memory_order_relaxed)};
 }
+
 
 auto gkit::core::Log::set_log_file_path(const std::filesystem::path& path) -> bool {
     if (path.empty()) {
@@ -183,6 +195,7 @@ auto gkit::core::Log::set_log_file_path(const std::filesystem::path& path) -> bo
     return true;
 }
 
+
 auto gkit::core::Log::log_to_console(const std::string& msg, LogLevel level) -> void {
     const char* log_tip = level_tip(level);
     std::lock_guard<std::mutex> lck(console_log_mutex);
@@ -190,6 +203,7 @@ auto gkit::core::Log::log_to_console(const std::string& msg, LogLevel level) -> 
         this->sink_failed.store(true);
     }
 }
+
 
 auto gkit::core::Log::log_to_file(const std::string& msg, LogLevel level) -> void {
     std::lock_guard<std::mutex> lck(file_log_mutex);
@@ -217,6 +231,7 @@ auto gkit::core::Log::log_to_file(const std::string& msg, LogLevel level) -> voi
     log_file_stream.flush();
     if (!log_file_stream) this->sink_failed.store(true);
 }
+
 
 auto gkit::core::Log::log_handler() -> void {
     Message msg;

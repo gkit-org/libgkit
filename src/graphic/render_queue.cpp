@@ -1,4 +1,4 @@
-#include "gkit/graphic/render/render_queue.hpp"
+#include "graphic/render_queue.hpp"
 
 #include "gkit/graphic/render/render_object.hpp"
 
@@ -16,19 +16,20 @@ namespace gkit::graphic {
          * MAX_TEXTURE_SLOTS, so the loop is bounded; null slots are skipped.
          */
         auto bind_textures(const Material& material) -> void {
-            for (uint32_t i = 0; i < material.get_texture_count(); ++i) {
+            for (uint32_t i = 0, count = material.get_texture_count(); i < count; ++i) {
                 if (const Texture* texture = material.get_texture(i); texture != nullptr) {
                     texture->bind(i);
                 }
             }
         }
 
+
         /**
          * @brief Apply a single uniform value through the shader's set_uniform_*
          */
         auto apply_uniform_value(Shader& shader, const std::string& name, const UniformValue& value) -> void {
             std::visit(
-                [&](const auto& v) {
+                [&](const auto& v) -> void {
                     using T = std::decay_t<decltype(v)>;
                     if constexpr (std::is_same_v<T, int>) {
                         shader.set_uniform_1i(name, v);
@@ -47,6 +48,7 @@ namespace gkit::graphic {
                 value);
         }
 
+
         /**
          * @brief Apply material uniforms (simple path)
          */
@@ -59,6 +61,7 @@ namespace gkit::graphic {
             }
             // TODO(graphic): upload material.get_ubo() via a UniformBuffer backend once implemented.
         }
+
 
         /**
          * @brief Sort comparator: framebuffer commands first, then by state/transparency
@@ -75,10 +78,11 @@ namespace gkit::graphic {
 
     } // namespace
 
-    auto RenderQueue::flush(RenderDevice& device) -> void {
+    auto RenderQueue::flush(RenderDevice& device, const std::shared_ptr<const void>& session, ViewportRect screen)
+        -> void {
         // Sort: opaque front-to-back, transparent back-to-front; group state/shader.
         std::stable_sort(
-            this->commands.begin(), this->commands.end(), [](const RenderCommand& a, const RenderCommand& b) {
+            this->commands.begin(), this->commands.end(), [](const RenderCommand& a, const RenderCommand& b) -> bool {
                 if (sort_key(a) != sort_key(b)) {
                     return sort_key(a) < sort_key(b);
                 }
@@ -90,19 +94,16 @@ namespace gkit::graphic {
 
         const FrameBuffer* last_target = nullptr;
         for (const auto& cmd : this->commands) {
-            if (cmd.object == nullptr) {
-                continue;
-            }
-            const Material& material = cmd.object->material;
+            const auto& material = cmd.material;
 
             // Switch render target: unbind the previous FBO (reverting to screen)
             // before binding a different target. target=null means screen, reached
             // by unbinding the previous FBO.
-            if (cmd.target != last_target) {
+            if (cmd.target.get() != last_target) {
                 if (last_target != nullptr) {
                     last_target->unbind();
                 }
-                last_target = cmd.target;
+                last_target = cmd.target.get();
                 if (cmd.target != nullptr) {
                     cmd.target->bind();
                 }
@@ -110,10 +111,12 @@ namespace gkit::graphic {
 
             // GL viewport is global state; each command sets its own viewport,
             // defaulting to the render target size when none was specified.
-            const Viewport vp = cmd.viewport.value_or(
-                cmd.target != nullptr ? Viewport{.x=0, .y=0, .width=cmd.target->width(), .height=cmd.target->height()}
-                                      : Viewport{.x=0, .y=0, .width=static_cast<int>(SCR_WIDTH), .height=static_cast<int>(SCR_HEIGHT)});
+            const ViewportRect vp = cmd.viewport.value_or(
+                cmd.target != nullptr
+                    ? ViewportRect{.x = 0, .y = 0, .width = cmd.target->width(), .height = cmd.target->height()}
+                    : screen);
             device.set_viewport(vp);
+            device.set_clip(cmd.clip);
 
             // Clear the currently bound target (FBO or screen) if the command asks for it.
             if (cmd.clear) {
@@ -125,8 +128,9 @@ namespace gkit::graphic {
             // Lazily upload geometry and bind shader/textures/uniforms.
             // Shader validity is enforced at enqueue time (Renderer::draw), so the
             // program is guaranteed non-null and valid here.
-            const auto& vao = cmd.object->ensure_uploaded(device);
-            const auto& ibo = cmd.object->index_buffer();
+            cmd.object->ensure_uploaded(device, session);
+            const auto& vao = *cmd.object->vao;
+            const auto& ibo = *cmd.object->ibo;
             material.get_shader()->bind();
             bind_textures(material);
             apply_uniforms(material);
@@ -142,6 +146,7 @@ namespace gkit::graphic {
         if (last_target != nullptr) {
             last_target->unbind();
         }
+        device.set_clip(std::nullopt);
         this->commands.clear();
     }
 

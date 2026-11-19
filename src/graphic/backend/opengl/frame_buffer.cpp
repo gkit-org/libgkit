@@ -1,6 +1,5 @@
 #include "graphic/backend/opengl/frame_buffer.hpp"
 
-#include "gkit/core/log.hpp"
 #include "graphic/backend/opengl/render_buffer.hpp"
 #include "graphic/backend/opengl/texture.hpp"
 
@@ -10,100 +9,129 @@
 
 namespace gkit::graphic::opengl {
 
-    FrameBuffer::FrameBuffer(int width, int height) : fb_width(width), fb_height(height) {
+    FrameBuffer::FrameBuffer(const std::shared_ptr<const Context>& context, int width, int height) :
+        ContextResource(context), fb_width(width), fb_height(height) {
         glGenFramebuffers(1, &this->renderer_id);
     }
 
-    FrameBuffer::FrameBuffer(FrameBuffer&& other) noexcept :
-        graphic::FrameBuffer(std::move(other)), renderer_id(other.renderer_id), fb_height(other.fb_height),
-        fb_width(other.fb_width), left_x(other.left_x), bottom_y(other.bottom_y) {
-        other.renderer_id = 0;
-    }
-
-    auto FrameBuffer::operator=(FrameBuffer&& other) noexcept -> FrameBuffer& {
-        if (this != &other) {
-            if (this->renderer_id != 0) {
-                glDeleteFramebuffers(1, &this->renderer_id);
-            }
-            graphic::FrameBuffer::operator=(std::move(other));
-            this->renderer_id = other.renderer_id;
-            this->fb_height   = other.fb_height;
-            this->fb_width    = other.fb_width;
-            this->left_x      = other.left_x;
-            this->bottom_y    = other.bottom_y;
-            other.renderer_id = 0;
-        }
-        return *this;
-    }
 
     FrameBuffer::~FrameBuffer() {
-        if (this->renderer_id != 0) {
+        if (renderer_id != 0 && has_current_context()) {
             glDeleteFramebuffers(1, &this->renderer_id);
             this->renderer_id = 0;
         }
     }
 
-    auto FrameBuffer::attach_color_texture(graphic::Texture& texture, int slot) -> void {
-        bind();
-        auto& gl_texture = static_cast<gkit::graphic::opengl::Texture&>(texture);
-        gl_texture.set_size(static_cast<int>(this->fb_width), static_cast<int>(this->fb_height));
+    namespace {
+        class DrawBinding {
+            GLint previous = 0;
+
+        public:
+            explicit DrawBinding(GLuint framebuffer) {
+                glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &previous);
+                glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer);
+            }
+
+
+            ~DrawBinding() { glBindFramebuffer(GL_DRAW_FRAMEBUFFER, previous); }
+        };
+
+        auto validate_slot(int slot) -> void {
+            GLint slots = 0;
+            glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &slots);
+            if (slot < 0 || slot >= slots) throw std::out_of_range("invalid color attachment slot");
+        }
+    } // namespace
+
+    auto FrameBuffer::attach_color_texture(std::shared_ptr<const graphic::Texture> texture, int slot) -> void {
+        require_context();
+        if (!texture) throw std::invalid_argument("missing color attachment");
+        const auto& native = require_resource<Texture>(*texture);
+        if (native.get_width() != width() || native.get_height() != height())
+            throw std::invalid_argument("color attachment dimensions must match the framebuffer");
+        validate_slot(slot);
+        color_attachments.insert_or_assign(slot, std::move(texture));
+        DrawBinding binding(renderer_id);
         glFramebufferTexture2D(
-            GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + slot, GL_TEXTURE_2D, gl_texture.get_renderer_id(), 0);
+            GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + slot, GL_TEXTURE_2D, native.get_renderer_id(), 0);
     }
+
 
     auto FrameBuffer::detach_color_texture(int slot) -> void {
-        bind();
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + slot, GL_TEXTURE_2D, 0, 0);
+        require_context();
+        validate_slot(slot);
+        DrawBinding binding(renderer_id);
+        glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + slot, GL_TEXTURE_2D, 0, 0);
+        color_attachments.erase(slot);
     }
 
-    auto FrameBuffer::attach_depth_stencil(const graphic::RenderBuffer& rbo) -> void {
-        bind();
-        const auto& gl_rbo = static_cast<const gkit::graphic::opengl::RenderBuffer&>(rbo);
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, gl_rbo.get_render_id());
+
+    auto FrameBuffer::attach_depth_stencil(std::shared_ptr<const graphic::RenderBuffer> rbo) -> void {
+        require_context();
+        if (!rbo) throw std::invalid_argument("missing depth-stencil attachment");
+        const auto& native = require_resource<RenderBuffer>(*rbo);
+        if (native.width() != width() || native.height() != height())
+            throw std::invalid_argument("depth-stencil attachment dimensions must match the framebuffer");
+        DrawBinding binding(renderer_id);
+        glFramebufferRenderbuffer(
+            GL_DRAW_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, native.get_render_id());
+        depth_stencil = std::move(rbo);
     }
+
 
     auto FrameBuffer::detach_depth_stencil() -> void {
-        bind();
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, 0);
+        require_context();
+        DrawBinding binding(renderer_id);
+        glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, 0);
+        depth_stencil.reset();
     }
+
 
     auto FrameBuffer::check() -> void {
-        bind();
-        gkit::core::Log::Message msg;
-        msg.functions = static_cast<std::uint8_t>(gkit::core::Log::LogFunction::Both);
-        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-            msg.level   = gkit::core::Log::LogLevel::Error;
-            msg.message = "ERROR::FRAMEBUFFER:: Framebuffer is not complete!";
-        } else {
-            msg.level   = gkit::core::Log::LogLevel::Info;
-            msg.message = "FRAMEBUFFER:: Framebuffer is complete!";
-        }
-        gkit::core::Log::instance().log(std::move(msg));
-        unbind();
+        require_context();
+        DrawBinding binding(renderer_id);
+        if (glCheckFramebufferStatus(GL_DRAW_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+            throw std::runtime_error("framebuffer is incomplete");
     }
 
+
     auto FrameBuffer::set_viewport(int x, int y, int width, int height) -> void {
+        require_context();
         glViewport(x, y, width, height);
     }
 
+
     auto FrameBuffer::set_viewport(int width, int height) -> void {
+        require_context();
         glViewport(this->left_x, this->bottom_y, width, height);
     }
 
+
     auto FrameBuffer::set_viewport() -> void {
+        require_context();
         glViewport(this->left_x, this->bottom_y, this->fb_width, this->fb_height);
     }
 
+
     auto FrameBuffer::bind() const -> void {
+        require_context();
         glBindFramebuffer(GL_FRAMEBUFFER, this->renderer_id);
     }
 
+
     auto FrameBuffer::unbind() const -> void {
+        require_context();
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
-    auto FrameBuffer::width() const -> int { return static_cast<int>(this->fb_width); }
 
-    auto FrameBuffer::height() const -> int { return static_cast<int>(this->fb_height); }
+    auto FrameBuffer::width() const -> int {
+        return static_cast<int>(this->fb_width);
+    }
+
+
+    auto FrameBuffer::height() const -> int {
+        return static_cast<int>(this->fb_height);
+    }
 
 } // namespace gkit::graphic::opengl

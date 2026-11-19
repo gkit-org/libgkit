@@ -13,6 +13,7 @@ namespace gkit::math {
         m[3][3] = diag;
     }
 
+
     Matrix4::Matrix4(const Matrix3& mat3) noexcept {
         for (int col = 0; col < 3; ++col) {
             for (int row = 0; row < 3; ++row) {
@@ -28,6 +29,7 @@ namespace gkit::math {
         m[3][2] = 0.0f;
     }
 
+
     Matrix4::Matrix4(const float* data) noexcept {
         for (int col = 0; col < 4; ++col) {
             for (int row = 0; row < 4; ++row) {
@@ -35,6 +37,7 @@ namespace gkit::math {
             }
         }
     }
+
 
     auto Matrix4::decompose(const Matrix4& mat) noexcept -> std::tuple<Vector3, Matrix3, Vector3> {
         Vector3 translation = get_translation(mat);
@@ -60,6 +63,7 @@ namespace gkit::math {
         return {translation, rotation, scale};
     }
 
+
     auto Matrix4::operator*(const Matrix4& other) const noexcept -> Matrix4 {
         Matrix4 result;
         for (int col = 0; col < 4; ++col) {
@@ -73,6 +77,7 @@ namespace gkit::math {
         return result;
     }
 
+
     auto Matrix4::operator*(const Vector4& v) const noexcept -> Vector4 {
         return {m[0][0] * v.x + m[1][0] * v.y + m[2][0] * v.z + m[3][0] * v.w,
                 m[0][1] * v.x + m[1][1] * v.y + m[2][1] * v.z + m[3][1] * v.w,
@@ -80,12 +85,14 @@ namespace gkit::math {
                 m[0][3] * v.x + m[1][3] * v.y + m[2][3] * v.z + m[3][3] * v.w};
     }
 
+
     auto Matrix4::operator*(const Vector3& v) const noexcept -> Vector3 {
         float w = m[0][3] * v.x + m[1][3] * v.y + m[2][3] * v.z + m[3][3];
         return {(m[0][0] * v.x + m[1][0] * v.y + m[2][0] * v.z + m[3][0]) / w,
                 (m[0][1] * v.x + m[1][1] * v.y + m[2][1] * v.z + m[3][1]) / w,
                 (m[0][2] * v.x + m[1][2] * v.y + m[2][2] * v.z + m[3][2]) / w};
     }
+
 
     auto Matrix4::operator+=(const Matrix4& other) noexcept -> Matrix4& {
         for (int col = 0; col < 4; ++col) {
@@ -96,6 +103,7 @@ namespace gkit::math {
         return *this;
     }
 
+
     auto Matrix4::operator-=(const Matrix4& other) noexcept -> Matrix4& {
         for (int col = 0; col < 4; ++col) {
             for (int row = 0; row < 4; ++row) {
@@ -105,10 +113,12 @@ namespace gkit::math {
         return *this;
     }
 
+
     auto Matrix4::operator*=(const Matrix4& other) noexcept -> Matrix4& {
         *this = *this * other;
         return *this;
     }
+
 
     auto Matrix4::operator*=(float scalar) noexcept -> Matrix4& {
         for (auto& col : m) {
@@ -118,6 +128,7 @@ namespace gkit::math {
         }
         return *this;
     }
+
 
     auto Matrix4::operator==(const Matrix4& other) const noexcept -> bool {
         for (int col = 0; col < 4; ++col) {
@@ -130,9 +141,11 @@ namespace gkit::math {
         return true;
     }
 
+
     auto Matrix4::operator!=(const Matrix4& other) const noexcept -> bool {
         return !(*this == other);
     }
+
 
     auto Matrix4::slerp(const Matrix4& a, const Matrix4& b, float t) noexcept -> Matrix4 {
         auto [trans_a, rot_a, scale_a] = decompose(a);
@@ -168,6 +181,7 @@ namespace gkit::math {
         return compose(trans_result, rot_result, scale_result);
     }
 
+
     auto Matrix4::lerp(const Matrix4& a, const Matrix4& b, float t) noexcept -> Matrix4 {
         Matrix4 result;
         for (int col = 0; col < 4; ++col) {
@@ -177,6 +191,7 @@ namespace gkit::math {
         }
         return result;
     }
+
 
     auto Matrix4::compose(const Vector3& translation, const Matrix3& rotation, const Vector3& scale) noexcept
         -> Matrix4 {
@@ -200,6 +215,7 @@ namespace gkit::math {
         return result;
     }
 
+
     auto Matrix4::compose(const Vector3& translation, const Matrix3& rotation) noexcept -> Matrix4 {
         Matrix4 result = identity();
         for (int col = 0; col < 3; ++col) {
@@ -214,6 +230,7 @@ namespace gkit::math {
         return result;
     }
 
+
     auto Matrix4::perspective(float fov, float aspect, float near, float far) noexcept -> Matrix4 {
         float f = 1.0f / std::tan(fov * 0.5f);
 
@@ -225,6 +242,7 @@ namespace gkit::math {
         result.m[3][2] = -(2.0f * far * near) / (far - near);
         return result;
     }
+
 
     auto Matrix4::orthographic(float left, float right, float bottom, float top, float near, float far) noexcept
         -> Matrix4 {
@@ -242,6 +260,7 @@ namespace gkit::math {
         result.m[3][3] = 1.0f;
         return result;
     }
+
 
     auto Matrix4::look_at(const Vector3& eye, const Vector3& target, const Vector3& up) noexcept -> Matrix4 {
         Vector3 f = (target - eye).normalize();
@@ -264,6 +283,7 @@ namespace gkit::math {
         return result;
     }
 
+
     auto Matrix4::to_string() const noexcept -> std::string {
         std::ostringstream oss;
         oss << std::fixed << std::setprecision(4);
@@ -277,9 +297,11 @@ namespace gkit::math {
         return oss.str();
     }
 
+
     auto Matrix4::print() const noexcept -> void {
         printf("%s", to_string().c_str());
     }
+
 
     auto Matrix4::inverse(const Matrix4& mat) noexcept -> std::optional<Matrix4> {
         float det = determinant(mat);
@@ -300,11 +322,13 @@ namespace gkit::math {
         return result;
     }
 
+
     auto Matrix4::transform_plane(const Matrix4& m, const Vector4& plane) noexcept -> Vector4 {
         Matrix4 inv    = inverse(m).value_or(identity());
         Vector4 result = transpose(inv) * plane;
         return result.normalize();
     }
+
 
     auto Matrix4::transform_normal(const Matrix4& m, const Vector3& normal) noexcept -> Vector3 {
         Matrix4 inv   = inverse(m).value_or(identity());
@@ -313,6 +337,7 @@ namespace gkit::math {
         Vector4 result = inv_t * n;
         return Vector3{result.x, result.y, result.z}.normalize();
     }
+
 
     auto Matrix4::transform_point(const Matrix4& m, const Vector3& point) noexcept -> Vector3 {
         Vector4 p{point.x, point.y, point.z, 1.0f};
@@ -324,21 +349,25 @@ namespace gkit::math {
         return {result.x, result.y, result.z};
     }
 
+
     auto Matrix4::transform_vector(const Matrix4& m, const Vector3& vector) noexcept -> Vector3 {
         Vector4 v{vector.x, vector.y, vector.z, 0.0f};
         Vector4 result = m * v;
         return {result.x, result.y, result.z};
     }
 
+
     auto Matrix4::inverse_transform_point(const Matrix4& m, const Vector3& point) noexcept -> Vector3 {
         auto inv = inverse(m);
         return inv ? transform_point(*inv, point) : point;
     }
 
+
     auto Matrix4::inverse_transform_vector(const Matrix4& m, const Vector3& vector) noexcept -> Vector3 {
         auto inv = inverse(m);
         return inv ? transform_vector(*inv, vector) : vector;
     }
+
 
     auto Matrix4::from_rows(const Vector4& row0, const Vector4& row1, const Vector4& row2, const Vector4& row3) noexcept
         -> Matrix4 {
@@ -361,6 +390,7 @@ namespace gkit::math {
         result.m[3][3] = row3.w;
         return result;
     }
+
 
     auto Matrix4::from_columns(const Vector4& col0,
                                const Vector4& col1,
@@ -386,6 +416,7 @@ namespace gkit::math {
         return result;
     }
 
+
     auto Matrix4::rotation_between_vectors(const Vector3& from, const Vector3& to) noexcept -> Matrix4 {
         Vector3 f       = from.normalize();
         Vector3 t       = to.normalize();
@@ -406,6 +437,7 @@ namespace gkit::math {
         float angle  = std::acos(cos_theta);
         return rotate(angle, axis);
     }
+
 
     auto Matrix4::reflect(const Vector4& plane) noexcept -> Matrix4 {
         float a = plane.x, b = plane.y, c = plane.z, d = plane.w;
@@ -431,6 +463,7 @@ namespace gkit::math {
         return result;
     }
 
+
     auto Matrix4::determinant(const Matrix4& mat) noexcept -> float {
         float a = mat.m[0][0], b = mat.m[1][0], c = mat.m[2][0], d = mat.m[3][0];
         float e = mat.m[0][1], f = mat.m[1][1], g = mat.m[2][1], h = mat.m[3][1];
@@ -444,6 +477,7 @@ namespace gkit::math {
 
         return a * c00 - b * c01 + c * c02 - d * c03;
     }
+
 
     auto Matrix4::minor(const Matrix4& mat, int row, int col) noexcept -> float {
         float sub[3][3];
@@ -463,10 +497,12 @@ namespace gkit::math {
                sub[0][2] * (sub[1][0] * sub[2][1] - sub[1][1] * sub[2][0]);
     }
 
+
     auto Matrix4::cofactor(const Matrix4& mat, int row, int col) noexcept -> float {
         float m = minor(mat, row, col);
         return ((row + col) % 2 == 0) ? m : -m;
     }
+
 
     auto Matrix4::adjugate(const Matrix4& mat) noexcept -> Matrix4 {
         Matrix4 result;
@@ -477,6 +513,7 @@ namespace gkit::math {
         }
         return result;
     }
+
 
     auto Matrix4::get_quaternion(const Matrix4& mat) noexcept -> Vector4 {
         Matrix3 r = get_rotation(mat);
@@ -512,6 +549,7 @@ namespace gkit::math {
         return q.normalize();
     }
 
+
     auto Matrix4::set_quaternion(Matrix4& mat, const Vector4& quat) noexcept -> Matrix4& {
         Vector4 q = quat.normalize();
         float xx = q.x * q.x, yy = q.y * q.y, zz = q.z * q.z;
@@ -535,10 +573,12 @@ namespace gkit::math {
         return mat;
     }
 
+
     auto Matrix4::is_affine() const noexcept -> bool {
         return std::abs(m[0][3]) < NORMALIZE_TOLERANCE_32 && std::abs(m[1][3]) < NORMALIZE_TOLERANCE_32 &&
                std::abs(m[2][3]) < NORMALIZE_TOLERANCE_32 && std::abs(m[3][3] - 1.0f) < NORMALIZE_TOLERANCE_32;
     }
+
 
     auto Matrix4::is_orthogonal() const noexcept -> bool {
         Matrix3 r        = get_rotation(*this);
@@ -554,6 +594,7 @@ namespace gkit::math {
         return true;
     }
 
+
     auto Matrix4::is_orthonormal() const noexcept -> bool {
         Matrix3 r = get_rotation(*this);
         for (auto& col : r.m) {
@@ -564,6 +605,7 @@ namespace gkit::math {
         }
         return is_orthogonal();
     }
+
 
     auto Matrix4::normalize_rotation() noexcept -> Matrix4& {
         for (int col = 0; col < 3; ++col) {
@@ -576,6 +618,7 @@ namespace gkit::math {
         return *this;
     }
 
+
     auto Matrix4::translate(const Vector3& translation) noexcept -> Matrix4 {
         Matrix4 result = identity();
         result.m[3][0] = translation.x;
@@ -584,6 +627,7 @@ namespace gkit::math {
         return result;
     }
 
+
     auto Matrix4::scale(const Vector3& scale) noexcept -> Matrix4 {
         Matrix4 result = identity();
         result.m[0][0] = scale.x;
@@ -591,6 +635,7 @@ namespace gkit::math {
         result.m[2][2] = scale.z;
         return result;
     }
+
 
     auto Matrix4::rotate(float angle, const Vector3& axis) noexcept -> Matrix4 {
         Vector3 n = axis.normalize();
@@ -614,6 +659,7 @@ namespace gkit::math {
         return result;
     }
 
+
     auto Matrix4::rotate_x(float angle) noexcept -> Matrix4 {
         float c = std::cos(angle);
         float s = std::sin(angle);
@@ -626,6 +672,7 @@ namespace gkit::math {
         return result;
     }
 
+
     auto Matrix4::rotate_y(float angle) noexcept -> Matrix4 {
         float c = std::cos(angle);
         float s = std::sin(angle);
@@ -637,6 +684,7 @@ namespace gkit::math {
         result.m[2][2] = c;
         return result;
     }
+
 
     auto Matrix4::rotate_z(float angle) noexcept -> Matrix4 {
         float c = std::cos(angle);

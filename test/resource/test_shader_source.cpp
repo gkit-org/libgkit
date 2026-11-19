@@ -51,6 +51,7 @@ auto test_load_vertex_and_fragment() -> bool {
     return true;
 }
 
+
 auto test_cache_returns_same_instance() -> bool {
     gkit::test::logln("=== Test: Cache Returns Same Instance ===");
 
@@ -68,6 +69,7 @@ auto test_cache_returns_same_instance() -> bool {
     return true;
 }
 
+
 auto test_load_missing_file() -> bool {
     gkit::test::logln("=== Test: Load Missing File ===");
 
@@ -78,6 +80,7 @@ auto test_load_missing_file() -> bool {
     gkit::test::logln("  missing file reports failure");
     return true;
 }
+
 
 auto main() -> int {
     gkit::test::logln("========================================");

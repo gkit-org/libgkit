@@ -42,13 +42,17 @@ namespace gkit::resource {
 
     ShaderSource::ShaderSource() : gkit::resource::Resource(), data(std::make_unique<Data>()) {}
 
+
     ShaderSource::ShaderSource(const std::filesystem::path& path) :
         gkit::resource::Resource(path), data(std::make_unique<Data>()) {}
+
 
     ShaderSource::ShaderSource(std::filesystem::path&& path) :
         gkit::resource::Resource(path), data(std::make_unique<Data>()) {}
 
+
     ShaderSource::~ShaderSource() = default;
+
 
     auto ShaderSource::load_from_file() -> void {
         this->is_available = false;
@@ -115,9 +119,11 @@ namespace gkit::resource {
         this->is_available = !this->data->full_source.empty();
     }
 
+
     auto ShaderSource::source() const noexcept -> std::string_view {
         return this->data->full_source;
     }
+
 
     auto ShaderSource::get_source(ShaderStage stage) const -> std::string_view {
         auto it = this->data->stage_sources.find(stage);
@@ -127,17 +133,21 @@ namespace gkit::resource {
         return {};
     }
 
+
     auto ShaderSource::has_stage(ShaderStage stage) const noexcept -> bool {
         return this->data->stage_sources.contains(stage);
     }
+
 
     auto ShaderSource::stages() const noexcept -> const std::unordered_map<ShaderStage, std::string>& {
         return this->data->stage_sources;
     }
 
+
     auto ShaderSource::get_path() const noexcept -> const std::filesystem::path& {
         return this->res_path;
     }
+
 
     auto ShaderSource::is_loaded() const noexcept -> bool {
         return this->is_available;

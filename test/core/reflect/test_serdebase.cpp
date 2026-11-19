@@ -19,6 +19,7 @@ class SeralizeObject : public gkit::core::Object {
 
 public:
     static const char* c_name;
+
     static auto regist_method() -> void {
         auto& db = gkit::core::reflect::ClassDB::instance();
         db.regist<SeralizeObject>(c_name)
@@ -33,7 +34,7 @@ public:
 const char* SeralizeObject::c_name = "SeralizeObject";
 
 class Json final : public SerdeBase {
-    auto wrapper(gkit::core::Type type, const std::string& key) const -> WrapperPair override {
+    [[nodiscard]] auto wrapper(gkit::core::Type type, const std::string& key) const -> WrapperPair override {
         std::string begin;
         if (!key.empty()) {
             begin += "\"" + key + "\":";
@@ -51,9 +52,11 @@ class Json final : public SerdeBase {
         return {begin, end};
     }
 
-    auto element_gap(gkit::core::Type /*type*/) const -> std::string override { return ","; }
 
-    auto leaf_value(const Value& v) const -> std::string override {
+    [[nodiscard]] auto element_gap(gkit::core::Type /*type*/) const -> std::string override { return ","; }
+
+
+    [[nodiscard]] auto leaf_value(const Value& v) const -> std::string override {
         switch (v.type()) {
         case gkit::core::Type::String: {
             return "\"" + v.as_string() + "\"";

@@ -22,6 +22,8 @@ auto test_values() -> bool {
     gkit::test::assert_if(!Matrix3::inverse(Matrix3::zero()), "singular matrix rejected");
     return true;
 }
+
+
 auto main() -> int {
     gkit::test::TestRunner().add_test_func(test_values).run();
 }

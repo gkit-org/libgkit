@@ -1,6 +1,7 @@
 #pragma once
 
 #include "gkit/graphic/resource/vertex_buffer.hpp"
+#include "graphic/backend/opengl/context.hpp"
 
 #include <cstdint>
 
@@ -12,13 +13,10 @@
  */
 namespace gkit::graphic::opengl {
 
-    class VertexBuffer final : public graphic::VertexBuffer {
+    class VertexBuffer final : public graphic::VertexBuffer, public ContextResource {
         friend class Device;
 
     public:
-        VertexBuffer(VertexBuffer&& other) noexcept;
-        auto operator=(VertexBuffer&& other) noexcept -> VertexBuffer&;
-
         ~VertexBuffer() override;
 
         auto bind() const -> void override;
@@ -34,7 +32,7 @@ namespace gkit::graphic::opengl {
          * @param size size of the data in bytes
          * @param dynamic true if updated frequently (GL_DYNAMIC_DRAW)
          */
-        explicit VertexBuffer(const void* data, uint32_t size, bool dynamic = false);
+        VertexBuffer(const std::shared_ptr<const Context>& context, const void* data, uint32_t size, bool dynamic);
 
         uint32_t renderer_id = 0; // GL buffer handle
         bool dynamic         = false;

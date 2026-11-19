@@ -5,14 +5,28 @@
 #pragma once
 
 #include "gkit/core/node.hpp"
+#include "gkit/platform/runtime.hpp"
 
 #include <chrono>
 #include <condition_variable>
+#include <cstdint>
 #include <mutex>
 
 namespace gkit::core::detail {
     struct TreeRuntime;
 }
+
+namespace gkit::core {
+    /** @brief Frame timing for the Processer coordinator hooks. */
+    struct FrameContext {
+        /** @brief Elapsed time in seconds, capped by the Processer configuration. */
+        double delta = 0;
+        /** @brief Zero-based logic-frame number, reset on each run. */
+        std::uint64_t frame = 0;
+        /** @brief Number of completed physics steps in this run. */
+        std::uint64_t physics_tick = 0;
+    };
+} // namespace gkit::core
 
 namespace gkit {
     /**
@@ -28,6 +42,7 @@ namespace gkit {
     public:
         /** @brief Create the root and stopped runtime; SDL and worker initialization are deferred to run(). */
         Processer();
+
         /**
          * @brief Cancel queued requests and release the owned tree after run() has returned.
          * @note Destruction does not join a run() executing on another thread; callers must synchronize its lifetime.
@@ -36,29 +51,43 @@ namespace gkit {
         virtual ~Processer();
         Processer(const Processer&)                    = delete;
         auto operator=(const Processer&) -> Processer& = delete;
+
         /** @brief Return the root owned by this Processer; attach application nodes beneath this root. */
         auto root() noexcept -> core::Node&;
         auto root() const noexcept -> const core::Node&;
+
         /** @brief Enable worker updates for explicitly marked independent subtrees on the next run. */
         auto set_parallel_update_enabled(bool value) noexcept -> Processer&;
+
         /** @brief Set the number of workers, excluding the coordinator. Parallel updates require at least one. */
         auto set_worker_count(std::size_t value) noexcept -> Processer&;
+
         /** @brief Set the physics step in seconds to a positive finite value. */
         auto set_fixed_delta(double value) noexcept -> Processer&;
+
         /** @brief Set the maximum number of physics ticks per frame to a positive value. */
         auto set_max_fixed_steps(std::size_t value) noexcept -> Processer&;
+
         /** @brief Set a positive finite upper bound on measured frame time in seconds. */
         auto set_max_frame_delta(double value) noexcept -> Processer&;
+
         /** @brief Set the target logic-frame rate. Zero disables pacing. */
         auto set_target_frame_rate(double value) noexcept -> Processer&;
-        /** @brief Enable SDL initialization. Disable it for headless runs with an empty input snapshot. */
+
+        /** @brief Set typed options for subsequent runs. These take precedence over legacy SDL setters. */
+        auto set_platform_options(platform::RuntimeOptions value) -> Processer&;
+
+        /** @brief Enable SDL initialization and event polling for the configured subsystems. */
         auto set_initialize_sdl(bool value) noexcept -> Processer&;
+
         /** @brief Select SDL subsystems. std::nullopt enables audio, events, gamepad, joystick and video. */
         auto set_sdl_flags(std::optional<std::uint32_t> value) noexcept -> Processer&;
+
         /**
          * @brief Enter the tree, process frames until stopped, and leave the tree before returning.
-         * @note Each frame commits queued edits, dispatches SDL events, invokes before_frame(), drains posted callbacks,
-         * runs bounded fixed physics steps, runs one variable logic step, then invokes after_frame() and paces.
+         * @note Each frame polls events and updates Input when SDL events are enabled, then enters the tree on the
+         * first frame, commits queued edits, invokes before_frame(), drains posted callbacks, runs bounded fixed
+         * physics steps and one variable logic step, then invokes after_frame() and paces.
          * All update tasks finish before each phase boundary. Excess whole physics steps are discarded; fractional
          * remainder is retained. Settings remain fixed throughout this call.
          * @throws std::logic_error For re-entry or execution on the wrong thread.
@@ -69,38 +98,53 @@ namespace gkit {
          * May be called again after returning; frame counters reset, enter_tree() repeats and ready() does not.
          */
         auto run() -> void;
+
         /**
          * @brief Request termination and wake any frame-pacing wait, from any thread.
          * @note Idempotent. Current callbacks finish; queued operations not committed before termination are cancelled.
          * This does not destroy the tree or join the calling thread. A later run() starts a new running lifetime.
          */
         auto stop() noexcept -> void;
+
         /** @brief Read the number of whole accumulated ticks discarded by the catch-up cap in the latest run. */
         auto dropped_physics_steps() const noexcept -> std::uint64_t { return dropped_steps.load(); }
+
+        /**
+         * @brief Read a thread-safe copy of the timing for the most recently started frame.
+         * @return The frame delta, zero-based frame number, and number of completed physics steps.
+         * @note The values reset to zero at the start of each run. In before_frame() the physics count
+         * covers earlier frames. In after_frame() it includes all completed steps of the current frame.
+         */
+        [[nodiscard]] auto get_frame_context() const -> core::FrameContext;
 
     protected:
         /** @brief Coordinator hook after startup succeeds and before parent-first tree entry. */
         virtual auto on_start() -> void {}
+
         /**
-         * @brief Coordinator hook after edits and event dispatch, before posted callbacks and updates.
-         * @param context This frame's measured delta, counters and immutable input.
+         * @brief Coordinator hook after input and edits, before posted callbacks and updates.
+         * @see get_frame_context()
          * @note All workers are idle; direct access to this tree is permitted.
          */
-        virtual auto before_frame(const core::FrameContext& context) -> void {}
+        virtual auto before_frame() -> void {}
+
         /**
          * @brief Coordinator hook after all scheduled tasks finish, before pacing.
-         * @param context This frame's timing, including the completed physics-tick count.
+         * @see get_frame_context()
          * @note May also run when stop() skipped part of the current frame; not called after an update exception.
          */
-        virtual auto after_frame(const core::FrameContext& context) -> void {}
+        virtual auto after_frame() -> void {}
+
         /** @brief Coordinator cleanup hook after tree exit, including a failed startup hook or update. */
         virtual auto on_stop() -> void {}
+
         /**
          * @brief Read a monotonic time point; defaults to std::chrono::steady_clock::now().
          * @return Current time in the scheduler clock's epoch.
          * @note Override together with wait_until() for deterministic timing tests.
          */
         virtual auto now() const -> std::chrono::steady_clock::time_point;
+
         /**
          * @brief Wait for a frame deadline or stop(), whichever happens first.
          * @param deadline Absolute time in the same epoch as now(). Past deadlines return immediately.
@@ -109,6 +153,18 @@ namespace gkit {
         virtual auto wait_until(std::chrono::steady_clock::time_point deadline) -> void;
 
     private:
+        /** @brief Start optional run services after platform setup and before on_start(). */
+        virtual auto start_run_services(const platform::Runtime*) -> void {}
+
+        /** @brief Receive the input batch after Input updates and before tree edits. */
+        virtual auto handle_events(const std::vector<platform::Event>&) -> void {}
+
+        /** @brief Finish the frame after after_frame(), while the run is still active. */
+        virtual auto finish_frame() -> void {}
+
+        /** @brief Release run services before releasing platform subsystems, including on failure. */
+        virtual auto stop_run_services() noexcept -> void {}
+
         struct Config {
             bool parallel_update_enabled = false;
             std::size_t worker_count     = 1;
@@ -116,7 +172,8 @@ namespace gkit {
             std::size_t max_fixed_steps  = 4;
             double max_frame_delta       = 0.25;
             double target_frame_rate     = 60;
-            bool initialize_sdl          = true;
+            std::optional<platform::RuntimeOptions> platform_options;
+            bool initialize_sdl = true;
             std::optional<std::uint32_t> sdl_flags;
         };
 
@@ -124,6 +181,8 @@ namespace gkit {
         std::unique_ptr<core::detail::TreeRuntime> runtime;
         Config config;
         mutable std::mutex settings_mutex;
+        mutable std::mutex frame_mutex;
+        core::FrameContext frame_context;
         std::mutex wait_mutex;
         std::condition_variable wake;
         std::atomic<bool> running                = false;

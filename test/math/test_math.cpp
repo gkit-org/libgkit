@@ -16,6 +16,7 @@ auto test_scalar_limits() -> bool {
     return true;
 }
 
+
 auto test_float_constants() -> bool {
     gkit::test::logln("=== constants.hpp float constants tests ===");
 
@@ -47,6 +48,7 @@ auto test_float_constants() -> bool {
     return true;
 }
 
+
 auto test_integer_constants() -> bool {
     gkit::test::logln("=== constants.hpp integer constants tests ===");
 
@@ -72,6 +74,7 @@ auto test_integer_constants() -> bool {
     gkit::test::assert_if(TWO_I32 == 2, "TWO_I32 is wrong");
     return true;
 }
+
 
 auto main() -> int {
     auto test_runner = gkit::test::TestRunner()

@@ -1,5 +1,5 @@
 Checks: >
-    -*,                          # Disable all, then enable selectively
+    -*,
     modernize-*,
     performance-*,
     google-*,
@@ -8,6 +8,7 @@ Checks: >
 HeaderFileExtensions: ["", h, hpp, hxx, inc, glsl]
 ImplementationFileExtensions: [c, cpp]
 HeaderFilterRegex: '.*(include|src|test)/.*'
+ExcludeHeaderFilterRegex: '(^|[/\\])third_party[/\\]'
 
 CheckOptions:
   # ── Classes / Structs / Enums ──────────────────────────────────
@@ -25,6 +26,9 @@ CheckOptions:
   # ── Functions / Methods ────────────────────────────────────────
   - key:   readability-identifier-naming.FunctionCase
     value: lower_case
+  # The reflection protocol requires this exact spelling.
+  - key:   readability-identifier-naming.FunctionIgnoredRegexp
+    value: '^_regist_method$'
   - key:   readability-identifier-naming.VirtualMethodCase
     value: lower_case
   - key:   readability-identifier-naming.ConstantParameterCase
@@ -86,10 +90,6 @@ CheckOptions:
     value: lower_case
   - key:   readability-identifier-naming.GlobalFunctionCase
     value: lower_case
-
-  # ── Trailing return type ──────────────────────────────────────
-  - key:   modernize-use-trailing-return-type.IgnoreDestructors
-    value: true
 
   # ── Ignore patterns (standard library internals, etc.) ─────────
   - key:   readability-identifier-naming.IgnoreMainLikeFunctions

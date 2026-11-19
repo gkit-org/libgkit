@@ -12,6 +12,7 @@ auto vec_str(const Vector3& vec) -> std::string {
     return std::format("x = {}, y = {}, z = {}", x, y, z);
 }
 
+
 auto test_constructors() -> bool {
     gkit::test::logln("=== constructors ===");
 
@@ -28,6 +29,7 @@ auto test_constructors() -> bool {
     gkit::test::assert_if(vec3.x == 1.0f && vec3.y == 2.0f && vec3.z == 3.0f, "copy assignment failed");
     return true;
 }
+
 
 auto test_arithmetic() -> bool {
     gkit::test::logln("=== arithmetic operators ===");
@@ -54,6 +56,7 @@ auto test_arithmetic() -> bool {
     return true;
 }
 
+
 auto test_length_and_normalize() -> bool {
     gkit::test::logln("=== length and normalize ===");
 
@@ -67,6 +70,7 @@ auto test_length_and_normalize() -> bool {
     gkit::test::assert_if(vec1.length() > 0.999f && vec1.length() < 1.001f, "normalize failed");
     return true;
 }
+
 
 auto main() -> int {
     auto test_runner = gkit::test::TestRunner()

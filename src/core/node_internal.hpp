@@ -10,12 +10,36 @@
 
 namespace gkit::core::detail {
     extern std::mutex tree_mutex;
+
     struct TreeRuntime;
+
+    enum class EditKind {
+        Add,
+        SetChild,
+        Detach,
+        Remove,
+        Rename,
+        Reparent
+    };
+
+    struct Edit {
+        EditKind kind;
+        ObjectId anchor, target;
+        std::string name;
+        Node::Completion complete;
+        std::optional<UniqueObject> owner;
+
+        auto submit() -> void;
+        auto submit(std::unique_lock<std::mutex>& guard) -> void;
+        auto apply(TreeRuntime* runtime, std::unique_lock<std::mutex>& guard, bool cancel) -> void;
+    };
 
     struct NodeState {
         explicit NodeState(Node& node) : node(node) {}
+
         Node& node;
-        ObjectId id, parent;
+        ObjectId id, parent, managed_child;
+        std::vector<Edit> construction_edits;
         std::vector<UniqueObject> children;
         std::unordered_map<std::string, ObjectId> child_names;
         std::string name;
@@ -26,7 +50,7 @@ namespace gkit::core::detail {
         static auto of(Node& node) -> NodeState& { return *node.state; }
         static auto resolve(ObjectId id) -> NodeState*;
         auto descendants() const {
-            return children | std::views::transform([](const UniqueObject& owner) {
+            return children | std::views::transform([](const UniqueObject& owner) -> NodeState* {
                        return static_cast<const Node*>(owner.get())->state.get();
                    });
         }
@@ -35,36 +59,25 @@ namespace gkit::core::detail {
         auto retire() noexcept -> void;
     };
 
-    enum class EditKind {
-        Add,
-        Detach,
-        Remove,
-        Rename,
-        Reparent
-    };
-    struct Edit {
-        EditKind kind;
-        ObjectId anchor, target;
-        std::string name;
-        Node::Completion complete;
-        std::optional<UniqueObject> owner;
-        auto submit() -> void;
-        auto apply(TreeRuntime* runtime, std::unique_lock<std::mutex>& guard, bool cancel) -> void;
-    };
-
     struct TreeRuntime {
+        explicit TreeRuntime(ObjectId root) : root(root) {}
+
+        const ObjectId root;
         const std::thread::id thread = std::this_thread::get_id();
         bool active                  = false; // tree_mutex
         std::mutex queue_mutex;
         bool accepting = true;
         std::deque<Edit> edits;
+
         struct Post {
             ObjectId target;
             std::function<void(Node&)> callback;
             std::function<void(NodeError)> complete;
         };
+
         std::deque<Post> posts;
     };
+
     auto assign_runtime(NodeState* root, TreeRuntime* runtime) -> void;
     auto enter_nodes(NodeState* root) -> void;
     auto exit_nodes(NodeState* root, std::exception_ptr& failure) noexcept -> void;

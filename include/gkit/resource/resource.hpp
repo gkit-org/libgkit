@@ -12,9 +12,10 @@ namespace gkit::resource {
         virtual ~Resource()                          = default;
         Resource(const Resource&)                    = delete;
         auto operator=(const Resource&) -> Resource& = delete;
+
         virtual auto load_from_file() -> void        = 0;
-        auto get_path() const noexcept -> const std::filesystem::path& { return this->res_path; }
-        auto available() const noexcept -> bool { return this->is_available; }
+        [[nodiscard]] auto get_path() const noexcept -> const std::filesystem::path& { return this->res_path; }
+        [[nodiscard]] auto available() const noexcept -> bool { return this->is_available; }
 
     protected:
         bool is_available = false;

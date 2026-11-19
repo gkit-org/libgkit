@@ -12,6 +12,7 @@ namespace gkit::core {
     namespace detail {
         struct NodeState;
     }
+
     /**
      * @brief Internal registry mapping ObjectId to live Object instances.
      *
@@ -22,11 +23,12 @@ namespace gkit::core {
      */
     class ObjectPool : public gkit::core::templates::Singleton<ObjectPool> {
         friend gkit::core::templates::Singleton<ObjectPool>;
+
         std::mutex pool_mutex;
         std::unordered_map<ObjectId, std::shared_ptr<Object>> id_instance_map;
 
         ObjectPool() { (void)ObjectId::IdAllocator::instance(); }
-        ~ObjectPool() = default;
+        ~ObjectPool() override = default;
 
     public:
         /** @brief Register a constructed object; allocation failure leaves the caller's shared owner intact. */

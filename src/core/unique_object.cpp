@@ -12,6 +12,7 @@ namespace gkit::core {
         return reflect::ClassDB::instance().create(class_name);
     }
 
+
     auto UniqueObject::from_raw_ptr(Object* obj) -> UniqueObject {
         UniqueObject uobj;
         if (obj == nullptr) return uobj;
@@ -22,9 +23,17 @@ namespace gkit::core {
         if (id_opt) {
             uobj.id  = *id_opt;
             uobj.obj = owned.get();
+            if (auto* node = dynamic_cast<Node*>(uobj.obj)) {
+                auto edits = std::move(detail::NodeState::of(*node).construction_edits);
+                for (auto& edit : edits) {
+                    edit.anchor = uobj.id;
+                    edit.submit();
+                }
+            }
         }
         return uobj;
     }
+
 
     UniqueObject::UniqueObject(UniqueObject&& other) noexcept : id(other.id) {
         this->obj = other.obj;
@@ -33,10 +42,12 @@ namespace gkit::core {
         other.id = ObjectId();
     }
 
+
     UniqueObject::~UniqueObject() noexcept {
         if (auto* node = dynamic_cast<Node*>(obj)) detail::NodeState::of(*node).retire();
         if (obj) ObjectPool::instance().release(id);
     }
+
 
     auto UniqueObject::operator=(UniqueObject&& other) noexcept -> UniqueObject& {
         if (this != &other) {

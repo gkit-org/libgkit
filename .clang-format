@@ -76,7 +76,8 @@ BreakConstructorInitializers: AfterColon
 ConstructorInitializerIndentWidth: 4
 BreakAfterJavaFieldAnnotations: false
 BreakStringLiterals: true
-MaxEmptyLinesToKeep: 1
+# Preserve the two blank lines between source-file definitions.
+MaxEmptyLinesToKeep: 2
 
 # ── Includes ───────────────────────────────────────────────────────
 SortIncludes: CaseSensitive

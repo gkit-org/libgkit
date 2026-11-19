@@ -21,7 +21,7 @@ auto test_concurrent_logging() -> bool {
     producers.reserve(producer_count);
 
     for (int thread_id = 0; thread_id < producer_count; ++thread_id) {
-        producers.emplace_back([thread_id, &logger]() {
+        producers.emplace_back([thread_id, &logger]() -> void {
             for (int i = 0; i < logs_per_thread; ++i) {
                 logger.log({.message   = "T" + std::to_string(thread_id) + " log " + std::to_string(i),
                             .level     = static_cast<Log::LogLevel>(i % 3),
@@ -46,6 +46,7 @@ auto test_concurrent_logging() -> bool {
     gkit::test::logln("  Finished logging");
     return true;
 }
+
 
 auto main() -> int {
     auto test_runner = gkit::test::TestRunner().add_test_func(test_concurrent_logging);

@@ -233,9 +233,7 @@ namespace gkit::core {
     public: // Array/Map modification helpers
         auto push_back(Value value) -> void;
         template<typename... Args>
-        auto emplace_back(Args&&... args) -> void {
-            as_array().emplace_back(std::forward<Args>(args)...);
-        }
+        auto emplace_back(Args&&... args) -> void;
 
     public:
         [[nodiscard]] constexpr auto type() const -> Type {
@@ -264,6 +262,11 @@ namespace gkit::core {
     private:
         Storage storage = Null{};
     };
+
+    template<typename... Args>
+    auto Value::emplace_back(Args&&... args) -> void {
+        as_array().emplace_back(std::forward<Args>(args)...);
+    }
 
     template<gkit::core::IsObject T>
     auto Value::as() -> T& {

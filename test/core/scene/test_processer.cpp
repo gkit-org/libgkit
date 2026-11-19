@@ -1,3 +1,4 @@
+#include "gkit/core/input/input.hpp"
 #include "gkit/core/processer.hpp"
 #include "gkit/scene/scene.hpp"
 #include "test_utils.hpp"
@@ -15,11 +16,13 @@ namespace {
     auto check(bool condition) -> void {
         if (!condition) throw std::runtime_error("processer regression failed");
     }
+
     struct App : Processer {
         mutable int time = 0;
         int frames       = 0;
         int limit        = 2;
         std::function<void(const FrameContext&)> before, after;
+
         App() {
             set_initialize_sdl(false)
                 .set_fixed_delta(0.125)
@@ -27,17 +30,24 @@ namespace {
                 .set_max_fixed_steps(2)
                 .set_target_frame_rate(0);
         }
+
+
         auto now() const -> std::chrono::steady_clock::time_point override {
             return std::chrono::steady_clock::time_point{} + std::chrono::seconds(time++);
         }
-        auto before_frame(const FrameContext& context) -> void override {
-            if (before) before(context);
+
+
+        auto before_frame() -> void override {
+            if (before) before(get_frame_context());
         }
-        auto after_frame(const FrameContext& context) -> void override {
-            if (after) after(context);
+
+
+        auto after_frame() -> void override {
+            if (after) after(get_frame_context());
             if (++frames >= limit) stop();
         }
     };
+
     auto test_configuration() -> bool {
         App app;
         app.set_fixed_delta(-1);
@@ -48,7 +58,7 @@ namespace {
         }
         check(app.frames == 0);
         app.set_fixed_delta(0.125);
-        app.before = [&](const auto&) {
+        app.before = [&](const auto&) -> void {
             app.set_worker_count(0).set_parallel_update_enabled(true);
         };
         app.run();
@@ -59,33 +69,46 @@ namespace {
         }
         return true;
     }
+
     struct Probe : Node {
         std::vector<std::string>& events;
         std::string label;
         int ready_count = 0, entered = 0, exited = 0, processes = 0, physics = 0;
+
         Probe(std::vector<std::string>& events, std::string label) : events(events), label(std::move(label)) {}
+
+
         auto enter_tree() -> void override {
             ++entered;
             events.push_back(label + "+");
         }
+
+
         auto ready() -> void override {
             ++ready_count;
             events.push_back(label + "!");
         }
+
+
         auto exit_tree() -> void override {
             ++exited;
             events.push_back(label + "-");
         }
-        auto process(const FrameContext& context) -> void override {
-            check(context.delta == 1);
+
+
+        auto process(double delta) -> void override {
+            check(delta == 1);
             ++processes;
             events.push_back(label);
         }
-        auto physics_process(const FrameContext& context) -> void override {
-            check(context.delta == 0.125);
+
+
+        auto physics_process(double delta) -> void override {
+            check(delta == 0.125);
             ++physics;
         }
     };
+
     auto test_lifecycle_and_clock() -> bool {
         std::vector<std::string> events;
         App app;
@@ -93,25 +116,37 @@ namespace {
         auto parent       = parent_owner.get_id();
         auto child_owner  = UniqueObject::create<Probe>(events, "child");
         auto child        = child_owner.get_id();
-        parent.with<Node>([&](Node& node) {
+        parent.with<Node>([&](Node& node) -> void {
             node.add_child("child", std::move(child_owner));
         });
         app.root().add_child("parent", std::move(parent_owner));
+        app.before = [&](const FrameContext& context) -> void {
+            check(context.delta == 1 && context.frame == std::uint64_t(app.frames) &&
+                  context.physics_tick == 2 * context.frame);
+        };
+        app.after = [&](const FrameContext& context) -> void {
+            check(context.delta == 1 && context.frame == std::uint64_t(app.frames) &&
+                  context.physics_tick == 2 * (context.frame + 1));
+        };
         app.run();
+        const auto last_frame = app.get_frame_context();
+        check(last_frame.frame == 1 && last_frame.physics_tick == 4);
         check(app.dropped_physics_steps() == 12);
         check(events ==
               std::vector<std::string>{
                   "parent+", "child+", "child!", "parent!", "parent", "child", "parent", "child", "child-", "parent-"});
-        parent.with<Probe>([](Probe& node) {
+        parent.with<Probe>([](Probe& node) -> void {
             check(node.physics == 4 && node.ready_count == 1 && node.exited == 1);
         });
         app.frames = 0;
         app.run();
-        child.with<Probe>([](Probe& node) {
+        child.with<Probe>([](Probe& node) -> void {
             check(node.entered == 2 && node.ready_count == 1 && node.exited == 2);
         });
         return true;
     }
+
+
     auto test_deferred_scene_edits() -> bool {
         App app;
         app.limit        = 4;
@@ -120,18 +155,18 @@ namespace {
         std::vector<std::string> events;
         auto child_owner = UniqueObject::create<Probe>(events, "child");
         auto child       = child_owner.get_id();
-        scene.with<Node>([&](Node& node) {
+        scene.with<Node>([&](Node& node) -> void {
             node.add_child("child", std::move(child_owner));
         });
         app.root().add_child("scene", std::move(scene_owner));
         std::optional<UniqueObject> detached;
-        app.after = [&](const FrameContext& context) {
+        app.after = [&](const FrameContext& context) -> void {
             if (context.frame == 0)
-                scene.with<scene::Scene>([](scene::Scene& value) {
+                scene.with<scene::Scene>([](scene::Scene& value) -> void {
                     value.pause();
                 });
             if (context.frame == 1) {
-                app.root().detach_child(scene, [&](EditResult result) {
+                app.root().detach_child(scene, [&](EditResult result) -> void {
                     check(result.error == NodeError::None);
                     detached = std::move(result.owner);
                 });
@@ -139,34 +174,39 @@ namespace {
             }
             if (context.frame == 2) {
                 check(app.root().children().empty() && detached.has_value());
-                scene.with<scene::Scene>([](scene::Scene& value) {
+                scene.with<scene::Scene>([](scene::Scene& value) -> void {
                     value.resume();
                 });
                 app.root().add_child("scene", std::move(*detached));
             }
         };
         app.run();
-        child.with<Probe>([](Probe& node) {
+        child.with<Probe>([](Probe& node) -> void {
             check(node.processes == 2 && node.entered == 2 && node.exited == 2 && node.ready_count == 1);
         });
         return true;
     }
+
     struct ParallelNode : Node {
         std::barrier<>& barrier;
         ObjectId peer;
         int posts = 0;
         int calls = 0;
+
         explicit ParallelNode(std::barrier<>& barrier) : barrier(barrier) { set_parallel(true); }
-        auto process(const FrameContext&) -> void override {
+
+
+        auto process(double) -> void override {
             ++calls;
-            check(peer.with<ParallelNode>([](ParallelNode& node) {
-                check(node.post([](Node& target) {
+            check(peer.with<ParallelNode>([](ParallelNode& node) -> void {
+                check(node.post([](Node& target) -> void {
                     ++static_cast<ParallelNode&>(target).posts;
                 }));
             }));
             barrier.arrive_and_wait();
         }
     };
+
     auto test_parallel_domains() -> bool {
         App app;
         app.set_parallel_update_enabled(true);
@@ -175,31 +215,36 @@ namespace {
         auto left_owner  = UniqueObject::create<ParallelNode>(barrier);
         auto right_owner = UniqueObject::create<ParallelNode>(barrier);
         auto left = left_owner.get_id(), right = right_owner.get_id();
-        left.with<ParallelNode>([&](auto& node) {
+        left.with<ParallelNode>([&](auto& node) -> void {
             node.peer = right;
         });
-        right.with<ParallelNode>([&](auto& node) {
+        right.with<ParallelNode>([&](auto& node) -> void {
             node.peer = left;
         });
         app.root().add_child("left", std::move(left_owner));
         app.root().add_child("right", std::move(right_owner));
-        app.before = [&](const auto&) {
+        app.before = [&](const auto&) -> void {
             app.set_parallel_update_enabled(false);
         };
         app.run();
-        left.with<ParallelNode>([](auto& node) {
+        left.with<ParallelNode>([](auto& node) -> void {
             check(node.calls == 2 && node.posts == 1);
         });
-        right.with<ParallelNode>([](auto& node) {
+        right.with<ParallelNode>([](auto& node) -> void {
             check(node.calls == 2 && node.posts == 1);
         });
         return true;
     }
+
     struct ThrowingNode : Node {
         int exits = 0;
-        auto process(const FrameContext&) -> void override { throw std::runtime_error("update failure"); }
+
+        auto process(double) -> void override { throw std::runtime_error("update failure"); }
+
+
         auto exit_tree() -> void override { ++exits; }
     };
+
     auto test_exception_cleanup() -> bool {
         App app;
         auto owner  = UniqueObject::create<ThrowingNode>();
@@ -212,27 +257,34 @@ namespace {
             failed = std::string(error.what()) == "update failure";
         }
         check(failed);
-        handle.with<ThrowingNode>([](auto& node) {
+        handle.with<ThrowingNode>([](auto& node) -> void {
             check(node.exits == 1);
         });
         return true;
     }
+
     struct EditingNode : Node {
         ObjectId created;
         int entered = 0;
+
         auto ready() -> void override {
             auto owner = UniqueObject::create<Node>();
             created    = owner.get_id();
             add_child("during_ready", std::move(owner));
         }
+
+
         auto enter_tree() -> void override { ++entered; }
-        auto process(const FrameContext&) -> void override {
+
+
+        auto process(double) -> void override {
             check(find_child("during_ready").has_value());
-            created.with<Node>([](Node& child) {
+            created.with<Node>([](Node& child) -> void {
                 child.rename("during_ready");
             });
         }
     };
+
     auto test_reentrant_edits_and_expired_posts() -> bool {
         App app;
         auto owner  = UniqueObject::create<EditingNode>();
@@ -242,14 +294,14 @@ namespace {
         app.root().add_child("victim", UniqueObject::create<Node>());
         victim          = *app.root().find_child("victim");
         int completions = 0;
-        app.after       = [&](const FrameContext& context) {
+        app.after       = [&](const FrameContext& context) -> void {
             if (context.frame == 0) {
-                victim.with<Node>([&](Node& target) {
+                victim.with<Node>([&](Node& target) -> void {
                     check(target.post(
-                        [](auto&) {
+                        [](auto&) -> void {
                             throw std::runtime_error("expired callback must not execute");
                         },
-                        [&](NodeError error) {
+                        [&](NodeError error) -> void {
                             check(error == NodeError::Expired);
                             ++completions;
                         }));
@@ -257,9 +309,9 @@ namespace {
                 app.root().remove_child(victim);
             }
             if (context.frame == 1) {
-                handle.with<Node>([&](Node& node) {
-                    check(node.post([](auto&) {},
-                                    [&](NodeError error) {
+                handle.with<Node>([&](Node& node) -> void {
+                    check(node.post([](auto&) -> void {},
+                                    [&](NodeError error) -> void {
                                         check(error == NodeError::Stopped);
                                         ++completions;
                                     }));
@@ -268,11 +320,13 @@ namespace {
         };
         app.run();
         check(completions == 2);
-        handle.with<EditingNode>([](auto& node) {
+        handle.with<EditingNode>([](auto& node) -> void {
             check(node.entered == 1 && node.children().size() == 1);
         });
         return true;
     }
+
+
     auto test_worker_exception_and_nested_domains() -> bool {
         App app;
         app.set_parallel_update_enabled(true);
@@ -281,10 +335,10 @@ namespace {
         auto handle   = owner.get_id();
         auto throwing = UniqueObject::create<ThrowingNode>();
         auto nested   = throwing.get_id();
-        nested.with<ThrowingNode>([](auto& node) {
+        nested.with<ThrowingNode>([](auto& node) -> void {
             node.set_parallel(true);
         });
-        handle.with<Node>([&](Node& node) {
+        handle.with<Node>([&](Node& node) -> void {
             node.set_parallel(true);
             node.add_child("nested", std::move(throwing));
         });
@@ -296,24 +350,26 @@ namespace {
             failed = true;
         }
         check(failed);
-        nested.with<ThrowingNode>([](auto& node) {
+        nested.with<ThrowingNode>([](auto& node) -> void {
             check(node.exits == 1);
         });
         return true;
     }
+
+
     auto test_concurrent_edit_cancellation() -> bool {
         App app;
         std::optional<UniqueObject> returned;
-        app.after = [&](const FrameContext& frame) {
+        app.after = [&](const FrameContext& frame) -> void {
             if (frame.frame == 0) {
-                std::thread writer([&] {
+                std::thread writer([&]() -> void {
                     app.root().add_child("first", UniqueObject::create<Node>());
                 });
                 writer.join();
                 check(!app.root().find_child("first"));
             } else {
                 check(app.root().find_child("first").has_value());
-                app.root().add_child("late", UniqueObject::create<Node>(), [&](EditResult result) {
+                app.root().add_child("late", UniqueObject::create<Node>(), [&](EditResult result) -> void {
                     check(result.error == NodeError::Stopped);
                     returned = std::move(result.owner);
                 });
@@ -322,16 +378,19 @@ namespace {
         app.run();
         return returned && returned->get() && !app.root().find_child("late");
     }
+
     struct WaitingApp : Processer {
         std::promise<void> waiting;
-        auto before_frame(const FrameContext&) -> void override { waiting.set_value(); }
+
+        auto before_frame() -> void override { waiting.set_value(); }
     };
+
     auto test_cross_thread_stop() -> bool {
         WaitingApp app;
         app.set_initialize_sdl(false);
         app.set_target_frame_rate(0.01); // Would sleep 100 seconds without stop notification.
         auto started = app.waiting.get_future();
-        std::thread stopper([&] {
+        std::thread stopper([&]() -> void {
             started.wait();
             app.stop();
         });
@@ -339,6 +398,8 @@ namespace {
         stopper.join();
         return true;
     }
+
+
     auto test_sdl_lifetime() -> bool {
         check(SDL_InitSubSystem(SDL_INIT_EVENTS));
         App app;
@@ -355,18 +416,91 @@ namespace {
         return true;
     }
 
+    struct InputProbe : Node {
+        const Processer& processer;
+        int entries = 0, ticks = 0, updates = 0;
+
+        explicit InputProbe(const Processer& processer) : processer(processer) {}
+
+
+        auto check_input() const -> void {
+            const auto frame     = processer.get_frame_context().frame;
+            const auto& controls = Input::instance();
+            check(controls.is_key_pressed(input::Key::A) == (frame == 0));
+            check(controls.is_key_just_pressed(input::Key::A) == (frame == 0));
+            check(controls.is_key_just_released(input::Key::A) == (frame == 1));
+        }
+
+
+        auto enter_tree() -> void override {
+            check_input();
+            ++entries;
+        }
+
+
+        auto physics_process(double) -> void override {
+            check_input();
+            ++ticks;
+        }
+
+
+        auto process(double) -> void override {
+            check_input();
+            ++updates;
+        }
+    };
+
+    auto test_input_before_tree() -> bool {
+        platform::Runtime host;
+        App app;
+        app.set_platform_options({}).set_parallel_update_enabled(true).set_worker_count(1);
+        auto worker    = UniqueObject::create<InputProbe>(app);
+        auto worker_id = worker.get_id();
+        worker_id.with<InputProbe>([](auto& probe) -> void {
+            probe.set_parallel(true);
+        });
+        app.root().add_child("worker", std::move(worker));
+        auto added    = UniqueObject::create<InputProbe>(app);
+        auto added_id = added.get_id();
+        SDL_Event key{};
+        key.type         = SDL_EVENT_KEY_DOWN;
+        key.key.scancode = SDL_SCANCODE_A;
+        check(SDL_PushEvent(&key));
+        app.after = [&](const FrameContext& context) -> void {
+            if (context.frame != 0) return;
+            key.type = SDL_EVENT_KEY_UP;
+            check(SDL_PushEvent(&key));
+            app.root().add_child("coordinator", std::move(added));
+        };
+        app.run();
+        check(worker_id.with<InputProbe>([](auto& probe) -> void {
+            check(probe.entries == 1 && probe.ticks == 4 && probe.updates == 2);
+        }));
+        check(added_id.with<InputProbe>([](auto& probe) -> void {
+            check(probe.entries == 1 && probe.ticks == 2 && probe.updates == 1);
+        }));
+        check(!Input::instance().is_key_just_released(input::Key::A));
+        return true;
+    }
+
     struct RejectingNode : Node {
         int& returned;
+
         explicit RejectingNode(int& returned) : returned(returned) { set_parallel(true); }
-        auto process(const FrameContext& context) -> void override {
-            if (context.frame != 0) return;
+
+        bool submitted = false;
+
+        auto process(double) -> void override {
+            if (submitted) return;
+            submitted = true;
             add_child("duplicate", UniqueObject::create<Node>());
-            add_child("duplicate", UniqueObject::create<Node>(), [&](EditResult result) {
+            add_child("duplicate", UniqueObject::create<Node>(), [&](EditResult result) -> void {
                 check(result.error == NodeError::InvalidEdit && result.owner && result.owner->get());
                 ++returned;
             });
         }
     };
+
     auto test_returned_ownership_and_runtime_expiry() -> bool {
         int returned = 0;
         App app;
@@ -379,23 +513,23 @@ namespace {
         victim      = *app.root().find_child("victim");
         int expired = 0;
         std::optional<UniqueObject> detached;
-        app.after = [&](const FrameContext& context) {
+        app.after = [&](const FrameContext& context) -> void {
             if (context.frame != 0) return;
-            app.root().detach_child(victim, [&](EditResult result) {
+            app.root().detach_child(victim, [&](EditResult result) -> void {
                 detached = std::move(result.owner);
             });
-            victim.with<Node>([&](Node& node) {
-                node.add_child("late", UniqueObject::create<Node>(), [&](EditResult result) {
+            victim.with<Node>([&](Node& node) -> void {
+                node.add_child("late", UniqueObject::create<Node>(), [&](EditResult result) -> void {
                     check(result.error == NodeError::Expired && result.owner.has_value());
                     ++expired;
                 });
             });
-            victim.with<Node>([&](Node& target) {
+            victim.with<Node>([&](Node& target) -> void {
                 check(target.post(
-                    [](auto&) {
+                    [](auto&) -> void {
                         throw std::runtime_error("detached target must not receive old posts");
                     },
-                    [&](NodeError error) {
+                    [&](NodeError error) -> void {
                         check(error == NodeError::Expired);
                         ++expired;
                     }));
@@ -403,14 +537,15 @@ namespace {
         };
         app.run();
         check(returned == 1 && expired == 2 && detached.has_value());
-        check(victim.with<Node>([](Node& node) {
+        check(victim.with<Node>([](Node& node) -> void {
             check(node.children().empty());
         }));
         return true;
     }
 
 } // namespace
-int main() {
+
+auto main() -> int {
     test::TestRunner()
         .add_test_func(test_configuration)
         .add_test_func(test_lifecycle_and_clock)
@@ -422,6 +557,7 @@ int main() {
         .add_test_func(test_concurrent_edit_cancellation)
         .add_test_func(test_cross_thread_stop)
         .add_test_func(test_sdl_lifetime)
+        .add_test_func(test_input_before_tree)
         .add_test_func(test_returned_ownership_and_runtime_expiry)
         .run();
 }

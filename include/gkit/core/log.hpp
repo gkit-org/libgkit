@@ -45,7 +45,7 @@ namespace gkit::core {
 
     private:
         Log();
-        ~Log();
+        ~Log() override;
 
         auto log_handler() -> void;
         auto log_to_console(const std::string& msg, LogLevel level = LogLevel::Info) -> void;
@@ -54,9 +54,11 @@ namespace gkit::core {
         class MpscBoundedQueue {
         public:
             explicit MpscBoundedQueue(std::size_t capacity);
+
             // Non-blocking producer path. Returns false when queue is full.
             [[nodiscard]] auto try_dequeue(Message& msg) noexcept -> bool;
             [[nodiscard]] auto try_enqueue(Message&& msg) noexcept -> bool;
+
             // Single-consumer dequeue path.
             [[nodiscard]] auto empty() const noexcept -> bool;
 
@@ -81,12 +83,15 @@ namespace gkit::core {
          * @param msg The log message to be logged.
          */
         auto log(Message msg) -> void;
+
         /** @brief Exposed for low-level call sites that want enqueue success feedback. */
         auto try_log(Message&& msg) -> bool;
+
         /** @brief Wait until messages accepted before this call have reached the sinks. */
         auto flush(std::chrono::milliseconds timeout = std::chrono::milliseconds(100)) -> bool;
         auto shutdown() -> void;
         auto stats() const noexcept -> Stats;
+
         /**
          * @brief Set the new log file path and reopen the file stream.
          * @param path new path
@@ -96,8 +101,10 @@ namespace gkit::core {
     private:
         // Must be power-of-two effective capacity for ring index masking.
         static constexpr std::size_t LOG_QUEUE_CAPACITY = 8192;
+
         static_assert((LOG_QUEUE_CAPACITY & (LOG_QUEUE_CAPACITY - 1u)) == 0u,
                       "LOG_QUEUE_CAPACITY must be a power of two");
+
         static constexpr std::chrono::milliseconds LOG_WAIT_TIMEOUT = std::chrono::milliseconds(2);
 
         std::mutex admission_mutex;

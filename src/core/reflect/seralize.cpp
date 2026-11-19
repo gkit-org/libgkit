@@ -32,14 +32,17 @@ namespace gkit::core::reflect {
             });
     }
 
+
     // SerdeStruct
     SerdeStruct::SerdeStruct(Value v) { // NOLINT(performance-unnecessary-value-param)
         this->from(std::move(v));
     }
 
+
     SerdeStruct::SerdeStruct(const ObjectId v) {
         this->from(v);
     }
+
 
     auto SerdeStruct::operator[](const std::string& key) -> Value& {
         if (!this->available_flag) throw std::logic_error("no serialized value");
@@ -52,6 +55,7 @@ namespace gkit::core::reflect {
         throw std::invalid_argument("element not found");
     }
 
+
     auto SerdeStruct::from(Value v) -> void { // NOLINT(performance-unnecessary-value-param)
         this->serde_root.reset();
         this->available_flag = false;
@@ -59,18 +63,20 @@ namespace gkit::core::reflect {
         this->available_flag = true;
     }
 
+
     auto SerdeStruct::from(ObjectId v) -> void {
         this->serde_root.reset();
         this->available_flag = false;
         if (!v.available()) throw std::invalid_argument("invalid object id");
 
         this->serde_root = std::make_unique<SerdeNode>("", Type::Object);
-        if (!v.with([&](Object& obj) {
+        if (!v.with([&](Object& obj) -> void {
                 expand_object_children(*this->serde_root, &obj);
             }))
             throw std::invalid_argument("expired object id");
         this->available_flag = true;
     }
+
 
     // SerdeNode
     SerdeNode::SerdeNode(const std::string& k, const Value& v) {
@@ -108,10 +114,12 @@ namespace gkit::core::reflect {
         }
     }
 
+
     SerdeNode::SerdeNode(const std::string& k, Type t) {
         this->key  = k;
         this->type = t;
     }
+
 
     auto SerdeNode::add_child(SerdeNode&& child) -> void {
         this->children.emplace_back(std::make_unique<SerdeNode>(std::move(child)));

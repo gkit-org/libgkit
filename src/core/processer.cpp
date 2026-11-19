@@ -3,10 +3,8 @@
  */
 #include "gkit/core/processer.hpp"
 
-#include "core/misc/sdl_event_dispatcher.hpp"
 #include "core/node_internal.hpp"
-
-#include <SDL3/SDL.h>
+#include "gkit/core/input/input.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -31,17 +29,19 @@ namespace gkit {
             std::exception_ptr failure;
 
         public:
-            auto enabled() const noexcept -> bool { return !workers.empty(); }
+            [[nodiscard]] auto enabled() const noexcept -> bool { return !workers.empty(); }
+
+
             explicit WorkerPool(std::size_t count) {
                 try {
                     for (std::size_t i = 0; i < count; ++i)
-                        workers.emplace_back([this] {
+                        workers.emplace_back([this]() -> void {
                             for (;;) {
                                 std::function<void()> job;
                                 bool skip;
                                 {
                                     std::unique_lock lock(mutex);
-                                    available.wait(lock, [&] {
+                                    available.wait(lock, [&]() -> bool {
                                         return closing || !jobs.empty();
                                     });
                                     if (jobs.empty()) return;
@@ -66,7 +66,11 @@ namespace gkit {
                     throw;
                 }
             }
+
+
             ~WorkerPool() { close(); }
+
+
             auto close() -> void {
                 {
                     std::lock_guard lock(mutex);
@@ -76,14 +80,20 @@ namespace gkit {
                 for (auto& worker : workers)
                     if (worker.joinable()) worker.join();
             }
+
+
             auto check_failure() -> void {
                 std::lock_guard lock(mutex);
                 if (failure) std::rethrow_exception(failure);
             }
+
+
             auto cancel(std::exception_ptr error) -> void {
                 std::lock_guard lock(mutex);
                 if (!failure) failure = error;
             }
+
+
             auto submit(std::function<void()> job) -> void {
                 std::lock_guard lock(mutex);
                 if (failure) std::rethrow_exception(failure);
@@ -91,20 +101,23 @@ namespace gkit {
                 ++pending;
                 available.notify_one();
             }
+
+
             auto join() -> void {
                 std::unique_lock lock(mutex);
-                finished.wait(lock, [&] {
+                finished.wait(lock, [&]() -> bool {
                     return pending == 0;
                 });
                 if (failure) std::rethrow_exception(failure);
             }
         };
         using State = core::detail::NodeState;
+
         /**
          * @brief Walk one worker-owned subtree parent-first, applying inherited update gates.
          * @note User code may post work or stage edits, but cannot mutate topology during a phase.
          */
-        auto serial_update(State* root, const core::FrameContext& context, bool physics) -> void {
+        auto serial_update(State* root, double delta, bool physics) -> void {
             std::vector<State*> pending{root};
             while (!pending.empty()) {
                 auto* current = pending.back();
@@ -112,19 +125,21 @@ namespace gkit {
                 auto& node = current->node;
                 if (!node.updates_enabled()) continue;
                 if (physics)
-                    node.physics_process(context);
+                    node.physics_process(delta);
                 else
-                    node.process(context);
+                    node.process(delta);
                 if (!node.updates_enabled()) continue;
                 for (auto* child : current->descendants() | std::views::reverse) pending.push_back(child);
             }
         }
+
+
         /**
          * @brief Update coordinator nodes and dispatch each independent subtree after its ancestors have completed.
          * @note Always join the phase before returning or throwing. No ordering is promised between independent
          * domains; local traversal remains insertion-ordered. This barrier separates every physics and logic phase.
          */
-        auto update(State* root, const core::FrameContext& context, bool physics, WorkerPool& pool) -> void {
+        auto update(State* root, double delta, bool physics, WorkerPool& pool) -> void {
             std::exception_ptr failure;
             try {
                 std::vector<State*> pending{root};
@@ -133,17 +148,17 @@ namespace gkit {
                     auto* current = pending.back();
                     pending.pop_back();
                     if (pool.enabled() && current != root && current->node.is_parallel()) {
-                        pool.submit([current, context, physics] {
-                            serial_update(current, context, physics);
+                        pool.submit([current, delta, physics]() -> void {
+                            serial_update(current, delta, physics);
                         });
                         continue;
                     }
                     auto& node = current->node;
                     if (!node.updates_enabled()) continue;
                     if (physics)
-                        node.physics_process(context);
+                        node.physics_process(delta);
                     else
-                        node.process(context);
+                        node.process(delta);
                     if (!node.updates_enabled()) continue;
                     for (auto* child : current->descendants() | std::views::reverse) pending.push_back(child);
                 }
@@ -159,11 +174,15 @@ namespace gkit {
             if (failure) std::rethrow_exception(failure);
         }
     } // namespace
+
     Processer::Processer() :
-        root_owner(core::UniqueObject::create<core::Node>()), runtime(std::make_unique<core::detail::TreeRuntime>()) {
+        root_owner(core::UniqueObject::create<core::Node>()),
+        runtime(std::make_unique<core::detail::TreeRuntime>(root_owner.get_id())) {
         std::lock_guard lock(core::detail::tree_mutex);
         core::detail::assign_runtime(root().state.get(), runtime.get());
     }
+
+
     Processer::~Processer() {
         // Destruction must follow run() returning; stop() is the cross-thread operation.
         {
@@ -181,61 +200,94 @@ namespace gkit {
         std::lock_guard guard(core::detail::tree_mutex);
         core::detail::assign_runtime(root().state.get(), nullptr);
     }
+
+
     auto Processer::root() noexcept -> core::Node& {
         return *static_cast<core::Node*>(root_owner.get());
     }
+
+
     auto Processer::root() const noexcept -> const core::Node& {
         return *static_cast<const core::Node*>(root_owner.get());
     }
+
+
     auto Processer::set_parallel_update_enabled(bool value) noexcept -> Processer& {
         std::lock_guard lock(settings_mutex);
         config.parallel_update_enabled = value;
         return *this;
     }
+
+
     auto Processer::set_worker_count(std::size_t value) noexcept -> Processer& {
         std::lock_guard lock(settings_mutex);
         config.worker_count = value;
         return *this;
     }
+
+
     auto Processer::set_fixed_delta(double value) noexcept -> Processer& {
         std::lock_guard lock(settings_mutex);
         config.fixed_delta = value;
         return *this;
     }
+
+
     auto Processer::set_max_fixed_steps(std::size_t value) noexcept -> Processer& {
         std::lock_guard lock(settings_mutex);
         config.max_fixed_steps = value;
         return *this;
     }
+
+
     auto Processer::set_max_frame_delta(double value) noexcept -> Processer& {
         std::lock_guard lock(settings_mutex);
         config.max_frame_delta = value;
         return *this;
     }
+
+
     auto Processer::set_target_frame_rate(double value) noexcept -> Processer& {
         std::lock_guard lock(settings_mutex);
         config.target_frame_rate = value;
         return *this;
     }
+
+
+    auto Processer::set_platform_options(platform::RuntimeOptions value) -> Processer& {
+        std::lock_guard lock(settings_mutex);
+        config.platform_options = value;
+        return *this;
+    }
+
+
     auto Processer::set_initialize_sdl(bool value) noexcept -> Processer& {
         std::lock_guard lock(settings_mutex);
         config.initialize_sdl = value;
         return *this;
     }
+
+
     auto Processer::set_sdl_flags(std::optional<std::uint32_t> value) noexcept -> Processer& {
         std::lock_guard lock(settings_mutex);
         config.sdl_flags = value;
         return *this;
     }
+
+
     auto Processer::now() const -> std::chrono::steady_clock::time_point {
         return std::chrono::steady_clock::now();
     }
+
+
     auto Processer::wait_until(std::chrono::steady_clock::time_point deadline) -> void {
         std::unique_lock lock(wait_mutex);
-        wake.wait_until(lock, deadline, [&] {
+        wake.wait_until(lock, deadline, [&]() -> bool {
             return !running.load();
         });
     }
+
+
     auto Processer::stop() noexcept -> void {
         {
             std::lock_guard lock(wait_mutex);
@@ -243,6 +295,14 @@ namespace gkit {
         }
         wake.notify_all();
     }
+
+
+    auto Processer::get_frame_context() const -> core::FrameContext {
+        std::lock_guard lock(frame_mutex);
+        return frame_context;
+    }
+
+
     /**
      * @brief Execute the scheduler's startup, frame loop and unconditional cleanup boundary.
      * @note Workers are scoped inside the guarded run body, so they finish before tree exit callbacks run.
@@ -271,25 +331,23 @@ namespace gkit {
         }
         dropped_steps.store(0);
         std::exception_ptr failure;
-        SDL_InitFlags flags                        = 0;
-        core::SDLEventDispatcher::Token quit_token = 0;
-        bool started                               = false;
+        std::optional<platform::Runtime> session;
+        bool started = false;
         try {
-            WorkerPool pool(settings.parallel_update_enabled ? settings.worker_count : 0);
-            if (settings.initialize_sdl) {
-                auto requested = settings.sdl_flags.value_or(SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_GAMEPAD |
-                                                             SDL_INIT_JOYSTICK | SDL_INIT_VIDEO);
-                if (!SDL_IsMainThread()) throw std::logic_error("SDL requires the main thread");
-                if (!SDL_InitSubSystem(requested)) throw std::runtime_error(SDL_GetError());
-                flags = requested;
-                if (flags & SDL_INIT_EVENTS) {
-                    Input::instance().initialize();
-                    quit_token = core::SDLEventDispatcher::instance().register_event_handler(SDL_EVENT_QUIT,
-                                                                                             [this](const auto&) {
-                                                                                                 stop();
-                                                                                             });
-                }
+            {
+                std::lock_guard lock(frame_mutex);
+                frame_context = {};
             }
+            WorkerPool pool(settings.parallel_update_enabled ? settings.worker_count : 0);
+            if (settings.platform_options)
+                session.emplace(*settings.platform_options);
+            else if (settings.initialize_sdl) {
+                if (settings.sdl_flags)
+                    session.emplace(*settings.sdl_flags);
+                else
+                    session.emplace(platform::RuntimeOptions{true, true, true, true, true});
+            }
+            if (session && session->has_events()) Input::instance().initialize();
             {
                 std::lock_guard lock(runtime->queue_mutex);
                 runtime->accepting = true;
@@ -298,31 +356,45 @@ namespace gkit {
                 std::lock_guard lock(core::detail::tree_mutex);
                 runtime->active = true;
             }
+            start_run_services(session ? &*session : nullptr);
             started = true;
             on_start();
-            core::detail::enter_nodes(root().state.get());
-            auto previous      = now();
-            double accumulated = 0;
-            core::FrameContext context;
-            auto empty_input = std::make_shared<const input::Snapshot>();
+            auto previous       = now();
+            double accumulated  = 0;
+            std::uint64_t frame = 0;
             while (running.load()) {
-                auto start = now();
-                context.delta =
+                const auto start = now();
+                const auto delta =
                     std::clamp(std::chrono::duration<double>(start - previous).count(), 0.0, settings.max_frame_delta);
                 previous = start;
-                accumulated += context.delta;
-                core::detail::drain_edits(*runtime);
-                if (flags & SDL_INIT_EVENTS) core::SDLEventDispatcher::instance().dispatch_events();
-                context.input = (flags & SDL_INIT_EVENTS) ? Input::instance().snapshot() : empty_input;
+                accumulated += delta;
+                {
+                    std::lock_guard lock(frame_mutex);
+                    frame_context.delta = delta;
+                    frame_context.frame = frame;
+                }
+                if (session && session->has_events()) {
+                    auto events = session->poll_events();
+                    for (const auto& event : events) {
+                        if (std::holds_alternative<platform::QuitEvent>(event)) stop();
+                    }
+                    Input::instance().update(events);
+                    if (running.load()) handle_events(events);
+                }
                 if (!running.load()) break;
-                before_frame(context);
+                if (frame == 0) core::detail::enter_nodes(root().state.get());
+                if (!running.load()) break;
+                core::detail::drain_edits(*runtime);
+                if (!running.load()) break;
+                before_frame();
                 core::detail::drain_posts(*runtime);
                 std::size_t steps = 0;
                 while (running.load() && accumulated >= settings.fixed_delta && steps < settings.max_fixed_steps) {
-                    auto fixed  = context;
-                    fixed.delta = settings.fixed_delta;
-                    update(root().state.get(), fixed, true, pool);
-                    ++context.physics_tick;
+                    update(root().state.get(), settings.fixed_delta, true, pool);
+                    {
+                        std::lock_guard lock(frame_mutex);
+                        ++frame_context.physics_tick;
+                    }
                     ++steps;
                     accumulated -= settings.fixed_delta;
                 }
@@ -330,9 +402,10 @@ namespace gkit {
                     dropped_steps.fetch_add(static_cast<std::uint64_t>(accumulated / settings.fixed_delta));
                     accumulated = std::fmod(accumulated, settings.fixed_delta);
                 }
-                if (running.load()) update(root().state.get(), context, false, pool);
-                after_frame(context);
-                ++context.frame;
+                if (running.load()) update(root().state.get(), delta, false, pool);
+                after_frame();
+                if (running.load()) finish_frame();
+                ++frame;
                 if (settings.target_frame_rate > 0) {
                     auto period = std::chrono::duration_cast<std::chrono::steady_clock::duration>(
                         std::chrono::duration<double>(1.0 / settings.target_frame_rate));
@@ -365,8 +438,13 @@ namespace gkit {
         } catch (...) {
             if (!failure) failure = std::current_exception();
         }
-        if (quit_token) core::SDLEventDispatcher::instance().disconnect(quit_token);
-        if (flags) SDL_QuitSubSystem(flags);
+        try {
+            if (session && session->has_events()) Input::instance().initialize();
+        } catch (...) {
+            if (!failure) failure = std::current_exception();
+        }
+        stop_run_services();
+        session.reset();
         {
             std::lock_guard lock(core::detail::tree_mutex);
             runtime->active = false;

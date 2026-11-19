@@ -10,8 +10,10 @@ namespace {
     struct Tracked : gkit::core::Object {
         static inline std::atomic<int> destroyed = 0;
         int value                                = 42;
+
         ~Tracked() override { ++destroyed; }
     };
+
     auto test_values() -> bool {
         using namespace gkit::core;
         static_assert(!std::is_constructible_v<Value, UniqueObject>);
@@ -21,7 +23,7 @@ namespace {
         auto copy        = original;
         copy["array"][0] = 7;
         gkit::test::assert_if(original["array"][0].as_int64() == 42, "nested values must copy independently");
-        gkit::test::assert_if(copy["object"].as_object().with<Tracked>([](auto& obj) {
+        gkit::test::assert_if(copy["object"].as_object().with<Tracked>([](auto& obj) -> void {
             gkit::test::assert_if(obj.value == 42, "copied object value");
         }),
                               "object ID copy");
@@ -34,26 +36,29 @@ namespace {
         gkit::test::assert_if(caught, "wrong type must throw rather than terminate");
         return true;
     }
+
+
     auto test_borrow() -> bool {
         using namespace gkit::core;
         Tracked::destroyed = 0;
         std::optional<UniqueObject> owned(UniqueObject::create<Tracked>());
         auto id = owned->get_id();
-        id.with<Tracked>([&](Tracked& borrowed) {
+        id.with<Tracked>([&](Tracked& borrowed) -> void {
             auto moved = std::move(*owned);
             gkit::test::assert_if(owned->get() == nullptr, "moved owner must be empty");
             owned.emplace(std::move(moved));
             owned.reset();
-            gkit::test::assert_if(!id.with([](Object&) {}) && Tracked::destroyed == 0, "retired object stays pinned");
+            gkit::test::assert_if(!id.with([](Object&) -> void {}) && Tracked::destroyed == 0,
+                                  "retired object stays pinned");
             gkit::test::assert_if(borrowed.value == 42, "callback borrow remains usable");
         });
         gkit::test::assert_if(Tracked::destroyed == 1, "destroy exactly once after final borrow");
         for (int i = 0; i < 100; ++i) {
             auto owner = UniqueObject::create<Tracked>();
             auto live  = owner.get_id();
-            std::thread reader([live] {
+            std::thread reader([live]() -> void {
                 for (int n = 0; n < 100; ++n) {
-                    live.with<Tracked>([](auto& obj) {
+                    live.with<Tracked>([](auto& obj) -> void {
                         gkit::test::assert_if(obj.value == 42, "concurrent borrow");
                     });
                 }
@@ -62,16 +67,18 @@ namespace {
                 auto released = std::move(owner);
             }
             reader.join();
-            gkit::test::assert_if(!live.with([](Object&) {}), "released ID must stay expired");
+            gkit::test::assert_if(!live.with([](Object&) -> void {}), "released ID must stay expired");
         }
         return true;
     }
+
     struct Throws : gkit::core::Object {
         Throws() { throw std::runtime_error("constructor failure"); }
     };
     struct Reentrant : gkit::core::Object {
         ~Reentrant() override { auto other = gkit::core::UniqueObject::create<Tracked>(); }
     };
+
     auto test_failure_and_reentry() -> bool {
         bool caught = false;
         try {
@@ -83,6 +90,8 @@ namespace {
         auto object = gkit::core::UniqueObject::create<Reentrant>();
         return object.get() != nullptr;
     }
+
+
     auto test_ids() -> bool {
         struct Tag {};
         using Id        = gkit::core::templates::GenId<Tag>;
@@ -101,6 +110,7 @@ namespace {
         return true;
     }
 } // namespace
+
 auto main() -> int {
     gkit::test::TestRunner()
         .add_test_func(test_values)

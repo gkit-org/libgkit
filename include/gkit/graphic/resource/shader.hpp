@@ -47,10 +47,7 @@ namespace gkit::graphic {
         virtual auto unbind() const -> void = 0;
 
         /**
-         * @brief Whether the shader program compiled and linked successfully
-         *
-         * A shader created from a file whose source failed to compile/link is
-         * invalid; rendering with it is undefined, so the queue rejects it.
+         * @brief Whether the shader linked successfully and belongs to a live graphics session.
          */
         [[nodiscard]] virtual auto is_valid() const -> bool = 0;
 

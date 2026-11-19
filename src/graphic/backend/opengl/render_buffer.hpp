@@ -1,6 +1,7 @@
 #pragma once
 
 #include "gkit/graphic/resource/render_buffer.hpp"
+#include "graphic/backend/opengl/context.hpp"
 
 #include <cstdint>
 
@@ -12,13 +13,10 @@
  */
 namespace gkit::graphic::opengl {
 
-    class RenderBuffer final : public graphic::RenderBuffer {
+    class RenderBuffer final : public graphic::RenderBuffer, public ContextResource {
         friend class Device;
 
     public:
-        RenderBuffer(RenderBuffer&& other) noexcept;
-        auto operator=(RenderBuffer&& other) noexcept -> RenderBuffer&;
-
         ~RenderBuffer() override;
 
         auto bind() const -> void override;
@@ -29,9 +27,14 @@ namespace gkit::graphic::opengl {
          */
         [[nodiscard]] auto get_render_id() const -> uint32_t { return this->renderer_id; }
 
-    private:
-        explicit RenderBuffer(int width, int height);
+        [[nodiscard]] auto width() const noexcept -> int { return buffer_width; }
+        [[nodiscard]] auto height() const noexcept -> int { return buffer_height; }
 
+    private:
+        explicit RenderBuffer(const std::shared_ptr<const Context>& context, int width, int height);
+
+        int buffer_width;
+        int buffer_height;
         uint32_t renderer_id = 0; // GL renderbuffer handle
     };
 

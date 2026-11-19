@@ -13,14 +13,16 @@ namespace gkit::resource {
         Texture();
         explicit Texture(std::filesystem::path path);
         ~Texture() override;
+
         auto load_from_file() -> void override;
-        auto width() const noexcept -> int;
-        auto height() const noexcept -> int;
-        auto pitch() const noexcept -> int;
-        auto pixels() const noexcept -> std::span<const std::byte>;
+        [[nodiscard]] auto width() const noexcept -> int;
+        [[nodiscard]] auto height() const noexcept -> int;
+        [[nodiscard]] auto pitch() const noexcept -> int;
+        [[nodiscard]] auto pixels() const noexcept -> std::span<const std::byte>;
 
     private:
         struct Data;
+
         std::unique_ptr<Data> data;
     };
 } // namespace gkit::resource

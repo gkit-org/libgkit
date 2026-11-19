@@ -2,35 +2,32 @@
 
 #include "gkit/core/input/action.hpp"
 #include "gkit/core/templates/singleton.hpp"
+#include "gkit/platform/runtime.hpp"
 #include "mouse.hpp"
 
-#include <memory>
 #include <mutex>
+#include <span>
 #include <string>
 #include <unordered_map>
-#include <unordered_set>
-
-namespace gkit::input {
-    /** @brief Immutable once published; retain one snapshot for a consistent frame read. */
-    struct Snapshot {
-        std::unordered_set<Key> keys, pressed_keys, released_keys, previous_keys;
-        std::unordered_set<MouseButton> buttons, pressed_buttons, released_buttons, previous_buttons;
-        std::unordered_set<int> gamepad, pressed_gamepad, released_gamepad;
-        MouseMove motion;
-        MouseWheel wheel;
-        std::uint32_t modifiers          = 0;
-        std::uint32_t previous_modifiers = 0;
-    };
-} // namespace gkit::input
 
 namespace gkit {
+    /**
+     * @brief Process-wide input state updated from platform event batches.
+     * @note Queries are thread-safe. Processer updates input before running the tree and waits for all
+     * workers before advancing input again. Just-pressed and just-released edges last for one logic
+     * frame, including every fixed physics step executed within that frame.
+     */
     class Input : public gkit::core::templates::Singleton<Input> {
     public:
         Input();
-        /** @brief Call on the SDL main thread after SDL event initialization. */
+
+        /** @brief Clear input state while keeping registered actions. Main thread only. */
         auto initialize() -> void;
-        auto snapshot() const -> std::shared_ptr<const input::Snapshot>;
-        virtual ~Input() = default;
+
+        /** @brief Apply an ordered event batch and advance frame edges. Main thread only. */
+        auto update(std::span<const platform::Event> events) -> void;
+
+        ~Input() override = default;
 
     public:
         // action related
@@ -66,6 +63,7 @@ namespace gkit {
     private:
         mutable std::mutex action_mutex;
         std::unordered_map<std::string, input::Action> action_map;
+
         auto action_state(const std::string& name, int edge) const -> bool;
     }; // class Input
 } // namespace gkit

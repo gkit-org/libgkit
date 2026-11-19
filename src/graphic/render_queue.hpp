@@ -1,8 +1,9 @@
 #pragma once
 
-#include "gkit/graphic/render/render_command.hpp"
-#include "gkit/graphic/render/render_device.hpp"
+#include "graphic/render_command.hpp"
+#include "graphic/render_device.hpp"
 
+#include <utility>
 #include <vector>
 
 namespace gkit::graphic {
@@ -17,16 +18,17 @@ namespace gkit::graphic {
     class RenderQueue {
     public:
         /**
-         * @brief Enqueue a command (copied; command is a value type)
+         * @brief Enqueue a command and the resources it owns.
          */
-        // cmd is deliberately taken by value: the command is copied into the queue.
-        auto submit(RenderCommand cmd) -> void { this->commands.push_back(cmd); }
+        auto submit(RenderCommand cmd) -> void { this->commands.push_back(std::move(cmd)); }
 
         /**
          * @brief Sort and execute all queued commands, then clear
          * @param device Backend device used to apply state and draw
+         * @param session Identifies the context used for geometry uploads.
+         * @param screen Default viewport for the window.
          */
-        auto flush(RenderDevice& device) -> void;
+        auto flush(RenderDevice& device, const std::shared_ptr<const void>& session, ViewportRect screen) -> void;
 
         /**
          * @brief Drop all queued commands without executing

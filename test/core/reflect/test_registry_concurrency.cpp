@@ -2,7 +2,7 @@
 #include "gkit/core/reflect/registry.hpp"
 #include "test_utils.hpp"
 
-#include <atomic>
+#include <latch>
 #include <thread>
 
 namespace {
@@ -15,6 +15,7 @@ namespace {
     struct Complete : gkit::core::Object {
         int value = 11;
     };
+
     auto test_snapshots() -> bool {
         using namespace gkit::core;
         auto& db = reflect::ClassDB::instance();
@@ -22,7 +23,7 @@ namespace {
         db.regist<Child>("ConcurrentChild", "ConcurrentBase").add_field("ConcurrentChild", "child", &Child::child);
         auto info = db.find("ConcurrentChild");
         int count = 0;
-        info->for_each_field([&](const auto&, const auto&, const auto*) {
+        info->for_each_field([&](const auto&, const auto&, const auto*) -> void {
             ++count;
         });
         gkit::test::assert_if(count == 2, "inheritance must work before parent lookup");
@@ -35,20 +36,22 @@ namespace {
             duplicate = true;
         }
         gkit::test::assert_if(duplicate, "duplicate inherited field rejected");
-        std::atomic<bool> done = false;
-        std::thread reader([&] {
-            while (!done.load()) {
-                if (auto published = db.find("Complete")) {
-                    gkit::test::assert_if(published->fields.size() == 1,
-                                          "transaction must publish complete description");
-                }
-            }
+        std::latch registered(1);
+        std::latch observed(1);
+        std::thread writer([&]() -> void {
+            db.regist<Complete>("Complete");
+            registered.count_down();
+            observed.wait();
+            db.add_field("Complete", "value", &Complete::value);
         });
-        db.register_class<Complete>("Complete", [](auto& staging) {
-            staging.add_field("Complete", "value", &Complete::value);
-        });
-        done = true;
-        reader.join();
+        registered.wait();
+        const auto initial = db.find("Complete");
+        observed.count_down();
+        writer.join();
+        const auto updated = db.find("Complete");
+        gkit::test::assert_if(initial && initial->fields.empty(), "adding a field preserves a reader's snapshot");
+        gkit::test::assert_if(updated && updated->fields.size() == 1 && updated->fields.front().name == "value",
+                              "new readers see the field after publication");
         Child child;
         gkit::test::assert_if(info->get_field(&child, "base")->as_int64() == 7, "inherited getter");
         std::weak_ptr<const reflect::ClassInfo> old = info;
@@ -78,6 +81,7 @@ namespace {
         return true;
     }
 } // namespace
+
 auto main() -> int {
     gkit::test::TestRunner().add_test_func(test_snapshots).run();
 }

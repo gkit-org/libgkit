@@ -1,27 +1,27 @@
 #pragma once
 
-#include "gkit/graphic/vertex_buffer_layout.hpp"
 #include "gkit/graphic/config.hpp"
-#include "gkit/graphic/render/render_device.hpp"
 #include "gkit/graphic/render/render_state.hpp"
 #include "gkit/graphic/resource/index_buffer.hpp"
 #include "gkit/graphic/resource/material.hpp"
 #include "gkit/graphic/resource/vertex_array.hpp"
 #include "gkit/graphic/resource/vertex_buffer.hpp"
+#include "gkit/graphic/vertex_buffer_layout.hpp"
 
 #include <cstdint>
 #include <memory>
 #include <vector>
 
 namespace gkit::graphic {
+    class RenderDevice;
+    class RenderQueue;
 
     /**
      * @brief A draw unit defined by CPU data (vertices/indices + material + state)
      *
      * Users provide vertex/index arrays, a vertex layout, a material, and state.
      * The VAO/VBO/IBO creation and binding are hidden: GPU resources are lazily
-     * created and cached on first draw. Only a RenderCommand built from this
-     * object is enqueued.
+     * created and cached on first draw in each graphics session.
      */
     class RenderObject {
     public:
@@ -37,6 +37,8 @@ namespace gkit::graphic {
                      const std::vector<uint32_t>& indices,
                      const VertexBufferLayout& layout,
                      const Material& material);
+        RenderObject(const RenderObject&)                    = delete;
+        auto operator=(const RenderObject&) -> RenderObject& = delete;
 
         // ---- Material (reusable, replaceable) ----
         Material material;
@@ -54,24 +56,14 @@ namespace gkit::graphic {
         /** @brief What to clear when clear is set. */
         ClearFlags clear_flags = ClearFlags::All;
 
-        /**
-         * @brief Lazily upload vertices/indices to GPU and return the vertex array
-         * @param device backend device used to create GPU buffers
-         * @return reference to the cached vertex array
-         */
-        auto ensure_uploaded(RenderDevice& device) -> const VertexArray&;
-
-        /**
-         * @brief Access the cached index buffer (valid after ensure_uploaded)
-         */
-        [[nodiscard]] auto index_buffer() -> const IndexBuffer&;
-
-        /**
-         * @brief Whether GPU resources have been created
-         */
-        [[nodiscard]] auto is_uploaded() const -> bool { return this->uploaded; }
+        /** @brief Whether the cached geometry belongs to a live graphics session. Coordinator thread only. */
+        [[nodiscard]] auto is_uploaded() const -> bool { return !uploaded_session.expired(); }
 
     private:
+        friend class RenderQueue;
+
+        auto ensure_uploaded(RenderDevice& device, const std::shared_ptr<const void>& session) -> void;
+
         // CPU geometry data (provided by the user)
         std::vector<float> vertices;
         std::vector<uint32_t> indices;
@@ -81,7 +73,7 @@ namespace gkit::graphic {
         std::unique_ptr<VertexBuffer> vbo;
         std::unique_ptr<VertexArray> vao;
         std::unique_ptr<IndexBuffer> ibo;
-        bool uploaded = false;
+        std::weak_ptr<const void> uploaded_session;
     };
 
 } // namespace gkit::graphic

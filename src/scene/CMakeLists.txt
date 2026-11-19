@@ -1,10 +1,13 @@
 set (GKIT_SCENE "gkit_scene")
 
 set (SCENE_SRC
+    "./register_types.cpp"
     "./scene.cpp"
 
     # 2D scene
     "2d/object2d.cpp"
+    "2d/sprite2d.cpp"
+    "2d/sprite2d_reflection.cpp"
     "2d/transform2d.cpp"
 
     # 3D scene

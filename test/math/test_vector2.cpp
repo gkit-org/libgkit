@@ -11,6 +11,7 @@ auto vec_str(const Vector2& vec) -> std::string {
     return std::format("x = {:.4f}, y = {:.4f}", vec.x, vec.y);
 }
 
+
 auto test_constructors() -> bool {
     gkit::test::logln("=== constructors ===");
 
@@ -25,6 +26,7 @@ auto test_constructors() -> bool {
     gkit::test::logln("  vec2: {}", vec_str(vec2));
     return true;
 }
+
 
 auto test_arithmetic() -> bool {
     gkit::test::logln("=== arithmetic operators ===");
@@ -52,6 +54,7 @@ auto test_arithmetic() -> bool {
     return true;
 }
 
+
 auto test_length_and_normalize() -> bool {
     gkit::test::logln("=== length and normalize ===");
 
@@ -72,6 +75,7 @@ auto test_length_and_normalize() -> bool {
     return true;
 }
 
+
 auto test_dot_and_cross() -> bool {
     gkit::test::logln("=== dot and cross product ===");
 
@@ -90,6 +94,7 @@ auto test_dot_and_cross() -> bool {
     gkit::test::logln("  Vector2::cross(a, b): {}", cross_result);
     return true;
 }
+
 
 auto test_lerp_min_max() -> bool {
     gkit::test::logln("=== lerp, min, max ===");
@@ -111,6 +116,7 @@ auto test_lerp_min_max() -> bool {
     gkit::test::logln("  Vector2::max((1,0), (0,1)): {}", vec_str(max_result));
     return true;
 }
+
 
 auto test_perp_reflect_distance() -> bool {
     gkit::test::logln("=== perp, reflect, distance ===");
@@ -135,6 +141,7 @@ auto test_perp_reflect_distance() -> bool {
     gkit::test::logln("  Vector2::distance((0,0), (3,4)): {}", dist);
     return true;
 }
+
 
 auto main() -> int {
     auto test_runner = gkit::test::TestRunner()

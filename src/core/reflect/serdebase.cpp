@@ -55,15 +55,20 @@ namespace gkit::core::reflect {
     };
 
     SerdeBase::SerdeBase() : data(std::make_unique<SerdeData>()) {}
+
+
     SerdeBase::~SerdeBase() {}
+
 
     auto SerdeBase::from(const ObjectId& id) -> void {
         this->data->ss.from(id);
     }
 
+
     auto SerdeBase::from(const Value& v) -> void {
         this->data->ss.from(v);
     }
+
 
     auto SerdeBase::to_string() const -> std::string {
         auto& ss = this->data->ss;

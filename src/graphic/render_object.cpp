@@ -1,5 +1,7 @@
 #include "gkit/graphic/render/render_object.hpp"
 
+#include "graphic/render_device.hpp"
+
 namespace gkit::graphic {
 
     RenderObject::RenderObject(const std::vector<float>& vertices,
@@ -8,23 +10,17 @@ namespace gkit::graphic {
                                const Material& material) :
         material(material), vertices(vertices), indices(indices), layout(layout) {}
 
-    auto RenderObject::ensure_uploaded(RenderDevice& device) -> const VertexArray& {
-        if (this->uploaded) {
-            return *this->vao;
-        }
 
-        // Create and cache GPU resources (hidden from the user).
-        this->vbo = device.create_vertex_buffer(this->vertices.data(), this->vertices.size() * sizeof(float), false);
-        this->ibo = device.create_index_buffer(this->indices.data(), static_cast<uint32_t>(this->indices.size()));
-        this->vao = device.create_vertex_array();
-        this->vao->add_buffer(*this->vbo, this->layout);
-
-        this->uploaded = true;
-        return *this->vao;
-    }
-
-    auto RenderObject::index_buffer() -> const IndexBuffer& {
-        return *this->ibo;
+    auto RenderObject::ensure_uploaded(RenderDevice& device, const std::shared_ptr<const void>& session) -> void {
+        if (uploaded_session.lock() == session) return;
+        auto vertices_buffer = device.create_vertex_buffer(vertices.data(), vertices.size() * sizeof(float), false);
+        auto vertex_array    = device.create_vertex_array();
+        vertex_array->add_buffer(*vertices_buffer, layout);
+        auto indices_buffer = device.create_index_buffer(indices.data(), static_cast<uint32_t>(indices.size()));
+        vao                 = std::move(vertex_array);
+        vbo                 = std::move(vertices_buffer);
+        ibo                 = std::move(indices_buffer);
+        uploaded_session    = session;
     }
 
 } // namespace gkit::graphic

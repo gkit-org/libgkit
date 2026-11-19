@@ -8,6 +8,7 @@ namespace gkit::graphic::opengl::viewport {
         glViewport(x, y, width, height);
     }
 
+
     auto set_viewport(int width, int height) -> void {
         glViewport(0, 0, width, height);
     }

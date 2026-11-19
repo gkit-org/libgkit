@@ -3,16 +3,9 @@
 namespace gkit::graphic {
 
     /**
-     * @brief Texture (frontend abstract interface)
-     *
-     * A thin binding between the CPU resource (pixel data, owned by the resource
-     * module) and the GPU texture object (owned by the backend).
-     * Does not own pixel data or decode images.
-     *
-     * TODO(future): once the resource module is ready, the constructor/factory
-     *               should take a resource handle (shared_ptr<resource::Texture>
-     *               or GUID); see RHI design doc §4.4/§4.5.
-     *               `opengl::Texture` is currently a placeholder implementation.
+     * @brief Sampled image or color attachment in one rendering session.
+     * Sprite images are uploaded from immutable resource::Texture data. The device owns
+     * the native representation and validates session compatibility when a draw is submitted.
      */
     class Texture {
     public:

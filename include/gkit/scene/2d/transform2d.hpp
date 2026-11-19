@@ -10,9 +10,9 @@ namespace gkit::scene {
 
     public:
         // Getters
-        inline auto get_position() const -> math::Vector2 { return position; }
-        inline auto get_rotation() const -> float { return rotation; }
-        inline auto get_scale() const -> math::Vector2 { return scale; }
+        [[nodiscard]] inline auto get_position() const -> math::Vector2 { return position; }
+        [[nodiscard]] inline auto get_rotation() const -> float { return rotation; }
+        [[nodiscard]] inline auto get_scale() const -> math::Vector2 { return scale; }
 
         // Setters
         inline auto set_position(const math::Vector2& position) -> void { this->position = position; }
