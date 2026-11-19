@@ -10,8 +10,10 @@ namespace gkit::scene {
     public:
         /** @brief Construct an untextured sprite at the origin. */
         Sprite2D() = default;
+
         /** @brief Decode and share an image on the calling thread. A failed load preserves the previous texture. */
         auto set_texture(const std::filesystem::path& path) -> void;
+
         /** @brief Pin the current CPU image across concurrent replacements and graphics sessions. */
         auto get_texture() const -> std::shared_ptr<const resource::Texture> {
             std::lock_guard guard(texture_mutex);

@@ -49,6 +49,7 @@ namespace gkit::core::reflect {
 
     private:
         friend class ClassDB;
+
         std::shared_ptr<const ClassInfo> parent_info;
         std::type_index cpp_type{typeid(void)};
 
@@ -56,6 +57,7 @@ namespace gkit::core::reflect {
             Getter getter;
             Setter setter;
         };
+
         std::vector<FieldAccess> accessors;
     };
 
@@ -84,29 +86,16 @@ namespace gkit::core::reflect {
 
         /** @brief Build a complete description privately, then publish it atomically. */
         template<IsObject T, class Fn>
-        auto register_class(const std::string& name, Fn&& configure, const std::string& parent = "") -> void {
-            ClassDB staging;
-            {
-                std::shared_lock guard(this->registry_mutex);
-                staging.classes    = this->classes;
-                staging.type_names = this->type_names;
-            }
-            staging.regist<T>(name, parent);
-            configure(staging);
-            auto completed = std::make_shared<ClassInfo>(*staging.find(name));
-            std::unique_lock guard(this->registry_mutex);
-            if (this->classes.contains(name) || this->type_names.contains(typeid(T))) {
-                throw std::invalid_argument("class already registered");
-            }
-            this->publish(std::move(completed));
-        }
+        auto register_class(const std::string& name, Fn&& configure, const std::string& parent = "") -> void;
 
     private:
         ClassDB() = default;
+
         mutable std::shared_mutex registry_mutex;
         std::map<std::string, std::shared_ptr<const ClassInfo>> classes;
         std::unordered_map<std::string, std::string> raw2_class_name;
         std::unordered_map<std::type_index, std::string> type_names;
+
         auto publish(std::shared_ptr<ClassInfo> info) -> void;
         auto editable(const std::string& name, std::type_index type) -> std::shared_ptr<ClassInfo>;
         static auto check_field(const ClassInfo& info, const std::string& name) -> void;
@@ -142,7 +131,7 @@ namespace gkit::core::reflect {
 
         template<typename T, typename F>
         auto make_setter(F T::* member) -> ClassInfo::Setter {
-            return [member](Object* obj, const Value& v) {
+            return [member](Object* obj, const Value& v) -> void {
                 auto* typed = dynamic_cast<T*>(obj);
                 if (!typed) throw std::invalid_argument("wrong reflected object type");
                 auto& val = (*typed).*member;
@@ -185,6 +174,24 @@ namespace gkit::core::reflect {
     // Template implementation — ClassDB / ClassInfo
     // =========================================================================
 
+    template<IsObject T, class Fn>
+    auto ClassDB::register_class(const std::string& name, Fn&& configure, const std::string& parent) -> void {
+        ClassDB staging;
+        {
+            std::shared_lock guard(this->registry_mutex);
+            staging.classes    = this->classes;
+            staging.type_names = this->type_names;
+        }
+        staging.regist<T>(name, parent);
+        configure(staging);
+        auto completed = std::make_shared<ClassInfo>(*staging.find(name));
+        std::unique_lock guard(this->registry_mutex);
+        if (this->classes.contains(name) || this->type_names.contains(typeid(T))) {
+            throw std::invalid_argument("class already registered");
+        }
+        this->publish(std::move(completed));
+    }
+
     template<IsObject T>
     auto ClassDB::regist(const std::string& class_name, const std::string& parent) -> ClassDB& {
         std::unique_lock guard(this->registry_mutex);
@@ -201,7 +208,7 @@ namespace gkit::core::reflect {
             info->parent_info = it->second;
         }
         if constexpr (std::is_default_constructible_v<T>) {
-            info->factory = [] {
+            info->factory = []() -> UniqueObject {
                 return UniqueObject::create<T>();
             };
         }
@@ -237,7 +244,7 @@ namespace gkit::core::reflect {
             return getter(*typed);
         };
         if (setter != nullptr) {
-            access.setter = [setter = std::move(setter)](Object* obj, const Value& v) {
+            access.setter = [setter = std::move(setter)](Object* obj, const Value& v) -> void {
                 auto* typed = dynamic_cast<T*>(obj);
                 if (!typed) throw std::invalid_argument("wrong reflected object type");
                 setter(*typed, v);

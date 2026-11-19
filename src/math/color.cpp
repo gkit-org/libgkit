@@ -38,6 +38,7 @@ namespace gkit::math {
         return HSV{.h = h, .s = s, .v = v};
     }
 
+
     auto hsv_to_rgb(const HSV& hsv) noexcept -> uint32_t {
         float h = hsv.h;
         float s = hsv.s;
@@ -81,6 +82,7 @@ namespace gkit::math {
         return (static_cast<uint32_t>(red) << 16) | (static_cast<uint32_t>(green) << 8) | static_cast<uint32_t>(blue);
     }
 
+
     // ------------------------------
     // HSL <-> RGB
     // ------------------------------
@@ -114,6 +116,7 @@ namespace gkit::math {
 
         return HSL{.h = h, .s = s, .l = l};
     }
+
 
     auto hsl_to_rgb(const HSL& hsl) noexcept -> uint32_t {
         float h = hsl.h;
@@ -158,6 +161,7 @@ namespace gkit::math {
         return (static_cast<uint32_t>(red) << 16) | (static_cast<uint32_t>(green) << 8) | static_cast<uint32_t>(blue);
     }
 
+
     // ------------------------------
     // Alpha Blending
     // ------------------------------
@@ -182,6 +186,7 @@ namespace gkit::math {
         return (static_cast<uint32_t>(a) << 24) | (static_cast<uint32_t>(r) << 16) | (static_cast<uint32_t>(g) << 8) |
                static_cast<uint32_t>(b);
     }
+
 
     auto premultiplied_blend(uint32_t src, uint32_t dst) noexcept -> uint32_t {
         auto sa = static_cast<uint8_t>(src >> 24);

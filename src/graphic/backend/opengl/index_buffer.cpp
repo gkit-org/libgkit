@@ -13,6 +13,7 @@ namespace gkit::graphic::opengl {
         this->size  = count * sizeof(uint32_t);
     }
 
+
     IndexBuffer::~IndexBuffer() {
         if (renderer_id != 0 && has_current_context()) {
             glDeleteBuffers(1, &this->renderer_id);
@@ -20,15 +21,18 @@ namespace gkit::graphic::opengl {
         }
     }
 
+
     auto IndexBuffer::bind() const -> void {
         require_context();
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->renderer_id);
     }
 
+
     auto IndexBuffer::unbind() const -> void {
         require_context();
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     }
+
 
     auto IndexBuffer::update_data(const void* data, uint32_t size) -> void {
         require_context();
@@ -40,6 +44,7 @@ namespace gkit::graphic::opengl {
             this->size = size;
         }
     }
+
 
     auto IndexBuffer::update_sub_data(uint32_t offset, const void* data, uint32_t size) -> void {
         require_context();

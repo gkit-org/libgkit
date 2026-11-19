@@ -1,7 +1,7 @@
 #include "test_utils.hpp"
 auto main() -> int {
     gkit::test::TestRunner()
-        .add_test_func([] {
+        .add_test_func([]() -> bool {
             return false;
         })
         .run();

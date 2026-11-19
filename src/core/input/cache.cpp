@@ -10,6 +10,7 @@ namespace gkit::input {
                 released.insert(key);
         }
     } // namespace
+
     auto Cache::initialize() -> void {
         platform::require_main_thread();
         std::unique_lock lock(mutex);
@@ -19,6 +20,8 @@ namespace gkit::input {
         modifiers = 0;
         begin_frame();
     }
+
+
     auto Cache::begin_frame() -> void {
         previous_keys      = keys;
         previous_buttons   = buttons;
@@ -32,13 +35,15 @@ namespace gkit::input {
         motion = {};
         wheel  = {};
     }
+
+
     auto Cache::update(std::span<const platform::Event> events) -> void {
         platform::require_main_thread();
         std::unique_lock lock(mutex);
         begin_frame();
         for (const auto& event : events) {
             std::visit(
-                [&](const auto& e) {
+                [&](const auto& e) -> void {
                     using T = std::decay_t<decltype(e)>;
                     if constexpr (std::is_same_v<T, platform::KeyEvent>) {
                         transition(keys, pressed_keys, released_keys, static_cast<Key>(e.scancode), e.down);

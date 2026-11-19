@@ -38,9 +38,7 @@ namespace gkit::core {
         /* template<IsObject T, typename... Args>
         static auto create(Args&&...) noexcept -> UniqueObject; */
 
-        virtual auto class_name() const -> std::string final;
-        inline virtual auto class_raw_name() const -> const char* final {
-            return typeid(*this).name();
-        }
+        [[nodiscard]] virtual auto class_name() const -> std::string final;
+        [[nodiscard]] inline virtual auto class_raw_name() const -> const char* final { return typeid(*this).name(); }
     };
 } // namespace gkit::core

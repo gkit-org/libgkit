@@ -15,14 +15,17 @@ namespace gkit::graphic::opengl {
         this->renderer_id                   = create_shader(source.vertex_shader, source.fragment_shader);
     }
 
+
     Shader::Shader(const std::shared_ptr<const Context>& context, const ShaderProgramSource& source) :
         ContextResource(context), renderer_id(create_shader(source.vertex_shader, source.fragment_shader)) {
         if (!renderer_id) throw std::runtime_error("failed to build the sprite shader");
     }
 
+
     Shader::~Shader() {
         if (renderer_id != 0 && has_current_context()) glDeleteProgram(renderer_id);
     }
+
 
     auto Shader::create_shader(const std::string& vertex_shader, const std::string& fragment_shader) -> uint32_t {
         uint32_t vs = compile_shader(GL_VERTEX_SHADER, vertex_shader);
@@ -64,6 +67,7 @@ namespace gkit::graphic::opengl {
 
         return program;
     }
+
 
     auto Shader::parse_shader(const std::string& file_path) -> graphic::ShaderProgramSource {
         gkit::core::Log::Message path_msg;
@@ -127,6 +131,7 @@ namespace gkit::graphic::opengl {
         return {.vertex_shader = ss[0].str(), .fragment_shader = ss[1].str()};
     }
 
+
     auto Shader::compile_shader(uint32_t type, const std::string& source) -> uint32_t {
         uint32_t id     = glCreateShader(type);
         const char* src = source.c_str();
@@ -153,52 +158,64 @@ namespace gkit::graphic::opengl {
         return id;
     }
 
+
     auto Shader::bind() const -> void {
         require_context();
         glUseProgram(this->renderer_id);
     }
+
 
     auto Shader::unbind() const -> void {
         require_context();
         glUseProgram(0);
     }
 
+
     auto Shader::is_valid() const -> bool {
         // renderer_id is 0 when compilation/linking failed or the program was moved.
         return renderer_id != 0 && context_alive();
     }
 
+
     auto Shader::set_uniform_1i(const std::string& name, int value) -> void {
         glUniform1i(get_uniform_location(name), value);
     }
+
 
     auto Shader::set_uniform_1f(const std::string& name, float value) -> void {
         glUniform1f(get_uniform_location(name), value);
     }
 
+
     auto Shader::set_uniform_4f(const std::string& name, float v0, float v1, float v2, float v3) -> void {
         glUniform4f(get_uniform_location(name), v0, v1, v2, v3);
     }
+
 
     auto Shader::set_uniform_mat_4f(const std::string& name, const gkit::math::Matrix4& mat4) -> void {
         glUniformMatrix4fv(get_uniform_location(name), 1, GL_FALSE, mat4.data());
     }
 
+
     auto Shader::set_uniform_mat_3f(const std::string& name, const gkit::math::Matrix3& mat3) -> void {
         glUniformMatrix3fv(get_uniform_location(name), 1, GL_FALSE, mat3.data());
     }
+
 
     auto Shader::set_uniform_vec_4f(const std::string& name, const gkit::math::Vector4& vec4) -> void {
         glUniform4fv(get_uniform_location(name), 1, &vec4.x);
     }
 
+
     auto Shader::set_uniform_vec_3f(const std::string& name, const gkit::math::Vector3& vec3) -> void {
         glUniform3fv(get_uniform_location(name), 1, &vec3.x);
     }
 
+
     auto Shader::set_uniform_1iv(const std::string& name, const int sz, const int* ind) -> void {
         glUniform1iv(get_uniform_location(name), sz, ind);
     }
+
 
     auto Shader::get_uniform_location(const std::string& name) -> int {
         require_context();

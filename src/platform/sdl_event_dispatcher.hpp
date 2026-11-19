@@ -18,7 +18,9 @@ namespace gkit::platform::detail {
             static SDLEventDispatcher instance;
             return instance;
         }
+
         using Token = std::uint64_t;
+
         auto register_handler_before_frame(std::function<void()> handler) -> Token;
         auto register_handler_after_frame(std::function<void()> handler) -> Token;
         auto register_event_handler(SDL_EventType type, std::function<void(const SDL_Event&)> handler) -> Token;
@@ -34,11 +36,13 @@ namespace gkit::platform::detail {
             Uint32 type;
             std::function<void(const SDL_Event&)> callback;
         };
+
         std::mutex registry_mutex;
         std::map<Token, std::shared_ptr<Entry>> entries;
         Token next_token                     = 1;
         static constexpr Uint32 BEFORE_FRAME = 0;
         static constexpr Uint32 AFTER_FRAME  = 1;
+
         auto add(Uint32 type, std::function<void(const SDL_Event&)> handler) -> Token;
         auto dispatch(Uint32 type, const SDL_Event& event) -> void;
     };

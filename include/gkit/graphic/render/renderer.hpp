@@ -25,15 +25,19 @@ namespace gkit::graphic {
     public:
         /** @brief Load a shader from a file. Throws std::runtime_error on compilation or linking failure. */
         [[nodiscard]] auto create_shader(const std::string& path) -> std::shared_ptr<Shader>;
+
         /** @brief Create an off-screen framebuffer with positive dimensions in pixels. */
         [[nodiscard]] auto create_frame_buffer(int width, int height) -> std::shared_ptr<FrameBuffer>;
+
         /** @brief Create an RGBA texture usable as a framebuffer color attachment. */
         [[nodiscard]] auto create_color_attachment(int width, int height) -> std::shared_ptr<Texture>;
+
         /** @brief Create a depth-stencil attachment with positive dimensions in pixels. */
         [[nodiscard]] auto create_render_buffer(int width, int height) -> std::shared_ptr<RenderBuffer>;
 
         /** @brief Clear the window framebuffer before executing this frame's queued draws. */
         auto clear(ClearFlags flags = ClearFlags::All) -> void;
+
         /**
          * @brief Enqueue a draw to the window.
          * @param object Geometry and material. The queue retains the object and captures its draw state by value.
@@ -42,6 +46,7 @@ namespace gkit::graphic {
          * @throws std::logic_error Outside render() or if the resources belong to an expired context.
          */
         auto draw(std::shared_ptr<RenderObject> object, std::optional<ViewportRect> viewport = std::nullopt) -> void;
+
         /**
          * @brief Enqueue a draw to an off-screen target. Off-screen draws execute before window draws.
          * @param target The retained framebuffer. Configure its attachments before queuing draws.
@@ -56,6 +61,7 @@ namespace gkit::graphic {
     private:
         friend class Application;
         friend class SpritePass;
+
         explicit Renderer(std::shared_ptr<RenderDevice> device);
         ~Renderer();
         Renderer(const Renderer&)                    = delete;
@@ -73,6 +79,7 @@ namespace gkit::graphic {
                      std::optional<ViewportRect> clip = std::nullopt) -> void;
 
         struct Impl;
+
         std::unique_ptr<Impl> impl;
     };
 } // namespace gkit::graphic

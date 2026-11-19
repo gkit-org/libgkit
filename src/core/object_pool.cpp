@@ -17,6 +17,7 @@ namespace gkit::core {
         return id;
     }
 
+
     auto ObjectPool::release(const ObjectId& id) noexcept -> void {
         std::shared_ptr<Object> retired;
         {
@@ -30,6 +31,7 @@ namespace gkit::core {
         // User destruction runs after unlocking the registry.
     }
 
+
     // Caller holds the topology lock or is traversing an owned, stable running tree.
     auto ObjectPool::find_node(ObjectId id) -> detail::NodeState* {
         std::lock_guard guard(pool_mutex);
@@ -40,11 +42,13 @@ namespace gkit::core {
         return state.retired ? nullptr : &state;
     }
 
+
     auto ObjectPool::lock(const ObjectId& id) -> std::shared_ptr<Object> {
         std::lock_guard guard(this->pool_mutex);
         auto it = this->id_instance_map.find(id);
         return it == this->id_instance_map.end() ? nullptr : it->second;
     }
+
 
     auto ObjectPool::deref_from(const ObjectId& id) noexcept -> Object* {
         return this->lock(id).get(); // Compatibility: caller must keep the owner alive.

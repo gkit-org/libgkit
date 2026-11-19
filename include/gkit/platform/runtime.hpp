@@ -15,7 +15,7 @@ namespace gkit::platform {
     };
 
     /** @brief Window notifications. Resize describes logical units, PixelResize describes framebuffer pixels. */
-    enum class WindowChange {
+    enum class WindowChange : std::uint8_t {
         Close,
         Resize,
         PixelResize,
@@ -24,35 +24,42 @@ namespace gkit::platform {
         Minimized,
         Restored
     };
+
     /** @brief Application-wide quit request. */
     struct QuitEvent {};
+
     /** @brief Window-specific notification carrying the native window identity. */
     struct WindowEvent {
         WindowId window;
         WindowChange change;
     };
+
     /** @brief Physical keyboard scancode and modifier bits with the same encoding used by gkit input. */
     struct KeyEvent {
         WindowId window;
         std::uint32_t scancode, modifiers;
         bool down;
     };
+
     /** @brief Press or release of a mouse button in the indicated window. */
     struct MouseButtonEvent {
         WindowId window;
         std::uint8_t button;
         bool down;
     };
+
     /** @brief Relative horizontal and vertical mouse motion in window coordinates. */
     struct MotionEvent {
         WindowId window;
         float x, y;
     };
+
     /** @brief Scroll distance on both axes in native wheel units. */
     struct WheelEvent {
         WindowId window;
         float x, y;
     };
+
     /** @brief Press or release of a gamepad button, identified by device instance and button index. */
     struct GamepadButtonEvent {
         std::uint32_t device;
@@ -78,12 +85,15 @@ namespace gkit::platform {
         ~Runtime();
         Runtime(const Runtime&)                    = delete;
         auto operator=(const Runtime&) -> Runtime& = delete;
+
         /** @brief Whether this session requested native video support. */
-        auto has_video() const noexcept -> bool;
+        [[nodiscard]] auto has_video() const noexcept -> bool;
+
         /** @brief Whether the acquired subsystems include platform events, explicitly or by dependency. */
-        auto has_events() const noexcept -> bool;
+        [[nodiscard]] auto has_events() const noexcept -> bool;
+
         /** @brief Main-thread event pump. The caller owns the returned batch. */
-        auto poll_events() const -> std::vector<Event>;
+        [[nodiscard]] auto poll_events() const -> std::vector<Event>;
 
     private:
         std::uint32_t flags;
@@ -91,8 +101,10 @@ namespace gkit::platform {
 
     /** @brief Throw std::logic_error when a main-thread operation would be invalid. */
     auto require_main_thread() -> void;
+
     /** @brief Return the application resource base as a native filesystem path. Throws on platform failure. */
     auto base_path() -> std::filesystem::path;
+
     /** @brief Locate and, when necessary, create the per-user directory for this organization and application. */
     auto user_data_path(const std::string& organization, const std::string& application) -> std::filesystem::path;
 } // namespace gkit::platform

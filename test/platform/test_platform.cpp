@@ -16,6 +16,7 @@ namespace {
         bool push_key               = true;
         std::optional<gkit::platform::Window> native;
         gkit::platform::WindowOptions options;
+
         auto on_start() -> void override {
             auto state = native.emplace(options).state();
             assert_if(state.width == 320 && state.height == 240 && state.drawable(), "window geometry");
@@ -33,6 +34,8 @@ namespace {
             e.key.scancode = SDL_SCANCODE_A;
             if (push_key) SDL_PushEvent(&e);
         }
+
+
         auto after_frame() -> void override {
             assert_if(get_frame_context().frame == 0, "global quit stops before the next update");
             assert_if(gkit::Input::instance().is_key_pressed(gkit::input::Key::A) == push_key, "per-run event batch");
@@ -40,6 +43,8 @@ namespace {
             e.type = SDL_EVENT_QUIT;
             SDL_PushEvent(&e);
         }
+
+
         auto on_stop() -> void override {
             if (!native) return;
             assert_if(native->state().id == id, "window alive through teardown");
@@ -47,13 +52,14 @@ namespace {
             ++stops;
         }
     };
+
     auto test_lifetime() -> bool {
         using namespace gkit::platform;
         Runtime host;
         bool rejected = false;
-        std::thread other([&] {
+        std::thread other([&]() -> void {
             try {
-                host.poll_events();
+                static_cast<void>(host.poll_events());
             } catch (const std::logic_error&) {
                 rejected = true;
             }
@@ -81,6 +87,9 @@ namespace {
         return true;
     }
 } // namespace
-int main() {
-    gkit::test::TestRunner().add_test_func(test_lifetime).run();
+
+auto main() -> int {
+    gkit::test::TestRunner()
+        .add_test_func(test_lifetime)
+        .run();
 }

@@ -15,6 +15,7 @@ namespace {
     struct Complete : gkit::core::Object {
         int value = 11;
     };
+
     auto test_snapshots() -> bool {
         using namespace gkit::core;
         auto& db = reflect::ClassDB::instance();
@@ -22,7 +23,7 @@ namespace {
         db.regist<Child>("ConcurrentChild", "ConcurrentBase").add_field("ConcurrentChild", "child", &Child::child);
         auto info = db.find("ConcurrentChild");
         int count = 0;
-        info->for_each_field([&](const auto&, const auto&, const auto*) {
+        info->for_each_field([&](const auto&, const auto&, const auto*) -> void {
             ++count;
         });
         gkit::test::assert_if(count == 2, "inheritance must work before parent lookup");
@@ -36,7 +37,7 @@ namespace {
         }
         gkit::test::assert_if(duplicate, "duplicate inherited field rejected");
         std::atomic<bool> done = false;
-        std::thread reader([&] {
+        std::thread reader([&]() -> void {
             while (!done.load()) {
                 if (auto published = db.find("Complete")) {
                     gkit::test::assert_if(published->fields.size() == 1,
@@ -44,7 +45,7 @@ namespace {
                 }
             }
         });
-        db.register_class<Complete>("Complete", [](auto& staging) {
+        db.register_class<Complete>("Complete", [](auto& staging) -> void {
             staging.add_field("Complete", "value", &Complete::value);
         });
         done = true;
@@ -78,6 +79,7 @@ namespace {
         return true;
     }
 } // namespace
+
 auto main() -> int {
     gkit::test::TestRunner().add_test_func(test_snapshots).run();
 }

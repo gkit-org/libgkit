@@ -13,15 +13,19 @@ namespace gkit::core::templates {
         Singleton()          = default;
         virtual ~Singleton() = default;
 
-        Singleton(const Singleton&)            = delete;
-        Singleton(const Singleton&&)           = delete;
-        Singleton operator=(const Singleton&)  = delete;
-        Singleton operator=(const Singleton&&) = delete;
-
     public:
-        inline static T& instance() {
-            static T instance;
-            return instance;
-        }
+        Singleton(const Singleton&)                    = delete;
+        Singleton(const Singleton&&)                   = delete;
+        auto operator=(const Singleton&) -> Singleton  = delete;
+        auto operator=(const Singleton&&) -> Singleton = delete;
+
+        static auto instance() -> T&;
     }; // class Singleton
+
+    template<typename T>
+    auto Singleton<T>::instance() -> T& {
+        static T instance;
+        return instance;
+    }
+
 } // namespace gkit::core::templates

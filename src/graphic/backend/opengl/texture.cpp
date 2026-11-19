@@ -40,15 +40,18 @@ namespace gkit::graphic::opengl {
         glBindTexture(GL_TEXTURE_2D, previous);
     }
 
+
     Texture::~Texture() {
         if (renderer_id != 0 && has_current_context()) glDeleteTextures(1, &renderer_id);
     }
+
 
     auto Texture::bind(unsigned int slot) const -> void {
         require_context();
         glActiveTexture(GL_TEXTURE0 + slot);
         glBindTexture(GL_TEXTURE_2D, renderer_id);
     }
+
 
     auto Texture::unbind() const -> void {
         require_context();

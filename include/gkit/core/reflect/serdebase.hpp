@@ -18,6 +18,7 @@ namespace gkit::core::reflect {
      */
     class SerdeBase {
         struct SerdeData;
+
         std::unique_ptr<SerdeData> data;
 
     public:
@@ -49,13 +50,13 @@ namespace gkit::core::reflect {
         // =====================================================================
 
         /** @brief Begin/end delimiters around a node (keyed or unkeyed). */
-        virtual auto wrapper(Type type, const std::string& key) const -> WrapperPair = 0;
+        [[nodiscard]] virtual auto wrapper(Type type, const std::string& key) const -> WrapperPair = 0;
 
         /** @brief Separator between sibling elements of a container. */
-        virtual auto element_gap(Type type) const -> std::string = 0;
+        [[nodiscard]] virtual auto element_gap(Type type) const -> std::string = 0;
 
         /** @brief Encode a leaf value into the target format. */
-        virtual auto leaf_value(const Value& v) const -> std::string = 0;
+        [[nodiscard]] virtual auto leaf_value(const Value& v) const -> std::string = 0;
     };
 
 } // namespace gkit::core::reflect

@@ -23,6 +23,7 @@ namespace {
         std::shared_ptr<gkit::graphic::FrameBuffer> fbo;
         std::shared_ptr<gkit::graphic::RenderObject> triangle_obj, quad_obj, alpha_triangle_obj, stencil_triangle_obj,
             masked_triangle_obj;
+
         DemoResources(gkit::graphic::Renderer& renderer, int screen_width, int screen_height) {
             const fs::path resource_base = fs::path(__FILE__).parent_path();
             // Colored triangle vertex data (position + color)
@@ -176,6 +177,8 @@ namespace {
             masked_triangle_obj->state.stencil.z_fail       = gkit::graphic::StencilOp::Keep;
             masked_triangle_obj->state.stencil.z_pass       = gkit::graphic::StencilOp::Keep;
         }
+
+
         auto draw(gkit::graphic::Renderer& renderer, int screen_width, int screen_height) -> void {
             // Clear the default framebuffer (screen) every frame. Depth is cleared
             // too: the translucent triangle depth-tests, so a stale depth buffer
@@ -222,10 +225,14 @@ namespace {
             gkit::test::assert_if(viewport[2] == drawn_width && viewport[3] == drawn_height,
                                   "screen draws must cover the current drawable");
         }
+
+
         auto on_start() -> void override {
             const auto state = window().state();
             resources.emplace(renderer(), state.pixel_width, state.pixel_height);
         }
+
+
         auto after_frame() -> void override {
             if (gkit::Input::instance().is_key_just_pressed(gkit::input::Key::Escape)) stop();
             if (smoke_test) {
@@ -235,6 +242,8 @@ namespace {
                 if (frame >= 120) throw std::runtime_error("window resize event timed out");
             }
         }
+
+
         auto render() -> void override {
             const auto state = window().state();
             resources->draw(renderer(), state.pixel_width, state.pixel_height);
@@ -242,6 +251,8 @@ namespace {
             drawn_height = state.pixel_height;
             if (smoke_test && state.width == 600 && state.height == 360) stop();
         }
+
+
         auto on_stop() -> void override {
             if (smoke_test) check_viewport();
             resources.reset();
@@ -250,9 +261,15 @@ namespace {
 
     class TestTexture final : public gkit::graphic::Texture {
         auto bind(unsigned int) const -> void override {}
+
+
         auto unbind() const -> void override {}
-        auto get_width() const -> int override { return 1; }
-        auto get_height() const -> int override { return 1; }
+
+
+        [[nodiscard]] auto get_width() const -> int override { return 1; }
+
+
+        [[nodiscard]] auto get_height() const -> int override { return 1; }
     };
 
     class SubmissionProbe final : public gkit::graphic::Application {
@@ -265,15 +282,16 @@ namespace {
         };
         Mode mode    = Mode::Draw;
         int rendered = 0, stopped = 0;
+
         SubmissionProbe() {
             set_window_title("Renderer lifetime test").set_window_size(96, 96);
             auto sprite = gkit::core::UniqueObject::create<gkit::scene::Sprite2D>();
-            sprite.get_id().with<gkit::scene::Sprite2D>([](auto& node) {
+            sprite.get_id().with<gkit::scene::Sprite2D>([](auto& node) -> void {
                 node.set_scale({4, 4});
                 node.set_texture(fs::path(__FILE__).parent_path() / "sprite_rows.png");
             });
             auto level = gkit::core::UniqueObject::create<gkit::scene::Scene>();
-            level.get_id().with<gkit::scene::Scene>([&](auto& scene) {
+            level.get_id().with<gkit::scene::Scene>([&](auto& scene) -> void {
                 scene.add_child("sprite", std::move(sprite));
             });
             set_main_scene(std::move(level));
@@ -298,6 +316,7 @@ namespace {
             throw std::runtime_error("expected graphics operation to be rejected");
         }
 
+
         auto on_start() -> void override {
             using gkit::test::assert_if;
             frame_hook_called = false;
@@ -305,18 +324,18 @@ namespace {
             local_target.reset();
             if (shader) {
                 assert_if(!shader->is_valid(), "shader from the previous run has expired");
-                check_rejected([&] {
+                check_rejected([&]() -> void {
                     shader->bind();
                 });
-                check_rejected([&] {
+                check_rejected([&]() -> void {
                     color->bind(0);
                 });
-                check_rejected([&] {
+                check_rejected([&]() -> void {
                     target->bind();
                 });
                 assert_if(!reusable->is_uploaded(), "mesh upload from the previous run has expired");
             }
-            check_rejected([&] {
+            check_rejected([&]() -> void {
                 renderer().clear();
             });
             const auto path = fs::path(__FILE__).parent_path() / "draw_submission.shader";
@@ -338,10 +357,14 @@ namespace {
             target->check();
             if (mode == Mode::ThrowOnStart) throw std::runtime_error("startup failure");
         }
+
+
         auto after_frame() -> void override {
             frame_hook_called = true;
             if (mode == Mode::StopBeforeRender) stop();
         }
+
+
         auto render() -> void override {
             using gkit::test::assert_if;
             assert_if(frame_hook_called, "render follows after_frame");
@@ -376,6 +399,8 @@ namespace {
             if (mode == Mode::ThrowOnRender) throw std::runtime_error("render failure");
             stop();
         }
+
+
         auto on_stop() -> void override {
             using gkit::test::assert_if;
             ++stopped;
@@ -407,7 +432,7 @@ namespace {
     auto test_submission_lifetime() -> bool {
         using Mode = SubmissionProbe::Mode;
         SubmissionProbe app;
-        auto check_failure = [&](Mode mode, std::string_view message) {
+        auto check_failure = [&](Mode mode, std::string_view message) -> void {
             app.mode = mode;
             try {
                 app.run();
@@ -427,6 +452,7 @@ namespace {
         return app.rendered == 3 && app.stopped == 5 && SDL_GL_GetCurrentContext() == nullptr;
     }
 
+
     auto test_window_attach_failure_and_retry() -> bool {
         using Window = gkit::graphic::Window;
         using Owner  = gkit::core::UniqueObject;
@@ -435,13 +461,15 @@ namespace {
 
         public:
             Probe() {
-                root().detach_child(*root().find_child("window"), [&](auto result) {
+                root().detach_child(*root().find_child("window"), [&](auto result) -> void {
                     detached = std::move(result.owner);
                 });
             }
+
+
             auto before_frame() -> void override {
                 if (auto id = root().find_child("late")) {
-                    id->with<Window>([](auto& node) {
+                    id->with<Window>([](auto& node) -> void {
                         gkit::test::assert_if(node.state().has_value(), "retry opens the existing window node");
                     });
                     stop();
@@ -459,7 +487,7 @@ namespace {
             return false;
         } catch (const std::invalid_argument&) {
             auto id = app.root().find_child("late");
-            if (!id || !id->with<Window>([](auto& node) {
+            if (!id || !id->with<Window>([](auto& node) -> void {
                     gkit::test::assert_if(!node.state(), "failed opening releases the session");
                 }))
                 return false;
@@ -468,6 +496,7 @@ namespace {
         app.run();
         return !SDL_GL_GetCurrentContext();
     }
+
 
     auto test_sprite_coordinates() -> bool {
         auto projection  = gkit::graphic::SpritePass::logical_projection(320, 180);
@@ -481,6 +510,7 @@ namespace {
         return std::abs((clip.x + 1.f) * 320.f - 80.f) < 0.001f && std::abs((1.f - clip.y) * 180.f - 60.f) < 0.001f;
     }
 
+
     auto test_game_entry_point() -> bool {
         class Player final : public gkit::scene::Sprite2D {
         public:
@@ -488,12 +518,16 @@ namespace {
                 set_position({5, 0});
                 set_texture(fs::path(__FILE__).parent_path() / "sprite_rows.png");
             }
+
+
             auto ready() -> void override {
                 SDL_Event event{};
                 event.type         = SDL_EVENT_KEY_DOWN;
                 event.key.scancode = SDL_SCANCODE_RIGHT;
                 SDL_PushEvent(&event);
             }
+
+
             auto process(double) -> void override {
                 if (gkit::Input::instance().is_key_pressed(gkit::input::Key::Right)) {
                     set_position({get_position().x + 1.f, 0});
@@ -512,12 +546,12 @@ namespace {
         auto player = gkit::core::UniqueObject::create<Player>();
         auto id     = player.get_id();
         auto level  = gkit::core::UniqueObject::create<gkit::scene::Scene>();
-        level.get_id().with<gkit::scene::Scene>([&](auto& scene) {
+        level.get_id().with<gkit::scene::Scene>([&](auto& scene) -> void {
             scene.add_child("player", std::move(player));
         });
         app.set_main_scene(std::move(level));
         app.run();
-        return id.with<Player>([](auto& node) {
+        return id.with<Player>([](auto& node) -> void {
             gkit::test::assert_if(node.get_position().x == 6, "player moves after input without a render callback");
             auto previous = node.get_texture();
             try {
@@ -563,6 +597,7 @@ namespace {
             return rgba;
         }
 
+
         auto check_picture(int x) -> void {
             const auto top     = pixel(x, 5);
             const auto overlap = pixel(x, 7);
@@ -574,12 +609,13 @@ namespace {
             gkit::test::assert_if(pixel(x - 1, 7)[0] == 0, "sprite edge moves with its parent");
         }
 
+
         auto after_frame() -> void override {
             using gkit::test::assert_if;
             switch (get_frame_context().frame) {
             case 0:
                 first_native = window().state().id;
-                initial.with<Window>([&](auto& node) {
+                initial.with<Window>([&](auto& node) -> void {
                     node.reparent(container);
                 });
                 root().add_child("extra", Owner::create<Window>());
@@ -587,13 +623,13 @@ namespace {
             case 1: {
                 assert_if(window().state().id == first_native, "same-tree move keeps the main window session");
                 const auto extra = root().find_child("extra");
-                assert_if(extra && extra->with<Window>([](auto& node) {
+                assert_if(extra && extra->with<Window>([](auto& node) -> void {
                     assert_if(!node.state(), "only the designated window opens a session");
                 }),
                           "extra window belongs to the same tree");
                 check_picture(5);
-                container.with<gkit::core::Node>([&](auto& parent) {
-                    parent.detach_child(initial, [&](auto result) {
+                container.with<gkit::core::Node>([&](auto& parent) -> void {
+                    parent.detach_child(initial, [&](auto result) -> void {
                         detached = std::move(result.owner);
                     });
                 });
@@ -601,10 +637,10 @@ namespace {
             }
             case 2:
                 assert_if(detached && !SDL_GL_GetCurrentContext(), "detaching releases the window");
-                initial.with<Window>([](auto& node) {
+                initial.with<Window>([](auto& node) -> void {
                     assert_if(!node.state(), "detached window state cleared");
                 });
-                set_main_scene(Owner::create<gkit::scene::Scene>(), [](auto result) {
+                set_main_scene(Owner::create<gkit::scene::Scene>(), [](auto result) -> void {
                     assert_if(result.error == gkit::core::NodeError::Expired && result.owner.has_value(),
                               "return the submitted scene while the main window is detached");
                 });
@@ -624,7 +660,7 @@ namespace {
             case 5:
                 assert_if(!SDL_GL_GetCurrentContext() && root().find_child("window") == initial,
                           "closing keeps simulation running");
-                initial.with<Window>([](auto& node) {
+                initial.with<Window>([](auto& node) -> void {
                     assert_if(!node.state(), "closed native state");
                 });
                 open_main_window();
@@ -646,16 +682,16 @@ namespace {
             auto host   = Owner::create<gkit::core::Node>();
             container   = host.get_id();
             root().add_child("host", std::move(host));
-            parent.get_id().with<MovingGroup>([](auto& node) {
+            parent.get_id().with<MovingGroup>([](auto& node) -> void {
                 node.set_position({4, 4});
                 node.set_scale({2, 2});
                 node.set_parallel(true);
                 auto frozen = Owner::create<gkit::scene::Scene>();
-                frozen.get_id().with<gkit::scene::Scene>([](auto& scene) {
+                frozen.get_id().with<gkit::scene::Scene>([](auto& scene) -> void {
                     scene.pause();
                     for (int y : {1, 0}) {
                         auto sprite = Owner::create<Sprite>();
-                        sprite.get_id().with<Sprite>([&](auto& image) {
+                        sprite.get_id().with<Sprite>([&](auto& image) -> void {
                             image.set_texture(fs::path(__FILE__).parent_path() / "sprite_rows.png");
                             image.set_position({0, float(y)});
                         });
@@ -665,7 +701,7 @@ namespace {
                 node.add_child("paused", std::move(frozen));
             });
             auto level = Owner::create<gkit::scene::Scene>();
-            level.get_id().with<gkit::scene::Scene>([&](auto& scene) {
+            level.get_id().with<gkit::scene::Scene>([&](auto& scene) -> void {
                 scene.add_child("moving", std::move(parent));
             });
             set_main_scene(std::move(level));
@@ -676,7 +712,7 @@ namespace {
 
     auto image_at(int x, int y, int scale) -> Owner {
         auto sprite = Owner::create<gkit::scene::Sprite2D>();
-        sprite.get_id().with<gkit::scene::Sprite2D>([&](auto& node) {
+        sprite.get_id().with<gkit::scene::Sprite2D>([&](auto& node) -> void {
             node.set_texture(fs::path(__FILE__).parent_path() / "sprite_rows.png");
             node.set_position({float(x), float(y)});
             node.set_scale({float(scale), float(scale)});
@@ -689,7 +725,7 @@ namespace {
         Minimap() {
             set_rect(18, 5, 6, 6);
             auto inner = Owner::create<gkit::graphic::Viewport>();
-            inner.get_id().with<gkit::graphic::Viewport>([](auto& view) {
+            inner.get_id().with<gkit::graphic::Viewport>([](auto& view) -> void {
                 view.set_rect(-2, 2, 6, 8);
                 view.add_child("tiles", image_at(0, 0, 6));
             });
@@ -711,20 +747,26 @@ namespace {
         public:
             std::vector<int>* events;
             int tag;
+
             auto enter_tree() -> void override { events->push_back(tag); }
+
+
             auto exit_tree() -> void override { events->push_back(-tag); }
         };
         std::vector<int> events;
         gkit::core::ObjectId final_scene;
         bool cancelled = false;
+
         auto recorded(int tag) -> Owner {
             auto scene = Owner::create<RecordedScene>();
-            scene.get_id().with<RecordedScene>([&](auto& node) {
+            scene.get_id().with<RecordedScene>([&](auto& node) -> void {
                 node.tag    = tag;
                 node.events = &events;
             });
             return scene;
         }
+
+
         auto check_pixel(int x, int y, int red, int blue) -> void {
             const auto s = window().state();
             std::array<unsigned char, 4> rgba{};
@@ -739,6 +781,8 @@ namespace {
             gkit::test::assert_if(std::abs(rgba[0] - red) <= 1 && std::abs(rgba[2] - blue) <= 1,
                                   "viewport pixel at " + std::to_string(x) + "," + std::to_string(y));
         }
+
+
         auto after_frame() -> void override {
             using gkit::test::assert_if;
             if (get_frame_context().frame == 1) {
@@ -757,11 +801,11 @@ namespace {
             }
             if (get_frame_context().frame == 2) {
                 assert_if(events == std::vector<int>{1, -1, 2}, "scene replacement exits before entering");
-                root().find_child("window")->with<gkit::graphic::Window>([&](auto& main) {
+                root().find_child("window")->with<gkit::graphic::Window>([&](auto& main) -> void {
                     assert_if(main.find_child("renamed") == final_scene, "replace renamed scene by identity");
                     assert_if(main.find_child("independent").has_value(), "preserve sibling");
                 });
-                set_main_scene(recorded(3), [&](auto result) {
+                set_main_scene(recorded(3), [&](auto result) -> void {
                     cancelled = result.error == gkit::core::NodeError::Stopped && result.owner.has_value();
                 });
                 stop();
@@ -774,19 +818,21 @@ namespace {
             auto scene = Owner::create<ViewportLevel>();
             auto id    = scene.get_id();
             set_main_scene(std::move(scene));
-            id.with<ViewportLevel>([](auto& node) {
+            id.with<ViewportLevel>([](auto& node) -> void {
                 node.rename("renamed");
             });
             root().add_child("outside", image_at(40, 10, 1));
-            root().find_child("window")->with<gkit::graphic::Window>([](auto& main) {
+            root().find_child("window")->with<gkit::graphic::Window>([](auto& main) -> void {
                 main.add_child("independent", Owner::create<gkit::core::Node>());
             });
             bool rejected = false;
-            set_main_scene(Owner::create<gkit::core::Node>(), [&](auto result) {
+            set_main_scene(Owner::create<gkit::core::Node>(), [&](auto result) -> void {
                 rejected = result.error == gkit::core::NodeError::InvalidEdit && result.owner.has_value();
             });
             gkit::test::assert_if(rejected, "return invalid owner");
         }
+
+
         auto passed() const -> bool { return cancelled && events == std::vector<int>{1, -1, 2, -2}; }
     };
 
@@ -812,6 +858,8 @@ namespace {
                 if (!SDL_RestoreWindow(native)) throw std::runtime_error(SDL_GetError());
             }
         }
+
+
         auto render() -> void override {
             gkit::test::assert_if(window().state().drawable(), "skip render while minimized");
             if (observed_minimized) {
@@ -839,6 +887,7 @@ auto test_render_loop(bool smoke_test) -> bool {
     return true;
 }
 
+
 auto test_material_helpers() -> bool {
     using gkit::test::assert_if;
     auto texture                            = std::make_shared<TestTexture>();
@@ -861,9 +910,10 @@ auto test_material_helpers() -> bool {
     return true;
 }
 
+
 auto main(int argc, char** argv) -> int {
     bool smoke_test  = argc == 2 && std::string_view(argv[1]) == "--smoke-test";
-    auto test_runner = gkit::test::TestRunner().add_test_func(test_material_helpers).add_test_func([=] {
+    auto test_runner = gkit::test::TestRunner().add_test_func(test_material_helpers).add_test_func([=]() -> bool {
         return test_render_loop(smoke_test);
     });
     if (smoke_test)
@@ -872,12 +922,12 @@ auto main(int argc, char** argv) -> int {
             .add_test_func(test_window_attach_failure_and_retry)
             .add_test_func(test_submission_lifetime)
             .add_test_func(test_minimized_window)
-            .add_test_func([] {
+            .add_test_func([]() -> bool {
                 SceneProbe app;
                 app.run();
                 return app.passed();
             })
-            .add_test_func([] {
+            .add_test_func([]() -> bool {
                 SpriteProbe app;
                 app.run();
                 return true;

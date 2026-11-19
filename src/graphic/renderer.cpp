@@ -23,15 +23,21 @@ namespace gkit::graphic {
     Renderer::Renderer(std::shared_ptr<RenderDevice> device) : impl(std::make_unique<Impl>()) {
         impl->device = std::move(device);
     }
+
+
     Renderer::~Renderer() = default;
+
 
     auto Renderer::require_context() const -> void {
         if (!impl->device->is_current()) throw std::logic_error("the graphics session is not current");
     }
+
+
     auto Renderer::require_frame() const -> void {
         require_context();
         if (!impl->recording) throw std::logic_error("draw and clear require Application::render()");
     }
+
 
     auto Renderer::create_shader(const std::string& path) -> std::shared_ptr<Shader> {
         require_context();
@@ -39,36 +45,49 @@ namespace gkit::graphic {
         if (!shader->is_valid()) throw std::runtime_error("failed to load shader: " + path);
         return std::shared_ptr<Shader>(std::move(shader));
     }
+
+
     auto Renderer::create_frame_buffer(int width, int height) -> std::shared_ptr<FrameBuffer> {
         require_context();
         require_positive_dimensions(width, height);
         return std::shared_ptr<FrameBuffer>(impl->device->create_frame_buffer(width, height));
     }
+
+
     auto Renderer::create_color_attachment(int width, int height) -> std::shared_ptr<Texture> {
         require_context();
         require_positive_dimensions(width, height);
         return std::shared_ptr<Texture>(impl->device->create_color_attachment(width, height));
     }
+
+
     auto Renderer::create_render_buffer(int width, int height) -> std::shared_ptr<RenderBuffer> {
         require_context();
         require_positive_dimensions(width, height);
         return std::shared_ptr<RenderBuffer>(impl->device->create_render_buffer(width, height));
     }
 
+
     auto Renderer::draw_sprites(Viewport& root, int width, int height, int pixel_width, int pixel_height) -> void {
         impl->sprites.submit(root, width, height, pixel_width, pixel_height, *impl->device, *this);
     }
+
+
     auto Renderer::begin_frame() -> void {
         require_context();
         impl->device->bind_window_target();
         impl->recording = true;
     }
+
+
     auto Renderer::finish_frame(ViewportRect screen) -> void {
         require_frame();
         impl->recording = false;
         impl->queue.flush(*impl->device, impl->device, screen);
         impl->device->present();
     }
+
+
     auto Renderer::discard_frame() noexcept -> void {
         impl->recording = false;
         impl->queue.clear();
@@ -77,20 +96,27 @@ namespace gkit::graphic {
             impl->device->bind_window_target();
         }
     }
+
+
     auto Renderer::clear(ClearFlags flags) -> void {
         require_frame();
         impl->device->clear_window(flags);
     }
 
+
     auto Renderer::draw(std::shared_ptr<RenderObject> object, std::optional<ViewportRect> viewport) -> void {
         enqueue({}, std::move(object), viewport);
     }
+
+
     auto Renderer::draw_to(std::shared_ptr<const FrameBuffer> target,
                            std::shared_ptr<RenderObject> object,
                            std::optional<ViewportRect> viewport) -> void {
         if (!target) throw std::invalid_argument("missing off-screen framebuffer");
         enqueue(std::move(target), std::move(object), viewport);
     }
+
+
     auto Renderer::enqueue(std::shared_ptr<const FrameBuffer> target,
                            std::shared_ptr<RenderObject> object,
                            std::optional<ViewportRect> viewport,

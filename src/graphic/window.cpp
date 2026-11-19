@@ -15,9 +15,13 @@ namespace gkit::graphic {
         }
         tree_changed(*this, entering);
     }
+
+
     auto Window::enter_tree() -> void {
         notify_tree_change(true);
     }
+
+
     auto Window::exit_tree() -> void {
         notify_tree_change(false);
     }

@@ -1,5 +1,4 @@
 #include "gkit/scene/2d/sprite2d.hpp"
-
 #include "gkit/resource/resource_loader.hpp"
 
 namespace gkit::scene {

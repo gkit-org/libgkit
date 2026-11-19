@@ -11,6 +11,8 @@ namespace {
     void check(bool ok) {
         if (!ok) throw std::runtime_error("node regression failed");
     }
+
+
     auto test_edits_and_ownership() -> bool {
         auto owner = UniqueObject::create<Node>();
         auto& root = *static_cast<Node*>(owner.get());
@@ -21,14 +23,14 @@ namespace {
         auto old     = root.children();
         auto sibling = *root.find_child("sibling");
         check(old.size() == 2 && old[0].id == id);
-        check(id.with<Node>([&](Node& node) {
+        check(id.with<Node>([&](Node& node) -> void {
             node.rename("first");
-            node.rename("sibling", [](EditResult result) {
+            node.rename("sibling", [](EditResult result) -> void {
                 check(result.error == NodeError::InvalidEdit);
             });
             check(root.find_child("first") == id && old[0].name == "child");
             node.add_child("leaf", UniqueObject::create<Node>());
-            node.reparent(*node.find_child("leaf"), [](EditResult result) {
+            node.reparent(*node.find_child("leaf"), [](EditResult result) -> void {
                 check(result.error == NodeError::InvalidEdit);
             });
             check(node.parent() == root.id());
@@ -36,21 +38,22 @@ namespace {
             check(node.parent() == sibling);
         }));
         std::optional<UniqueObject> detached;
-        root.detach_child(sibling, [&](EditResult result) {
+        root.detach_child(sibling, [&](EditResult result) -> void {
             detached = std::move(result.owner);
         });
         check(root.children().empty() && detached && detached->get_id() == sibling);
         root.add_child("sibling", std::move(*detached));
-        root.add_child("sibling", UniqueObject::create<Node>(), [&](EditResult result) {
+        root.add_child("sibling", UniqueObject::create<Node>(), [&](EditResult result) -> void {
             check(result.error == NodeError::InvalidEdit && result.owner && root.find_child("sibling") == sibling);
         });
-        check(sibling.with<Node>([&](Node& pinned) {
+        check(sibling.with<Node>([&](Node& pinned) -> void {
             root.remove_child(sibling);
-            check(!sibling.with([](Object&) {}) && !id.with([](Object&) {}));
+            check(!sibling.with([](Object&) -> void {}) && !id.with([](Object&) -> void {}));
             check(pinned.children().empty());
         }));
         return true;
     }
+
 
     auto test_nearest_ancestor() -> bool {
         using gkit::scene::Scene;
@@ -66,7 +69,7 @@ namespace {
         root.add_child("level", std::move(inner));
 
         check(!root.find_ancestor<Scene>());
-        check(leaf_id.with<Node>([&](Node& node) {
+        check(leaf_id.with<Node>([&](Node& node) -> void {
             check(node.find_ancestor<Node>() == group_id);
             check(node.find_ancestor<Scene>() == inner_id);
             check(!node.find_ancestor<gkit::scene::Object2D>());
@@ -77,18 +80,19 @@ namespace {
         return true;
     }
 
+
     auto test_access_and_reflection() -> bool {
         auto owner = UniqueObject::create<gkit::scene::Object2D>();
         auto id    = owner.get_id();
         auto info  = reflect::ClassDB::instance().find("Node");
         check(info->set_field(owner.get(), "name", Value(std::string("root"))));
-        check(!id.with<gkit::scene::Scene>([](auto&) {}));
+        check(!id.with<gkit::scene::Scene>([](auto&) -> void {}));
         auto scene = UniqueObject::create<gkit::scene::Scene>();
         auto& gate = *static_cast<gkit::scene::Scene*>(scene.get());
         std::barrier start(2);
-        std::thread writer([&] {
+        std::thread writer([&]() -> void {
             start.arrive_and_wait();
-            id.with<gkit::scene::Object2D>([&](auto& node) {
+            id.with<gkit::scene::Object2D>([&](auto& node) -> void {
                 for (int i = 1; i <= 500; ++i) {
                     node.set_position({float(i), float(i)});
                     node.set_enabled(i % 2);
@@ -98,7 +102,7 @@ namespace {
             });
         });
         start.arrive_and_wait();
-        check(id.with<gkit::scene::Object2D>([&](auto& node) {
+        check(id.with<gkit::scene::Object2D>([&](auto& node) -> void {
             check(node.name() == "root");
             for (int i = 0; i < 500; ++i) {
                 auto pos = node.get_transform().get_position();
@@ -111,18 +115,19 @@ namespace {
         return true;
     }
 
+
     auto test_concurrent_snapshots_and_deep_tree() -> bool {
         auto owner = UniqueObject::create<Node>();
         auto& root = *static_cast<Node*>(owner.get());
         std::barrier start(2);
-        std::thread reader([&] {
+        std::thread reader([&]() -> void {
             start.arrive_and_wait();
             for (int i = 0; i < 1000; ++i) {
                 auto snapshot = root.children();
                 check(snapshot.size() <= 1);
                 if (!snapshot.empty()) {
                     check(snapshot[0].name == "child" || snapshot[0].name == "renamed");
-                    snapshot[0].id.with<Node>([](Node& node) {
+                    snapshot[0].id.with<Node>([](Node& node) -> void {
                         (void)node.name();
                     });
                 }
@@ -132,7 +137,7 @@ namespace {
         for (int i = 0; i < 500; ++i) {
             root.add_child("child", UniqueObject::create<Node>());
             auto child = *root.find_child("child");
-            child.with<Node>([](Node& node) {
+            child.with<Node>([](Node& node) -> void {
                 node.rename("renamed");
             });
             root.remove_child(child);
@@ -147,10 +152,11 @@ namespace {
         }
         root.add_child("deep", std::move(subtree));
         root.remove_child(*root.find_child("deep"));
-        return !leaf.with([](Object&) {});
+        return !leaf.with([](Object&) -> void {});
     }
 } // namespace
-int main() {
+
+auto main() -> int {
     gkit::test::TestRunner()
         .add_test_func(test_edits_and_ownership)
         .add_test_func(test_nearest_ancestor)

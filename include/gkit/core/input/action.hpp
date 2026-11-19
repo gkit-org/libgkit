@@ -20,6 +20,7 @@ namespace gkit::input {
     public:
         /** @brief Default constructor for a new Action object */
         Action() = default;
+
         /**
          * @brief Construct a new Action object with a name
          * @param name The name of the action

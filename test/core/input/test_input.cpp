@@ -22,10 +22,10 @@ auto test_event_batch() -> bool {
     event.type = SDL_EVENT_KEY_UP;
     SDL_PushEvent(&event);
     int calls   = 0;
-    auto first  = dispatcher.register_event_handler(SDL_EVENT_USER, [&](const auto&) {
+    auto first  = dispatcher.register_event_handler(SDL_EVENT_USER, [&](const auto&) -> void {
         ++calls;
     });
-    auto second = dispatcher.register_event_handler(SDL_EVENT_USER, [&](const auto&) {
+    auto second = dispatcher.register_event_handler(SDL_EVENT_USER, [&](const auto&) -> void {
         calls += 10;
     });
     dispatcher.disconnect(first);
@@ -41,10 +41,10 @@ auto test_event_batch() -> bool {
     gkit::test::assert_if(calls == 10, "disconnect must preserve other subscribers");
     dispatcher.disconnect(second);
     gkit::platform::detail::SDLEventDispatcher::Token self = 0;
-    self                                                   = dispatcher.register_handler_before_frame([&] {
+    self                                                   = dispatcher.register_handler_before_frame([&]() -> void {
         dispatcher.disconnect(self);
     });
-    std::thread reader([&] {
+    std::thread reader([&]() -> void {
         for (int i = 0; i < 1000; ++i) {
             const auto move = input.get_mouse_move();
             gkit::test::assert_if((move.x == 6 && move.y == -4) || (move.x == 0 && move.y == 0), "whole input batch");
@@ -56,6 +56,8 @@ auto test_event_batch() -> bool {
     gkit::test::assert_if(!input.is_key_just_pressed(key) && !input.is_key_just_released(key), "reset frame edges");
     return true;
 }
+
+
 auto main() -> int {
     gkit::test::TestRunner().add_test_func(test_event_batch).run();
 }

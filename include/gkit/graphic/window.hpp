@@ -17,12 +17,14 @@ namespace gkit::graphic {
     public:
         /** @brief Construct a closed node with the default application window options. */
         Window() = default;
+
         /** @brief Set the title used when opening the window. */
         auto set_title(std::string title) -> Window& {
             std::lock_guard lock(mutex);
             options.title = std::move(title);
             return *this;
         }
+
         /** @brief Set positive initial dimensions in logical pixels. */
         auto set_size(int width, int height) -> Window& {
             if (width <= 0 || height <= 0) throw std::invalid_argument("window dimensions must be positive");
@@ -31,12 +33,14 @@ namespace gkit::graphic {
             options.height = height;
             return *this;
         }
+
         /** @brief Allow or prevent resizing of the next native window. */
         auto set_resizable(bool value) -> Window& {
             std::lock_guard lock(mutex);
             options.resizable = value;
             return *this;
         }
+
         /** @brief Read confirmed native state from any thread. Empty while closed. */
         auto state() const -> std::optional<platform::WindowState> {
             std::lock_guard lock(mutex);
@@ -45,6 +49,7 @@ namespace gkit::graphic {
 
     private:
         friend class Application;
+
         auto notify_tree_change(bool entering) -> void;
         auto enter_tree() -> void override;
         auto exit_tree() -> void override;

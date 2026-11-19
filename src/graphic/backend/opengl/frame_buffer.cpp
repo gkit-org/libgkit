@@ -14,6 +14,7 @@ namespace gkit::graphic::opengl {
         glGenFramebuffers(1, &this->renderer_id);
     }
 
+
     FrameBuffer::~FrameBuffer() {
         if (renderer_id != 0 && has_current_context()) {
             glDeleteFramebuffers(1, &this->renderer_id);
@@ -30,6 +31,8 @@ namespace gkit::graphic::opengl {
                 glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &previous);
                 glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer);
             }
+
+
             ~DrawBinding() { glBindFramebuffer(GL_DRAW_FRAMEBUFFER, previous); }
         };
 
@@ -53,6 +56,7 @@ namespace gkit::graphic::opengl {
             GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + slot, GL_TEXTURE_2D, native.get_renderer_id(), 0);
     }
 
+
     auto FrameBuffer::detach_color_texture(int slot) -> void {
         require_context();
         validate_slot(slot);
@@ -60,6 +64,7 @@ namespace gkit::graphic::opengl {
         glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + slot, GL_TEXTURE_2D, 0, 0);
         color_attachments.erase(slot);
     }
+
 
     auto FrameBuffer::attach_depth_stencil(std::shared_ptr<const graphic::RenderBuffer> rbo) -> void {
         require_context();
@@ -73,12 +78,14 @@ namespace gkit::graphic::opengl {
         depth_stencil = std::move(rbo);
     }
 
+
     auto FrameBuffer::detach_depth_stencil() -> void {
         require_context();
         DrawBinding binding(renderer_id);
         glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, 0);
         depth_stencil.reset();
     }
+
 
     auto FrameBuffer::check() -> void {
         require_context();
@@ -87,34 +94,41 @@ namespace gkit::graphic::opengl {
             throw std::runtime_error("framebuffer is incomplete");
     }
 
+
     auto FrameBuffer::set_viewport(int x, int y, int width, int height) -> void {
         require_context();
         glViewport(x, y, width, height);
     }
+
 
     auto FrameBuffer::set_viewport(int width, int height) -> void {
         require_context();
         glViewport(this->left_x, this->bottom_y, width, height);
     }
 
+
     auto FrameBuffer::set_viewport() -> void {
         require_context();
         glViewport(this->left_x, this->bottom_y, this->fb_width, this->fb_height);
     }
+
 
     auto FrameBuffer::bind() const -> void {
         require_context();
         glBindFramebuffer(GL_FRAMEBUFFER, this->renderer_id);
     }
 
+
     auto FrameBuffer::unbind() const -> void {
         require_context();
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
+
     auto FrameBuffer::width() const -> int {
         return static_cast<int>(this->fb_width);
     }
+
 
     auto FrameBuffer::height() const -> int {
         return static_cast<int>(this->fb_height);

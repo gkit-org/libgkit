@@ -10,6 +10,7 @@ namespace gkit::graphic {
                                const Material& material) :
         material(material), vertices(vertices), indices(indices), layout(layout) {}
 
+
     auto RenderObject::ensure_uploaded(RenderDevice& device, const std::shared_ptr<const void>& session) -> void {
         if (uploaded_session.lock() == session) return;
         auto vertices_buffer = device.create_vertex_buffer(vertices.data(), vertices.size() * sizeof(float), false);

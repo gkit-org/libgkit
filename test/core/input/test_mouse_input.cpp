@@ -77,6 +77,7 @@ auto test_mouse_input_loop() -> bool {
     return true;
 }
 
+
 auto main() -> int {
     auto test_runner = gkit::test::TestRunner().add_test_func(test_mouse_input_loop);
 

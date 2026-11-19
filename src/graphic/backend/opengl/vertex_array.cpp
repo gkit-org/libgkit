@@ -26,12 +26,14 @@ namespace gkit::graphic::opengl {
         glGenVertexArrays(1, &this->renderer_id);
     }
 
+
     VertexArray::~VertexArray() {
         if (renderer_id != 0 && has_current_context()) {
             glDeleteVertexArrays(1, &this->renderer_id);
             this->renderer_id = 0;
         }
     }
+
 
     auto VertexArray::add_buffer(const graphic::VertexBuffer& vb, const graphic::VertexBufferLayout& layout) -> void {
         bind();
@@ -53,6 +55,7 @@ namespace gkit::graphic::opengl {
         }
     }
 
+
     auto VertexArray::add_instance_buffer(const graphic::VertexBuffer& vb) -> void {
         bind();
         vb.bind();
@@ -73,10 +76,12 @@ namespace gkit::graphic::opengl {
         }
     }
 
+
     auto VertexArray::bind() const -> void {
         require_context();
         glBindVertexArray(this->renderer_id);
     }
+
 
     auto VertexArray::unbind() const -> void {
         require_context();

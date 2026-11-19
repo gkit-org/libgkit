@@ -1,5 +1,5 @@
 Checks: >
-    -*,                          # Disable all, then enable selectively
+    -*,
     modernize-*,
     performance-*,
     google-*,
@@ -8,6 +8,7 @@ Checks: >
 HeaderFileExtensions: ["", h, hpp, hxx, inc, glsl]
 ImplementationFileExtensions: [c, cpp]
 HeaderFilterRegex: '.*(include|src|test)/.*'
+ExcludeHeaderFilterRegex: '(^|[/\\])third_party[/\\]'
 
 CheckOptions:
   # ── Classes / Structs / Enums ──────────────────────────────────
@@ -86,10 +87,6 @@ CheckOptions:
     value: lower_case
   - key:   readability-identifier-naming.GlobalFunctionCase
     value: lower_case
-
-  # ── Trailing return type ──────────────────────────────────────
-  - key:   modernize-use-trailing-return-type.IgnoreDestructors
-    value: true
 
   # ── Ignore patterns (standard library internals, etc.) ─────────
   - key:   readability-identifier-naming.IgnoreMainLikeFunctions

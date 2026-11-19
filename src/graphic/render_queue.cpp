@@ -23,12 +23,13 @@ namespace gkit::graphic {
             }
         }
 
+
         /**
          * @brief Apply a single uniform value through the shader's set_uniform_*
          */
         auto apply_uniform_value(Shader& shader, const std::string& name, const UniformValue& value) -> void {
             std::visit(
-                [&](const auto& v) {
+                [&](const auto& v) -> void {
                     using T = std::decay_t<decltype(v)>;
                     if constexpr (std::is_same_v<T, int>) {
                         shader.set_uniform_1i(name, v);
@@ -47,6 +48,7 @@ namespace gkit::graphic {
                 value);
         }
 
+
         /**
          * @brief Apply material uniforms (simple path)
          */
@@ -59,6 +61,7 @@ namespace gkit::graphic {
             }
             // TODO(graphic): upload material.get_ubo() via a UniformBuffer backend once implemented.
         }
+
 
         /**
          * @brief Sort comparator: framebuffer commands first, then by state/transparency
@@ -79,7 +82,7 @@ namespace gkit::graphic {
         -> void {
         // Sort: opaque front-to-back, transparent back-to-front; group state/shader.
         std::stable_sort(
-            this->commands.begin(), this->commands.end(), [](const RenderCommand& a, const RenderCommand& b) {
+            this->commands.begin(), this->commands.end(), [](const RenderCommand& a, const RenderCommand& b) -> bool {
                 if (sort_key(a) != sort_key(b)) {
                     return sort_key(a) < sort_key(b);
                 }

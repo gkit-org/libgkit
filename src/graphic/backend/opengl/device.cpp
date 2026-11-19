@@ -53,24 +53,35 @@ void main() {
         return native;
     }
 
+
     Device::Device(platform::Window& target) :
         window(platform::detail::WindowAccess::native(target)), native(create_context(window)),
         context(std::make_shared<Context>(Context{native.get()})) {
         state_manager.force_apply_all();
     }
+
+
     auto Device::is_current() const noexcept -> bool {
         return context->is_current();
     }
+
+
     auto Device::bind_window_target() noexcept -> void {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
+
+
     auto Device::clear_window(ClearFlags flags) -> void {
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
         clear(flags);
     }
+
+
     auto Device::present() -> void {
         if (!SDL_GL_SwapWindow(window)) throw std::runtime_error(std::string("SDL_GL_SwapWindow: ") + SDL_GetError());
     }
+
+
     auto Device::validate_submission(const Material& material, const graphic::FrameBuffer* target) const -> void {
         if (target) require_resource<FrameBuffer>(*target);
         const auto* shader = material.get_shader();
@@ -81,6 +92,7 @@ void main() {
             require_resource<Texture>(*material.get_texture(slot));
     }
 
+
     auto Device::create_vertex_buffer(const void* data, uint32_t size, bool dynamic)
         -> std::unique_ptr<graphic::VertexBuffer> {
         // Direct new (not make_unique) so Device's friendship grants access to the
@@ -88,37 +100,47 @@ void main() {
         return std::unique_ptr<graphic::VertexBuffer>(new VertexBuffer(context, data, size, dynamic));
     }
 
+
     auto Device::create_index_buffer(const uint32_t* data, uint32_t count) -> std::unique_ptr<graphic::IndexBuffer> {
         return std::unique_ptr<graphic::IndexBuffer>(new IndexBuffer(context, data, count));
     }
+
 
     auto Device::create_shader(const std::string& filepath) -> std::unique_ptr<graphic::Shader> {
         return std::unique_ptr<graphic::Shader>(new Shader(context, filepath));
     }
 
+
     auto Device::create_sprite_shader() -> std::shared_ptr<graphic::Shader> {
         return std::shared_ptr<graphic::Shader>(new Shader(context, SPRITE_SHADER));
     }
+
+
     auto Device::upload_texture(const resource::Texture& image) -> std::shared_ptr<graphic::Texture> {
         return std::shared_ptr<graphic::Texture>(
             new Texture(context, image.width(), image.height(), image.pixels().data(), image.pitch()));
     }
 
+
     auto Device::create_color_attachment(int width, int height) -> std::unique_ptr<graphic::Texture> {
         return std::unique_ptr<graphic::Texture>(new Texture(context, width, height));
     }
+
 
     auto Device::create_vertex_array() -> std::unique_ptr<graphic::VertexArray> {
         return std::unique_ptr<graphic::VertexArray>(new VertexArray(context));
     }
 
+
     auto Device::create_frame_buffer(int width, int height) -> std::unique_ptr<graphic::FrameBuffer> {
         return std::unique_ptr<graphic::FrameBuffer>(new FrameBuffer(context, width, height));
     }
 
+
     auto Device::create_render_buffer(int width, int height) -> std::unique_ptr<graphic::RenderBuffer> {
         return std::unique_ptr<graphic::RenderBuffer>(new RenderBuffer(context, width, height));
     }
+
 
     auto Device::clear(ClearFlags flags) -> void {
         const auto mask      = to_gl_clear_mask(flags);
@@ -141,9 +163,11 @@ void main() {
         }
     }
 
+
     auto Device::apply_state(const graphic::RenderState& state) -> void {
         this->state_manager.apply(state);
     }
+
 
     auto Device::set_clip(std::optional<ViewportRect> clip) noexcept -> void {
         if (clip) {
@@ -154,9 +178,11 @@ void main() {
         }
     }
 
+
     auto Device::set_viewport(const graphic::ViewportRect& viewport) -> void {
         glViewport(viewport.x, viewport.y, viewport.width, viewport.height);
     }
+
 
     auto Device::draw(const graphic::VertexArray& va, const graphic::IndexBuffer& ib, const graphic::Shader& shader)
         -> void {
@@ -165,6 +191,7 @@ void main() {
         ib.bind();
         glDrawElements(GL_TRIANGLES, ib.get_count(), GL_UNSIGNED_INT, nullptr);
     }
+
 
     auto Device::draw_instance(const graphic::VertexArray& va,
                                const graphic::IndexBuffer& ib,

@@ -8,7 +8,9 @@ namespace gkit::input {
     class Cache : public core::templates::Singleton<Cache> {
         friend class core::templates::Singleton<Cache>;
         friend class gkit::Input;
+
         Cache() = default;
+
         std::shared_mutex mutex;
         std::unordered_set<Key> keys, pressed_keys, released_keys, previous_keys;
         std::unordered_set<MouseButton> buttons, pressed_buttons, released_buttons, previous_buttons;

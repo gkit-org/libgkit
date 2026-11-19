@@ -29,17 +29,19 @@ namespace gkit {
             std::exception_ptr failure;
 
         public:
-            auto enabled() const noexcept -> bool { return !workers.empty(); }
+            [[nodiscard]] auto enabled() const noexcept -> bool { return !workers.empty(); }
+
+
             explicit WorkerPool(std::size_t count) {
                 try {
                     for (std::size_t i = 0; i < count; ++i)
-                        workers.emplace_back([this] {
+                        workers.emplace_back([this]() -> void {
                             for (;;) {
                                 std::function<void()> job;
                                 bool skip;
                                 {
                                     std::unique_lock lock(mutex);
-                                    available.wait(lock, [&] {
+                                    available.wait(lock, [&]() -> bool {
                                         return closing || !jobs.empty();
                                     });
                                     if (jobs.empty()) return;
@@ -64,7 +66,11 @@ namespace gkit {
                     throw;
                 }
             }
+
+
             ~WorkerPool() { close(); }
+
+
             auto close() -> void {
                 {
                     std::lock_guard lock(mutex);
@@ -74,14 +80,20 @@ namespace gkit {
                 for (auto& worker : workers)
                     if (worker.joinable()) worker.join();
             }
+
+
             auto check_failure() -> void {
                 std::lock_guard lock(mutex);
                 if (failure) std::rethrow_exception(failure);
             }
+
+
             auto cancel(std::exception_ptr error) -> void {
                 std::lock_guard lock(mutex);
                 if (!failure) failure = error;
             }
+
+
             auto submit(std::function<void()> job) -> void {
                 std::lock_guard lock(mutex);
                 if (failure) std::rethrow_exception(failure);
@@ -89,15 +101,18 @@ namespace gkit {
                 ++pending;
                 available.notify_one();
             }
+
+
             auto join() -> void {
                 std::unique_lock lock(mutex);
-                finished.wait(lock, [&] {
+                finished.wait(lock, [&]() -> bool {
                     return pending == 0;
                 });
                 if (failure) std::rethrow_exception(failure);
             }
         };
         using State = core::detail::NodeState;
+
         /**
          * @brief Walk one worker-owned subtree parent-first, applying inherited update gates.
          * @note User code may post work or stage edits, but cannot mutate topology during a phase.
@@ -117,6 +132,8 @@ namespace gkit {
                 for (auto* child : current->descendants() | std::views::reverse) pending.push_back(child);
             }
         }
+
+
         /**
          * @brief Update coordinator nodes and dispatch each independent subtree after its ancestors have completed.
          * @note Always join the phase before returning or throwing. No ordering is promised between independent
@@ -131,7 +148,7 @@ namespace gkit {
                     auto* current = pending.back();
                     pending.pop_back();
                     if (pool.enabled() && current != root && current->node.is_parallel()) {
-                        pool.submit([current, delta, physics] {
+                        pool.submit([current, delta, physics]() -> void {
                             serial_update(current, delta, physics);
                         });
                         continue;
@@ -157,12 +174,15 @@ namespace gkit {
             if (failure) std::rethrow_exception(failure);
         }
     } // namespace
+
     Processer::Processer() :
         root_owner(core::UniqueObject::create<core::Node>()),
         runtime(std::make_unique<core::detail::TreeRuntime>(root_owner.get_id())) {
         std::lock_guard lock(core::detail::tree_mutex);
         core::detail::assign_runtime(root().state.get(), runtime.get());
     }
+
+
     Processer::~Processer() {
         // Destruction must follow run() returning; stop() is the cross-thread operation.
         {
@@ -180,66 +200,94 @@ namespace gkit {
         std::lock_guard guard(core::detail::tree_mutex);
         core::detail::assign_runtime(root().state.get(), nullptr);
     }
+
+
     auto Processer::root() noexcept -> core::Node& {
         return *static_cast<core::Node*>(root_owner.get());
     }
+
+
     auto Processer::root() const noexcept -> const core::Node& {
         return *static_cast<const core::Node*>(root_owner.get());
     }
+
+
     auto Processer::set_parallel_update_enabled(bool value) noexcept -> Processer& {
         std::lock_guard lock(settings_mutex);
         config.parallel_update_enabled = value;
         return *this;
     }
+
+
     auto Processer::set_worker_count(std::size_t value) noexcept -> Processer& {
         std::lock_guard lock(settings_mutex);
         config.worker_count = value;
         return *this;
     }
+
+
     auto Processer::set_fixed_delta(double value) noexcept -> Processer& {
         std::lock_guard lock(settings_mutex);
         config.fixed_delta = value;
         return *this;
     }
+
+
     auto Processer::set_max_fixed_steps(std::size_t value) noexcept -> Processer& {
         std::lock_guard lock(settings_mutex);
         config.max_fixed_steps = value;
         return *this;
     }
+
+
     auto Processer::set_max_frame_delta(double value) noexcept -> Processer& {
         std::lock_guard lock(settings_mutex);
         config.max_frame_delta = value;
         return *this;
     }
+
+
     auto Processer::set_target_frame_rate(double value) noexcept -> Processer& {
         std::lock_guard lock(settings_mutex);
         config.target_frame_rate = value;
         return *this;
     }
+
+
     auto Processer::set_platform_options(platform::RuntimeOptions value) -> Processer& {
         std::lock_guard lock(settings_mutex);
         config.platform_options = value;
         return *this;
     }
+
+
     auto Processer::set_initialize_sdl(bool value) noexcept -> Processer& {
         std::lock_guard lock(settings_mutex);
         config.initialize_sdl = value;
         return *this;
     }
+
+
     auto Processer::set_sdl_flags(std::optional<std::uint32_t> value) noexcept -> Processer& {
         std::lock_guard lock(settings_mutex);
         config.sdl_flags = value;
         return *this;
     }
+
+
     auto Processer::now() const -> std::chrono::steady_clock::time_point {
         return std::chrono::steady_clock::now();
     }
+
+
     auto Processer::wait_until(std::chrono::steady_clock::time_point deadline) -> void {
         std::unique_lock lock(wait_mutex);
-        wake.wait_until(lock, deadline, [&] {
+        wake.wait_until(lock, deadline, [&]() -> bool {
             return !running.load();
         });
     }
+
+
     auto Processer::stop() noexcept -> void {
         {
             std::lock_guard lock(wait_mutex);
@@ -247,10 +295,14 @@ namespace gkit {
         }
         wake.notify_all();
     }
+
+
     auto Processer::get_frame_context() const -> core::FrameContext {
         std::lock_guard lock(frame_mutex);
         return frame_context;
     }
+
+
     /**
      * @brief Execute the scheduler's startup, frame loop and unconditional cleanup boundary.
      * @note Workers are scoped inside the guarded run body, so they finish before tree exit callbacks run.

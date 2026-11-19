@@ -57,6 +57,7 @@ auto init_reflect() -> void {
     db.regist<ChildObj>("ChildObj", "ReflectTestObj").add_field<ChildObj>("ChildObj", "weight", &ChildObj::weight);
 }
 
+
 // =========================================================================
 // Tests
 // =========================================================================
@@ -79,6 +80,7 @@ auto test_regist_and_find() -> bool {
     return true;
 }
 
+
 auto test_add_field() -> bool {
     std::cout << "=== Test: add_field ===" << '\n';
 
@@ -93,6 +95,7 @@ auto test_add_field() -> bool {
 
     return true;
 }
+
 
 auto test_get_field() -> bool {
     std::cout << "=== Test: get_field ===" << '\n';
@@ -130,6 +133,7 @@ auto test_get_field() -> bool {
     return true;
 }
 
+
 auto test_set_field() -> bool {
     std::cout << "=== Test: set_field ===" << '\n';
 
@@ -164,6 +168,7 @@ auto test_set_field() -> bool {
     return true;
 }
 
+
 auto test_readonly_property() -> bool {
     std::cout << "=== Test: read-only property ===" << '\n';
 
@@ -188,6 +193,7 @@ auto test_readonly_property() -> bool {
     return true;
 }
 
+
 auto test_parent_inheritance() -> bool {
     std::cout << "=== Test: parent inheritance ===" << '\n';
 
@@ -206,6 +212,7 @@ auto test_parent_inheritance() -> bool {
     return true;
 }
 
+
 auto test_for_each_field_inheritance() -> bool {
     std::cout << "=== Test: for_each_field with inheritance ===" << '\n';
 
@@ -213,7 +220,7 @@ auto test_for_each_field_inheritance() -> bool {
     assert(info != nullptr);
 
     std::vector<std::string> field_names;
-    info->for_each_field([&](const FieldDesc& f, auto& /*getter*/, const auto* /*setter*/) {
+    info->for_each_field([&](const FieldDesc& f, auto& /*getter*/, const auto* /*setter*/) -> void {
         field_names.push_back(f.name);
     });
 
@@ -227,6 +234,7 @@ auto test_for_each_field_inheritance() -> bool {
 
     return true;
 }
+
 
 auto test_get_field_inherited() -> bool {
     std::cout << "=== Test: get_field inherited ===" << '\n';
@@ -250,6 +258,7 @@ auto test_get_field_inherited() -> bool {
     return true;
 }
 
+
 auto test_set_field_inherited() -> bool {
     std::cout << "=== Test: set_field inherited ===" << '\n';
 
@@ -268,6 +277,7 @@ auto test_set_field_inherited() -> bool {
 
     return true;
 }
+
 
 auto test_create_object() -> bool {
     std::cout << "=== Test: create object by class name ===" << '\n';
@@ -298,6 +308,7 @@ auto test_create_object() -> bool {
 
     return true;
 }
+
 
 // =========================================================================
 // Entry

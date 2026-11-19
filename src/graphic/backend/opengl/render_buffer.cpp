@@ -16,6 +16,7 @@ namespace gkit::graphic::opengl {
         unbind();
     }
 
+
     RenderBuffer::~RenderBuffer() {
         if (renderer_id != 0 && has_current_context()) {
             glDeleteRenderbuffers(1, &this->renderer_id);
@@ -23,10 +24,12 @@ namespace gkit::graphic::opengl {
         }
     }
 
+
     auto RenderBuffer::bind() const -> void {
         require_context();
         glBindRenderbuffer(GL_RENDERBUFFER, this->renderer_id);
     }
+
 
     auto RenderBuffer::unbind() const -> void {
         require_context();

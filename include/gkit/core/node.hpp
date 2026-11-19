@@ -9,6 +9,7 @@
 namespace gkit {
     class Processer;
 }
+
 namespace gkit::core {
     namespace detail {
         struct NodeState;
@@ -46,18 +47,23 @@ namespace gkit::core {
     class Node : public Object {
         friend struct detail::NodeState;
         friend class gkit::Processer;
+
         std::unique_ptr<detail::NodeState> state;
         std::atomic<bool> enabled{true}, parallel{false};
+
         auto find_ancestor_if(bool (*matches)(const Node&)) const -> std::optional<ObjectId>;
 
     public:
         using Completion = std::function<void(EditResult)>;
+
         Node();
         ~Node() override;
         Node(const Node&)                    = delete;
         auto operator=(const Node&) -> Node& = delete;
-        auto id() const noexcept -> ObjectId;
-        auto parent() const -> std::optional<ObjectId>;
+
+        [[nodiscard]] auto id() const noexcept -> ObjectId;
+        [[nodiscard]] auto parent() const -> std::optional<ObjectId>;
+
         /**
          * @brief Find the nearest ancestor of type @p T, starting at the immediate parent.
          * @tparam T A node type. Derived instances also match.
@@ -65,14 +71,11 @@ namespace gkit::core {
          * @note The search observes one tree topology. Use ObjectId::with<T>() to borrow the result later.
          */
         template<std::derived_from<Node> T>
-        [[nodiscard]] auto find_ancestor() const -> std::optional<ObjectId> {
-            return find_ancestor_if([](const Node& ancestor) {
-                return dynamic_cast<const T*>(&ancestor) != nullptr;
-            });
-        }
-        auto name() const -> std::string;
-        auto find_child(const std::string& name) const -> std::optional<ObjectId>;
-        auto children() const -> std::vector<ChildInfo>;
+        [[nodiscard]] auto find_ancestor() const -> std::optional<ObjectId>;
+
+        [[nodiscard]] auto name() const -> std::string;
+        [[nodiscard]] auto find_child(const std::string& name) const -> std::optional<ObjectId>;
+        [[nodiscard]] auto children() const -> std::vector<ChildInfo>;
 
         /** @brief Edits complete inline on stopped trees or at a frame boundary during run().
          * Adds from a derived constructor are committed after UniqueObject finishes construction; their callbacks
@@ -82,28 +85,42 @@ namespace gkit::core {
         auto remove_child(ObjectId child, Completion complete = {}) -> void;
         auto rename(std::string name, Completion complete = {}) -> void;
         auto reparent(ObjectId parent, Completion complete = {}) -> void;
+
         /** @brief Schedule custom code on the coordinator. False means the request was not accepted. */
         auto post(std::function<void(Node&)> callback, std::function<void(NodeError)> complete = {}) -> bool;
 
         auto set_enabled(bool value) noexcept -> void { enabled.store(value); }
-        virtual auto updates_enabled() const -> bool { return enabled.load(); }
+        [[nodiscard]] virtual auto updates_enabled() const -> bool { return enabled.load(); }
         auto set_parallel(bool value) noexcept -> void { parallel.store(value); }
-        auto is_parallel() const noexcept -> bool { return parallel.load(); }
+        [[nodiscard]] auto is_parallel() const noexcept -> bool { return parallel.load(); }
+
         /** @brief Called parent-first on entry and again after reattachment. */
         virtual auto enter_tree() -> void {}
+
         /** @brief Called once, after all children are ready. */
         virtual auto ready() -> void {}
+
         /**
          * @brief Run one logic update after input and fixed-step physics.
          * @param delta Elapsed frame time in seconds, capped by the Processer configuration.
          */
         virtual auto process(double delta) -> void {}
+
         /**
          * @brief Run one fixed-step physics update using the current frame's input.
          * @param delta Configured duration of one physics step in seconds.
          */
         virtual auto physics_process(double delta) -> void {}
+
         /** @brief Called child-first on removal or shutdown. */
         virtual auto exit_tree() -> void {}
     };
+
+    template<std::derived_from<Node> T>
+    auto Node::find_ancestor() const -> std::optional<ObjectId> {
+        return find_ancestor_if([](const Node& ancestor) -> bool {
+            return dynamic_cast<const T*>(&ancestor) != nullptr;
+        });
+    }
+
 } // namespace gkit::core

@@ -2,6 +2,7 @@
 
 #include "gkit/platform/runtime.hpp"
 
+#include <cstdint>
 #include <memory>
 
 namespace gkit::platform {
@@ -10,7 +11,7 @@ namespace gkit::platform {
     }
 
     /** @brief Native surface capability selected before window creation. */
-    enum class Surface {
+    enum class Surface : std::uint8_t {
         Plain,
         OpenGL
     };
@@ -28,7 +29,10 @@ namespace gkit::platform {
         WindowId id{};
         int width{}, height{}, pixel_width{}, pixel_height{};
         bool focused{}, minimized{};
-        auto drawable() const noexcept -> bool { return !minimized && pixel_width > 0 && pixel_height > 0; }
+
+        [[nodiscard]] auto drawable() const noexcept -> bool {
+            return !minimized && pixel_width > 0 && pixel_height > 0;
+        }
     };
 
     /** @brief Main-thread window. Keeps its video subsystem alive until the native window is destroyed. */
@@ -39,18 +43,24 @@ namespace gkit::platform {
         Window(const Window&) = delete;
 
         auto operator=(const Window&) -> Window& = delete;
+
         /** @brief Read a synchronized copy, including from a worker during a frame. */
-        auto state() const -> WindowState;
+        [[nodiscard]] auto state() const -> WindowState;
+
         /** @brief Change the native title on the main thread. Throws on failure. */
         auto set_title(const std::string& title) -> void;
+
         /** @brief Request a size in logical units. The window manager confirms the change with a resize event. */
         auto set_size(int width, int height) -> void;
+
         /** @brief Refresh geometry and focus after a window event. Main thread only. */
         auto refresh() -> void;
 
     private:
         friend struct detail::WindowAccess;
+
         struct Impl;
+
         std::unique_ptr<Impl> impl;
     };
 } // namespace gkit::platform

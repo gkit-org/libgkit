@@ -12,12 +12,14 @@ namespace gkit::graphic {
     public:
         /** @brief Construct a viewport that fills its parent. */
         Viewport() = default;
+
         /** @brief Position the view relative to its parent's top-left corner. Width and height must be positive. */
         auto set_rect(int x, int y, int width, int height) -> void {
             if (width <= 0 || height <= 0) throw std::invalid_argument("viewport dimensions must be positive");
             std::lock_guard lock(mutex);
             rect = {x, y, width, height};
         }
+
         /** @brief Read the logical rectangle, or nullopt when the view fills its parent. */
         auto get_rect() const -> std::optional<ViewportRect> {
             std::lock_guard lock(mutex);

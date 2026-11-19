@@ -20,11 +20,14 @@ namespace gkit {
     class Input : public gkit::core::templates::Singleton<Input> {
     public:
         Input();
+
         /** @brief Clear input state while keeping registered actions. Main thread only. */
         auto initialize() -> void;
+
         /** @brief Apply an ordered event batch and advance frame edges. Main thread only. */
         auto update(std::span<const platform::Event> events) -> void;
-        virtual ~Input() = default;
+
+        ~Input() override = default;
 
     public:
         // action related
@@ -60,6 +63,7 @@ namespace gkit {
     private:
         mutable std::mutex action_mutex;
         std::unordered_map<std::string, input::Action> action_map;
+
         auto action_state(const std::string& name, int edge) const -> bool;
     }; // class Input
 } // namespace gkit

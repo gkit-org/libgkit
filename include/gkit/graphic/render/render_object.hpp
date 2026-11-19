@@ -61,6 +61,7 @@ namespace gkit::graphic {
 
     private:
         friend class RenderQueue;
+
         auto ensure_uploaded(RenderDevice& device, const std::shared_ptr<const void>& session) -> void;
 
         // CPU geometry data (provided by the user)

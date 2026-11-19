@@ -14,7 +14,7 @@ namespace gkit::graphic {
             int width, height;
             ViewportRect visible;
 
-            auto child(const Viewport& node) const -> std::optional<Region> {
+            [[nodiscard]] auto child(const Viewport& node) const -> std::optional<Region> {
                 const auto rect    = node.get_rect().value_or(ViewportRect{0, 0, width, height});
                 const auto child_x = x + rect.x, child_y = y + rect.y;
                 const auto left   = std::max<std::int64_t>(visible.x, child_x);
@@ -36,7 +36,7 @@ namespace gkit::graphic {
 
     auto SpritePass::pixel_clip(ViewportRect clip, int width, int height, int pixel_width, int pixel_height)
         -> ViewportRect {
-        auto edge = [](std::int64_t value, int logical, int pixels) {
+        auto edge = [](std::int64_t value, int logical, int pixels) -> int {
             return static_cast<int>((value * pixels + logical / 2) / logical);
         };
         const int left   = edge(clip.x, width, pixel_width);
@@ -47,12 +47,14 @@ namespace gkit::graphic {
                 bottom - edge(clip.y, height, pixel_height)};
     }
 
+
     auto SpritePass::logical_projection(int width, int height) -> math::Matrix3 {
         auto projection    = math::Matrix3::scaling(2.f / width, -2.f / height, 1.f);
         projection.m[2][0] = -1.f;
         projection.m[2][1] = 1.f;
         return projection;
     }
+
 
     auto SpritePass::mesh(const std::shared_ptr<const resource::Texture>& image, RenderDevice& device)
         -> std::shared_ptr<RenderObject> {
@@ -76,6 +78,7 @@ namespace gkit::graphic {
         return object;
     }
 
+
     auto SpritePass::submit(Viewport& root,
                             int width,
                             int height,
@@ -84,7 +87,7 @@ namespace gkit::graphic {
                             RenderDevice& device,
                             Renderer& renderer) -> void {
         if (width <= 0 || height <= 0) return;
-        std::erase_if(images, [](const auto& entry) {
+        std::erase_if(images, [](const auto& entry) -> bool {
             return entry.first.expired();
         });
         const auto projection = logical_projection(width, height);

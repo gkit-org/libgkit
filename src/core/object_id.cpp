@@ -7,6 +7,7 @@ namespace gkit::core {
         return ObjectPool::instance().lock(*this);
     }
 
+
     auto ObjectId::deref() const noexcept -> Object* {
         if (!this->available()) return nullptr;
         return ObjectPool::instance().deref_from(*this);

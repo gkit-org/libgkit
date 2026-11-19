@@ -27,6 +27,7 @@ auto test_format_conversion() -> bool {
     return true;
 }
 
+
 auto test_blending() -> bool {
     gkit::test::logln("=== color blending ===");
 
@@ -42,6 +43,7 @@ auto test_blending() -> bool {
     gkit::test::logln("  premultiplied_blend(0x80FF0000, 0xFF0000FF) = 0x{:X}", preblended);
     return true;
 }
+
 
 auto test_adjustment() -> bool {
     gkit::test::logln("=== color adjustment ===");
@@ -66,6 +68,7 @@ auto test_adjustment() -> bool {
     return true;
 }
 
+
 auto test_hsv_conversion() -> bool {
     gkit::test::logln("=== HSV <-> RGB ===");
 
@@ -82,6 +85,7 @@ auto test_hsv_conversion() -> bool {
     return true;
 }
 
+
 auto test_hsl_conversion() -> bool {
     gkit::test::logln("=== HSL <-> RGB ===");
 
@@ -97,6 +101,7 @@ auto test_hsl_conversion() -> bool {
     gkit::test::logln("  hsl_to_rgb(60, 1.0, 0.5) = 0x{:X}", rgb3);
     return true;
 }
+
 
 auto test_color_conversion_values() -> bool {
     constexpr std::array hues{0.0f, 60.0f, 120.0f, 180.0f, 240.0f, 300.0f};
@@ -118,6 +123,7 @@ auto test_color_conversion_values() -> bool {
     return true;
 }
 
+
 auto test_utility() -> bool {
     gkit::test::logln("=== utility ===");
 
@@ -137,6 +143,7 @@ auto test_utility() -> bool {
     gkit::test::logln("  palette_8[7] = 0x{:X}", colors::PALETTE_8[7]);
     return true;
 }
+
 
 auto main() -> int {
     auto test_runner = gkit::test::TestRunner()

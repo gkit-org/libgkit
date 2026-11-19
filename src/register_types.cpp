@@ -12,27 +12,27 @@ namespace gkit::core::reflect {
         static auto& registry = []() -> ClassDB& {
             auto& db = templates::Singleton<ClassDB>::instance();
             db.regist<Object>("Object");
-            db.register_class<Node>("Node", [](ClassDB& staging) {
+            db.register_class<Node>("Node", [](ClassDB& staging) -> void {
                 staging.add_property<Node>(
                     "Node",
                     "name",
-                    [](const Node& node) {
+                    [](const Node& node) -> Value {
                         return Value(node.name());
                     },
-                    [](Node& node, const Value& value) {
+                    [](Node& node, const Value& value) -> void {
                         node.rename(value.as_string());
                     });
             });
             db.register_class<scene::Scene>(
                 "Scene",
-                [](ClassDB& staging) {
+                [](ClassDB& staging) -> void {
                     staging.add_property<scene::Scene>(
                         "Scene",
                         "active",
-                        [](const scene::Scene& scene) {
+                        [](const scene::Scene& scene) -> Value {
                             return Value(scene.is_active());
                         },
-                        [](scene::Scene& scene, const Value& value) {
+                        [](scene::Scene& scene, const Value& value) -> void {
                             if (value.as_bool())
                                 scene.activate();
                             else
@@ -41,10 +41,10 @@ namespace gkit::core::reflect {
                     staging.add_property<scene::Scene>(
                         "Scene",
                         "paused",
-                        [](const scene::Scene& scene) {
+                        [](const scene::Scene& scene) -> Value {
                             return Value(scene.is_paused());
                         },
-                        [](scene::Scene& scene, const Value& value) {
+                        [](scene::Scene& scene, const Value& value) -> void {
                             if (value.as_bool())
                                 scene.pause();
                             else
@@ -61,7 +61,7 @@ namespace gkit::core::reflect {
         return registry;
     }
 
-    static const RegistHolder regist_holder([] {
+    static const RegistHolder regist_holder([]() -> void {
         register_builtin_types();
     });
 

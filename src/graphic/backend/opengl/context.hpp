@@ -12,7 +12,7 @@ namespace gkit::graphic::opengl {
         SDL_GLContext native;
         std::thread::id thread = std::this_thread::get_id();
 
-        auto is_current() const noexcept -> bool {
+        [[nodiscard]] auto is_current() const noexcept -> bool {
             return thread == std::this_thread::get_id() && SDL_GL_GetCurrentContext() == native;
         }
     };
@@ -28,11 +28,12 @@ namespace gkit::graphic::opengl {
         explicit ContextResource(const std::shared_ptr<const Context>& context) : context(context) {
             require_context();
         }
-        auto has_current_context() const noexcept -> bool {
+
+        [[nodiscard]] auto has_current_context() const noexcept -> bool {
             const auto owner = context.lock();
             return owner && owner->is_current();
         }
-        auto context_alive() const noexcept -> bool { return !context.expired(); }
+        [[nodiscard]] auto context_alive() const noexcept -> bool { return !context.expired(); }
 
     private:
         std::weak_ptr<const Context> context;

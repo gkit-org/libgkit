@@ -19,19 +19,28 @@ namespace gkit::scene {
     public:
         /** @brief Construct an active, unpaused scene and register its reflected properties. */
         Scene();
+
         /** @brief Allow updates subject to pause, Node enablement, and all ancestor gates. */
         auto activate() -> void { active = true; }
+
         /** @brief Suppress subtree updates while preserving membership and application state. */
         auto deactivate() -> void { active = false; }
+
         /** @brief Pause subtree updates without changing the activation state. */
         auto pause() -> void { paused = true; }
+
         /** @brief Clear the local pause flag; ancestors may still prevent updates. */
         auto resume() -> void { paused = false; }
+
         /** @brief Return the local activation flag, independent of ancestor state. */
-        auto is_active() const -> bool { return active; }
+        [[nodiscard]] auto is_active() const -> bool { return active; }
+
         /** @brief Return the local pause flag, independent of ancestor state. */
-        auto is_paused() const -> bool { return paused; }
+        [[nodiscard]] auto is_paused() const -> bool { return paused; }
+
         /** @brief Combine Node enablement, activation and pause into the local update gate. */
-        auto updates_enabled() const -> bool override { return Node::updates_enabled() && active && !paused; }
+        [[nodiscard]] auto updates_enabled() const -> bool override {
+            return Node::updates_enabled() && active && !paused;
+        }
     };
 } // namespace gkit::scene

@@ -21,23 +21,26 @@ namespace gkit::core {
 
         /** @brief Pin the matching object for this call. References must stay inside the callback. */
         template<IsObject T = Object, class Fn>
-        auto with(Fn&& callback) const -> bool {
-            auto pinned  = pin();
-            auto* object = dynamic_cast<T*>(pinned.get());
-            if (!object) return false;
-            std::invoke(std::forward<Fn>(callback), *object);
-            return true;
-        }
+        auto with(Fn&& callback) const -> bool;
 
         /** @brief Borrow without pinning; requires external lifetime synchronization. */
-        auto deref() const noexcept -> Object*;
+        [[nodiscard]] auto deref() const noexcept -> Object*;
 
         template<IsObject T>
         auto deref_as() const noexcept -> T*;
 
     private:
-        auto pin() const -> std::shared_ptr<Object>;
+        [[nodiscard]] auto pin() const -> std::shared_ptr<Object>;
     };
+
+    template<IsObject T, class Fn>
+    auto ObjectId::with(Fn&& callback) const -> bool {
+        auto pinned  = pin();
+        auto* object = dynamic_cast<T*>(pinned.get());
+        if (!object) return false;
+        std::invoke(std::forward<Fn>(callback), *object);
+        return true;
+    }
 
     template<IsObject T>
     auto ObjectId::deref_as() const noexcept -> T* {

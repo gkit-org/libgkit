@@ -19,11 +19,13 @@ namespace gkit::graphic::opengl {
     class Device final : public graphic::RenderDevice {
     public:
         explicit Device(platform::Window& window);
-        auto is_current() const noexcept -> bool override;
+
+        [[nodiscard]] auto is_current() const noexcept -> bool override;
         auto bind_window_target() noexcept -> void override;
         auto clear_window(ClearFlags flags) -> void override;
         auto present() -> void override;
         auto validate_submission(const Material& material, const graphic::FrameBuffer* target) const -> void override;
+
         ~Device() override = default;
 
         auto create_vertex_buffer(const void* data, uint32_t size, bool dynamic)
@@ -53,8 +55,11 @@ namespace gkit::graphic::opengl {
         struct DestroyContext {
             auto operator()(SDL_GLContext handle) const noexcept -> void { SDL_GL_DestroyContext(handle); }
         };
+
         using ContextHandle = std::unique_ptr<std::remove_pointer_t<SDL_GLContext>, DestroyContext>;
+
         static auto create_context(SDL_Window* window) -> ContextHandle;
+
         SDL_Window* window;
         ContextHandle native;
         std::shared_ptr<const Context> context;

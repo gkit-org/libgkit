@@ -59,9 +59,7 @@ namespace gkit::graphic {
          * @param count number of components
          */
         template<typename T>
-        auto push(uint32_t count) -> void {
-            static_assert(sizeof(T) == 0, "Unsupported type for VertexBufferLayout::push");
-        }
+        auto push(uint32_t count) -> void;
 
         /**
          * @brief Get all elements in this layout (by const reference - zero copy)
@@ -81,6 +79,11 @@ namespace gkit::graphic {
         std::vector<VertexBufferElement> elements;
         uint32_t stride = 0;
     };
+
+    template<typename T>
+    auto VertexBufferLayout::push(uint32_t count) -> void {
+        static_assert(sizeof(T) == 0, "Unsupported type for VertexBufferLayout::push");
+    }
 
     // Template specializations
 

@@ -27,8 +27,8 @@ namespace gkit::graphic::opengl {
          */
         [[nodiscard]] auto get_render_id() const -> uint32_t { return this->renderer_id; }
 
-        auto width() const noexcept -> int { return buffer_width; }
-        auto height() const noexcept -> int { return buffer_height; }
+        [[nodiscard]] auto width() const noexcept -> int { return buffer_width; }
+        [[nodiscard]] auto height() const noexcept -> int { return buffer_height; }
 
     private:
         explicit RenderBuffer(const std::shared_ptr<const Context>& context, int width, int height);

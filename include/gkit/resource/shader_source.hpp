@@ -85,6 +85,7 @@ namespace gkit::resource {
 
     private:
         struct Data;
+
         std::unique_ptr<Data> data;
     };
 
